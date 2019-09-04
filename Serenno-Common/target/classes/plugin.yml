@@ -1,0 +1,6 @@
+name: Serenno-Common
+main: io.jayms.serenno.SerennoCommon
+authors: 
+- jayms
+version: 1.0.0
+depend: [CivModCore, ProtocolLib]

@@ -1,0 +1,39 @@
+name: Serenno-Cobalt
+main: io.jayms.serenno.SerennoCobalt
+authors: 
+- jayms
+version: 1.0.0
+depend: [CivModCore, Serenno-Common, ProtocolLib]
+commands:
+  cti:
+    usage: /cti
+    description: Toggle reinforcement information mode.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  ctf:
+    usage: /ctf
+    description: Toggle reinforcement fortification mode.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  ctb:
+    usage: /ctb
+    description: Toggle reinforcement information mode.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  cto:
+    usage: /cto
+    description: Turn off the reinforcement modes.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  ctr:
+    usage: /ctr
+    description: Turn on reinforcement reinforce mode.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  
+   

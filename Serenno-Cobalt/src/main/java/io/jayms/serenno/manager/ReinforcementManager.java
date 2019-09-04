@@ -1,0 +1,232 @@
+package io.jayms.serenno.manager;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.Bed;
+
+import com.google.common.collect.Maps;
+
+import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.reinforcement.ReinforcementCreationEvent;
+import io.jayms.serenno.kit.ItemStackKey;
+import io.jayms.serenno.model.citadel.CitadelPlayer;
+import io.jayms.serenno.model.citadel.ReinforcementMode;
+import io.jayms.serenno.model.citadel.ReinforcementMode.ReinforceMethod;
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementDataSource;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
+import io.jayms.serenno.model.group.Group;
+import io.jayms.serenno.model.group.GroupPermissions;
+import io.jayms.serenno.util.ChunkCache;
+import io.jayms.serenno.util.ChunkCoord;
+import io.jayms.serenno.util.Coords;
+import io.jayms.serenno.util.LocationTools;
+
+public class ReinforcementManager {
+	
+	private ReinforcementDataSource dataSource;
+	private Map<String, ReinforcementWorld> reinforcementWorlds = Maps.newConcurrentMap();
+	private Map<ItemStackKey, ReinforcementBlueprint> reinforcementBlueprints = Maps.newConcurrentMap();
+	
+	private CitadelManager cm;
+	private GroupManager gm = SerennoCobalt.get().getGroupManager();
+	
+	public ReinforcementManager(CitadelManager cm, ReinforcementDataSource dataSource) {
+		this.cm = cm;
+		this.dataSource = dataSource;
+	}
+	
+	public void registerReinforcementBlueprint(ReinforcementBlueprint blueprint) {
+		reinforcementBlueprints.put(new ItemStackKey(blueprint.getItemStack()), blueprint);
+	}
+	
+	public ReinforcementBlueprint getReinforcementBlueprint(String name) {
+		return reinforcementBlueprints.values().stream()
+				.filter(r -> r.getName().equalsIgnoreCase(name))
+				.findFirst()
+				.orElse(null);
+	}
+	
+	public ReinforcementBlueprint getReinforcementBlueprint(ItemStack it) {
+		return reinforcementBlueprints.get(new ItemStackKey(it));
+	}
+	
+	public ReinforcementWorld getReinforcementWorld(World world, ReinforcementDataSource dataSource) {
+		ReinforcementWorld reinWorld = reinforcementWorlds.get(world.getName());
+		if (reinWorld == null) {
+			reinWorld = new ReinforcementWorld(world, dataSource);
+			reinforcementWorlds.put(world.getName(), reinWorld);
+		}
+		return reinWorld;
+	}
+	
+	public Reinforcement getReinforcement(Block block) {
+		World world = block.getWorld();
+		ReinforcementWorld reinWorld = getReinforcementWorld(world, dataSource);
+		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
+		return reinChunkCache.get(block);
+	}
+	
+	public Set<Reinforcement> getReinforcementsInArea(Location l1, Location l2) {
+		if (!(l1.getWorld().getUID().equals(l2.getWorld().getUID()))) {
+			return new HashSet<>();
+		}
+		
+		World world = l1.getWorld();
+		ReinforcementWorld reinWorld = getReinforcementWorld(world, dataSource);
+		Set<Reinforcement> result = new HashSet<>();
+		
+		int minChunkX = l1.getChunk().getX();
+		int minChunkZ = l1.getChunk().getZ();
+		
+		int maxChunkX = l2.getChunk().getX();
+		int maxChunkZ = l2.getChunk().getZ();
+		
+		for (int x = minChunkX; x < maxChunkX + 1; x++) {
+			for (int z = minChunkZ; z < maxChunkZ + 1; z++) {
+				ChunkCache<Reinforcement> reinforcements = reinWorld.getChunkCache(new ChunkCoord(x, z));
+				for (Reinforcement rein : reinforcements.getAll()) {
+					System.out.println("rein: " + rein);
+					if (LocationTools.isBetween(l1, l2, rein.getLocation())) {
+						System.out.println("IN BETWEEN");
+						result.add(rein);
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	public boolean placeBlock(CitadelPlayer cp, Block block) {
+		ReinforcementMode reinMode = cp.getReinforcementMode();
+		if (reinMode == null || reinMode.getMethod() != ReinforceMethod.FORTIFY) {
+			return false;
+		}
+		
+		return reinforceBlock(cp, block);
+	}
+	
+	public boolean reinforceBlock(CitadelPlayer cp, Block block) {
+		ReinforcementMode reinMode = cp.getReinforcementMode();
+		
+		ReinforcementBlueprint blueprint = reinMode.getReinforcementBlueprint();
+		Group group = reinMode.getGroupToReinforce();
+		if (!group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_FORTIFICATION)) {
+			return true;
+		}
+		
+		reinforceBlock(cp.getBukkitPlayer(), block, blueprint, group);
+		return false;
+	}
+	
+	public void reinforceBlock(Player placer, Block block, ReinforcementBlueprint blueprint, Group group) {
+		Reinforcement reinforcement = Reinforcement.builder()
+				.id(UUID.randomUUID())
+				.health(blueprint.getMaxHealth())
+				.blueprint(blueprint)
+				.creationTime(System.currentTimeMillis())
+				.placer(placer)
+				.loc(block.getLocation())
+				.inMemory(true)
+				.group(group)
+				.build();
+		
+		ReinforcementCreationEvent event = new ReinforcementCreationEvent(reinforcement, dataSource);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		ReinforcementWorld reinWorld = getReinforcementWorld(block.getWorld(), dataSource);
+		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
+		reinChunkCache.put(block.getX(), block.getY(), block.getZ(), reinforcement);
+		
+		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
+	}
+	
+	// false = allow break
+	// true = dont allow break
+	public boolean breakBlock(CitadelPlayer cp, Block block) {
+		Reinforcement reinforcement = getReinforcement(block);
+		
+		if (reinforcement == null) {
+			return false;
+		}
+		
+		Group group = reinforcement.getGroup();
+		Group bypassGroup = cp.getReinforcementBypass();
+		if (!group.equals(bypassGroup)) {
+			return false;
+		}
+		if (!group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_BYPASS)) {
+			return false;
+		}
+		
+		ReinforcementBlueprint rb = reinforcement.getBlueprint();
+		if (reinforcement.getHealth() > 0) {
+			reinforcement.damage(rb.getDefaultDamage());
+		} else {
+			reinforcement.destroy();
+		}
+		return true;
+	}
+
+	public void destroyReinforcement(Reinforcement reinforcement) {
+		Location loc = reinforcement.getLocation();
+		ReinforcementWorld reinWorld = getReinforcementWorld(loc.getWorld(), dataSource);
+		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(loc);
+		reinChunkCache.delete(new Coords(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+	}
+	
+	public static Block getResponsibleBlock(Block block) {
+		switch (block.getType()) {
+		case YELLOW_FLOWER:
+		case RED_ROSE:
+		case SAPLING:
+		case WHEAT:
+		case CARROT:
+		case POTATO:
+		case BEETROOT:
+		case MELON_STEM:
+		case PUMPKIN_STEM:
+		case NETHER_WART_BLOCK:
+			return block.getRelative(BlockFace.DOWN);
+		case SUGAR_CANE:
+		case CACTUS:
+			// scan downwards for first different block
+			Block below = block.getRelative(BlockFace.DOWN);
+			while (below.getType() == block.getType()) {
+				below = below.getRelative(BlockFace.DOWN);
+			}
+			return below;
+		case ACACIA_DOOR:
+		case BIRCH_DOOR:
+		case DARK_OAK_DOOR:
+		case IRON_DOOR:
+		case SPRUCE_DOOR:
+		case JUNGLE_DOOR:
+		case WOOD_DOOR:
+			if (block.getRelative(BlockFace.UP).getType() != block.getType()) {
+				// block is upper half of a door
+				return block.getRelative(BlockFace.DOWN);
+			}
+		case BED:
+			Bed bed = (Bed) block.getState();
+			if (bed.isHeadOfBed()) {
+				return block.getRelative(((Bed) block.getState()).getFacing().getOppositeFace());
+			}
+		default:
+			return block;
+		}
+	}
+	
+}

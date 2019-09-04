@@ -1,0 +1,8 @@
+lobby:
+  spawn:
+    world: world
+    x: 0
+    y: 70
+    z: 0
+     
+  

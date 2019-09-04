@@ -1,0 +1,213 @@
+name: Serenno-Crimson
+main: io.jayms.serenno.SerennoCrimson
+authors: 
+- jayms
+version: 1.0.0
+depend: [CivModCore, ProtocolLib, Serenno-Common, FastAsyncWorldEdit, Citizens]
+commands:
+  regioncreate:
+    usage: /regioncreate <name>
+    description: Create a region.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  regioninfo:
+    usage: /regioninfo <name>
+    description: Get info about region.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  regionlist:
+    usage: /regionlist
+    description: Lists all regions with their ids.
+    min-args: 0
+    max-args: 0
+    player-only: false
+  regionflags:
+    usage: /regionflags <name>
+    description: Open flags UI.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  regionsetdisplayname:
+    aliases:
+    - regionsdn
+    usage: /regionsetdisplayname <region-name> <display-name>
+    description: Set region display name.
+    min-args: 2
+    max-args: 2
+    player-only: true
+  regiondelete:
+    usage: /regiondelete <region-name>
+    description: Delete a region.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  regionimport:
+    usage: /regionimport <region-name> <schematic-name>
+    description: Import a region.
+    min-args: 2
+    max-args: 2
+    player-only: true
+  regionsave:
+    usage: /regionsave <region-name>
+    description: Save a region.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  arenacreate:
+    usage: /arenacreate <region-name>
+    description: Create arena.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  arenalist:
+    usage: /arenalist
+    description: List arenas.
+    min-args: 0
+    max-args: 0
+    player-only: false
+  arenainfo:
+    usage: /arenainfo <region-name>
+    description: View arena information.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  arenaadddueltype:
+    usage: /arenaadddueltype <region-name> <duel-type>
+    description: Add duel type to arena.
+    min-args: 2
+    max-args: 2
+    player-only: false
+  arenaremovedueltype:
+    usage: /arenaremovedueltype <region-name> <duel-type>
+    description: Remove duel type from arena.
+    min-args: 2
+    max-args: 2
+    player-only: false
+  arenasetdescription:
+    aliases:
+    - arenasetdesc
+    usage: /arenasetdescription <region-name> <description>
+    description: Set description of an arena.
+    min-args: 2
+    player-only: false
+  arenasetcreators:
+    usage: /arenasetdescription <region-name> <creators>
+    description: Set creators of an arena.
+    min-args: 2
+    player-only: false
+  arenasetspawn:
+    usage: /arenasetspawn <region-name> <team-color>
+    description: Stand inside an arena and set a spawn for a team.
+    min-args: 2
+    max-args: 2
+    player-only: true
+  arenasetitem:
+    usage: /arenasetitem <region-name>
+    description: Hold item and set display item for any UIs.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  arenasave:
+    usage: /arenasave <region-name>
+    description: Save arena to database.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  arenadelete:
+    usage: /arenadelete <region-name>
+    description: Delete arena from database.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  duel:
+    usage: /duel <player-name>
+    description: Open duel GUI against a player.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  accept:
+    usage: /accept <player-name>
+    description: Accepts duel against a player.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  teamcreate:
+    usage: /teamcreate
+    description: Creates team.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  teaminvite:
+    usage: /teaminvite <player-name>
+    description: Invite a player to your team. Creates team automatically if no team.
+    min-args: 1 
+    max-args: 1
+    player-only: true
+  teaminfo:
+    usage: /teaminfo <player-name>
+    description: Displays information about team.
+    min-args: 0
+    max-args: 1
+    player-only: true
+  teamleave:
+    usage: /teamleave
+    description: Leave team.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  teamdisband:
+    usage: /teamdisband
+    description: Disband team.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  teamkick:
+    usage: /teamkick <player-name>
+    description: Kick a team member.
+    min-args: 1
+    max-args: 1
+    player-only: true
+  teamlist:
+    usage: /teamlist
+    description: List teams.
+    min-args: 0
+    max-args: 0
+    player-only: false
+  gameslist:
+    usage: /gameslist
+    description: Lists all ongoing games.
+    min-args: 0
+    max-args: 0
+    player-only: false
+  gameinfo:
+    usage: /gameinfo <game-id>
+    description: Shows information about an ongoing game.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  gamestats:
+    usage: /gamestats <game-id>
+    description: Shows statistics about game.
+    min-args: 1
+    max-args: 1
+    player-only: false
+  tsm:
+    usage: /tsm
+    description: Toggle schematic mode.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  kiteditor:
+    usage: /kiteditor
+    description: Open kit editor.
+    min-args: 0
+    max-args: 0
+    player-only: true
+  duelbot:
+    usage: /duelbot <bot-name>
+    description: Duel a bot.
+    min-args: 1
+    max-args: 1
+    player-only: true

@@ -1,0 +1,7 @@
+database:
+  creds: false
+  host: localhost
+  port: 27017
+  user: 
+  pass: 
+  db: serenno
