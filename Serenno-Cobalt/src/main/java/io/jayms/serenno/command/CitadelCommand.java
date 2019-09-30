@@ -10,6 +10,8 @@ import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.manager.ReinforcementManager;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryType;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import net.md_5.bungee.api.ChatColor;
@@ -32,6 +34,9 @@ public class CitadelCommand extends BaseCommand {
 			BastionBlueprint bb = bm.getBastionBlueprint(thingName);
 			giveIt = bb.getItemStack();
 			giveIt.setAmount(amount);
+		} else if (thingType.equalsIgnoreCase("artillery")) {
+			ArtilleryCrate crate = ArtilleryType.TREBUCHET.getArtilleryCrate();
+			giveIt = crate.getItemStack();
 		} else {
 			player.sendMessage(ChatColor.RED + "Citadel doesn't have that thing to give you.");
 			return;

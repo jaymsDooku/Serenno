@@ -5,12 +5,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.arena.Arena;
+import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.player.SerennoPlayer;
 import mkremins.fanciful.FancyMessage;
 import net.md_5.bungee.api.ChatColor;
@@ -51,6 +51,8 @@ public abstract class AbstractGame implements Game {
 	@Override
 	public void start() {
 		initGame();
+		
+		broadcast(ChatColor.GOLD + "You are now playing on " + map.getRegion().getDisplayName() + ChatColor.GOLD + " by " + ChatColor.BLACK + "[" + ChatColor.RESET + map.getCreators() + ChatColor.BLACK + "]");
 		
 		counterTask = new BukkitRunnable() {
 			
@@ -162,6 +164,8 @@ public abstract class AbstractGame implements Game {
 	public void startSpectating(SerennoPlayer spectator, SerennoPlayer toSpectate) {
 		startSpectating(spectator, toSpectate.getBukkitPlayer().getLocation());
 	}
+	
+	private static final Kit spectatorKit = new Kit();
 
 	@Override
 	public void startSpectating(SerennoPlayer spectator, Location loc) {
@@ -176,11 +180,12 @@ public abstract class AbstractGame implements Game {
 			
 			public void run() {
 				spectator.teleport(loc);
+				spectatorKit.load(spectator.getBukkitPlayer());
 			};
 			
 		}.runTask(SerennoCrimson.get());
-		spectators.add(spectator);
 		broadcast(ChatColor.GOLD + spectator.getName() + ChatColor.YELLOW + " is spectating.");
+		spectators.add(spectator);
 	}
 
 	@Override

@@ -15,9 +15,15 @@ public interface Region {
 	
 	String getDisplayName();
 	
+	void setParentWorld(World world);
+	
 	World getParentWorld();
 	
 	Set<World> getChildWorlds();
+	
+	void setPoint1(Vector v);
+	
+	void setPoint2(Vector v);
 	
 	Vector getPoint1();
 	

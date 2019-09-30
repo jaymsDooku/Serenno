@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 
 public class MaterialTools {
@@ -69,5 +70,13 @@ public class MaterialTools {
 	public static boolean isPotion(ItemStack it) {
 		Material type = it.getType();
 		return type == Material.POTION || type == Material.LINGERING_POTION || type == Material.SPLASH_POTION;
+	}
+	
+	public static boolean isChest(Material mat) {
+		return mat == Material.CHEST || mat == Material.TRAPPED_CHEST;
+	}
+	
+	public static boolean isChest(Block block) {
+		return isChest(block.getType());
 	}
 }

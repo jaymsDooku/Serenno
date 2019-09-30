@@ -17,7 +17,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.boydti.fawe.object.FawePlayer;
 import com.google.common.collect.Lists;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -29,6 +28,8 @@ import io.jayms.serenno.db.MongoAPI;
 import io.jayms.serenno.db.event.DBConnectEvent;
 import io.jayms.serenno.region.event.RegionDeletionEvent;
 import io.jayms.serenno.util.MongoTools;
+import io.jayms.serenno.util.PlayerTools;
+import io.jayms.serenno.util.PlayerTools.Clipboard;
 import net.md_5.bungee.api.ChatColor;
 
 public class RegionManager implements Listener {
@@ -37,7 +38,7 @@ public class RegionManager implements Listener {
 	private Map<String, Region> regions = new HashMap<>();
 	
 	public RegionManager() {
-		this.listener = new RegionListener();
+		this.listener = new RegionListener(this);
 		Bukkit.getPluginManager().registerEvents(this, SerennoCrimson.get());
 		Bukkit.getPluginManager().registerEvents(listener, SerennoCrimson.get());
 	}
@@ -106,6 +107,8 @@ public class RegionManager implements Listener {
             		region.getPossibleFlags().add(RegionFlags.BLOCK_PLACE);
             		region.getPossibleFlags().add(RegionFlags.PVP);
             		region.getPossibleFlags().add(RegionFlags.PVE);
+            		region.getPossibleFlags().add(RegionFlags.HUNGER_LOSS);
+            		region.getPossibleFlags().add(RegionFlags.DAMAGE_LOSS);
                     
                     regions.put(regionName, region);
                     SerennoCrimson.get().getLogger().info("Loaded region: " + region.getName());
@@ -179,22 +182,12 @@ public class RegionManager implements Listener {
 	}
 	
 	public Region createRegion(Player player, String name) {
-		FawePlayer<Player> fawePlayer = FawePlayer.wrap(player);
-		com.sk89q.worldedit.regions.Region selection = fawePlayer.getSelection();
-		Vector p1 = new Vector(selection.getMinimumPoint().getX(), selection.getMinimumPoint().getY(), selection.getMinimumPoint().getZ());
-		Vector p2 = new Vector(selection.getMaximumPoint().getX(), selection.getMaximumPoint().getY(), selection.getMaximumPoint().getZ());
-		
-		World w = Bukkit.getWorld(selection.getWorld().getName());
-		
-		if (w == null) {
-			player.sendMessage(ChatColor.RED + "Clipboard selection error.");
+		Clipboard cb = PlayerTools.getClipboard(player);
+		if (cb == null) {
 			return null;
 		}
 		
-		Location l1 = new Location(w, p1.getX(), p1.getY(), p1.getZ());
-		Location l2 = new Location(w, p2.getX(), p2.getY(), p2.getZ());
-		
-		return createRegion(player, name, l1, l2);
+		return createRegion(player, name, cb.getP1(), cb.getP2());
 	}
 	
 	public Region createRegion(Player player, String name, Location p1, Location p2) {
@@ -214,6 +207,8 @@ public class RegionManager implements Listener {
 		region.getPossibleFlags().add(RegionFlags.BLOCK_PLACE);
 		region.getPossibleFlags().add(RegionFlags.PVP);
 		region.getPossibleFlags().add(RegionFlags.PVE);
+		region.getPossibleFlags().add(RegionFlags.DAMAGE_LOSS);
+		region.getPossibleFlags().add(RegionFlags.HUNGER_LOSS);
 		
 		saveRegion(region);
 		regions.put(region.getName(), region);

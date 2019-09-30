@@ -1,5 +1,6 @@
 package io.jayms.serenno.game;
 
+import io.jayms.serenno.game.menu.MatchReportMenu;
 import io.jayms.serenno.game.statistics.DuelStatistics;
 import io.jayms.serenno.player.SerennoPlayer;
 
@@ -18,6 +19,8 @@ public interface Duel extends Game {
 	DuelTeam getOtherTeam(DuelTeam team);
 	
 	DuelStatistics getStatistics();
+	
+	MatchReportMenu getMatchReportMenu();
 	
 	DuelType getDuelType();
 	

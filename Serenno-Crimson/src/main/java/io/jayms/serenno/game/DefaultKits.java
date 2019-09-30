@@ -11,10 +11,15 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
+import com.github.maxopoly.finale.classes.ability.item.LinkerItem;
+import com.github.maxopoly.finale.classes.ability.item.SugarRushItem;
+
+import io.jayms.serenno.item.CustomItemManager;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.util.MaterialTools;
+import net.md_5.bungee.api.ChatColor;
 
 public final class DefaultKits {
 	
@@ -27,28 +32,30 @@ public final class DefaultKits {
 	public static ItemStack fres(int duration) {
 		return new ItemStackBuilder(Material.SPLASH_POTION, 1)
 				.meta(new ItemMetaBuilder()
-						.colour(Color.fromRGB(209, 125, 69))
-						.effects(Arrays.asList(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, duration * 20, 0)))).build();
+						.potionData(new PotionData(PotionType.FIRE_RESISTANCE, true, false))).build();
 	}
 	
 	public static ItemStack strength(int duration) {
 		return new ItemStackBuilder(Material.SPLASH_POTION, 1)
-		.meta(new ItemMetaBuilder()
-				.colour(Color.fromRGB(89, 24, 24))
-				.effects(Arrays.asList(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, duration * 20, 1)))).build();
+				.meta(new ItemMetaBuilder()
+						.name(ChatColor.DARK_PURPLE + "Strength Potion")
+						.colour(Color.fromRGB(98, 24, 23))
+						.effects(Arrays.asList(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, duration * 20, 1)))).build();
 	}
 	
 	public static ItemStack speed(int duration) {
 		return new ItemStackBuilder(Material.SPLASH_POTION, 1)
 				.meta(new ItemMetaBuilder()
-						.colour(Color.fromRGB(138, 180, 247))
+						.name(ChatColor.AQUA + "Speed Potion")
+						.colour(Color.fromRGB(122, 172, 195))
 						.effects(Arrays.asList(new PotionEffect(PotionEffectType.SPEED, duration * 20, 1)))).build();
 	}
 	
 	public static ItemStack regen(int duration) {
 		return new ItemStackBuilder(Material.SPLASH_POTION, 1)
 				.meta(new ItemMetaBuilder()
-						.colour(Color.fromRGB(191, 124, 239))
+						.name(ChatColor.LIGHT_PURPLE + "Regeneration Potion")
+						.colour(Color.fromRGB(158, 71, 132))
 						.effects(Arrays.asList(new PotionEffect(PotionEffectType.REGENERATION, duration * 20, 0)))).build();
 	}
 	
@@ -101,7 +108,9 @@ public final class DefaultKits {
 	}
 	
 	public static ItemStack sugar() {
-		return new ItemStack(Material.SUGAR, 64);
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(SugarRushItem.class).getItemStack();
+		result.setAmount(64);
+		return result;
 	}
 	
 	public static ItemStack feather() {
@@ -307,6 +316,18 @@ public final class DefaultKits {
 		return new ItemStack(Material.COOKED_BEEF, 64);
 	}
 	
+	public static ItemStack godApple() {
+		return new ItemStackBuilder(Material.GOLDEN_APPLE, 64)
+				.durability((short) 1)
+				.build();
+	}
+	
+	public static ItemStack linker() {
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(LinkerItem.class).getItemStack();
+		result.setAmount(64);
+		return result;
+	}
+	
 	public static Kit prot4Set() {
 		return new Kit().helmet(dhelmet())
 				.chestplate(dchest())
@@ -315,6 +336,22 @@ public final class DefaultKits {
 				.set(0, sword())
 				.set(1, pearls())
 				.offhand(carrots());
+	}
+	
+	public static Kit prot4LeatherSet() {
+		return new Kit().helmet(lhelmet())
+				.chestplate(lchest())
+				.leggings(llegs())
+				.boots(lboots())
+				.set(0, sword())
+				.set(1, pearls())
+				.offhand(carrots());
+	}
+	
+	public static Kit combo() {
+		Kit result = prot4Set()
+				.set(2, godApple());
+		return result;
 	}
 	
 	public static Kit noDebuff() {
@@ -348,6 +385,24 @@ public final class DefaultKits {
 				.set(10, poisonExtended(33))
 				.set(18, slow(67))
 				.set(19, poisonExtended(33));
+	}
+	
+	public static Kit archer() {
+		Kit result = prot4LeatherSet()
+				.range(4, 36, health())
+				.set(2, bow())
+				.set(3, linker())
+				.set(5, fres(8 * 60))
+				.set(6, regen(150))
+				.set(7, strength(150))
+				.set(8, sugar())
+				
+				.set(25, regen(150))
+				.set(26, strength(150))
+				
+				.set(34, regen(150))
+				.set(35, strength(150));
+		return result;
 	}
 	
 	public static Kit vaultBattle() {

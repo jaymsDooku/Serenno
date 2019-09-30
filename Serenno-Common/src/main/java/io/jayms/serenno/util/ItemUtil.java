@@ -14,12 +14,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
 import com.google.common.collect.ImmutableMap;
 
 import de.tr7zw.nbtapi.NBTCompoundList;
 import de.tr7zw.nbtapi.NBTItem;
 import de.tr7zw.nbtapi.NBTListCompound;
+import net.md_5.bungee.api.ChatColor;
 import net.minecraft.server.v1_12_R1.Item;
 
 public class ItemUtil {
@@ -185,6 +187,12 @@ public class ItemUtil {
 		return CraftItemStack.asBukkitCopy(isNms);
 	}
 	
+	public static void setName(ItemStack it, String name) {
+		ItemMeta meta = it.getItemMeta();
+		meta.setDisplayName(name);
+		it.setItemMeta(meta);
+	}
+	
 	public static String getName(ItemStack it) {
 		ItemMeta meta = it.getItemMeta();
 		String name = it.getType().name();
@@ -200,14 +208,13 @@ public class ItemUtil {
 		return meta.getLore();
 	}
 	
-	public static boolean isPotion(ItemStack it, PotionEffectType type) {
+	public static boolean isPotion(ItemStack it, PotionType type) {
 		if (it == null) return false;
 		
 		ItemMeta meta = it.getItemMeta();
 		if (meta instanceof PotionMeta) {
 			PotionMeta potMeta = (PotionMeta) meta;
-			List<PotionEffect> effects = potMeta.getCustomEffects();
-			if (containsEffect(effects, type)) {
+			if (potMeta.getBasePotionData().getType() == type) {
 				return true;
 			}
 		}
@@ -217,4 +224,70 @@ public class ItemUtil {
 	public static boolean containsEffect(List<PotionEffect> effects, PotionEffectType effect) {
 		return effects.stream().filter(e -> e.getType() == effect).findFirst().isPresent();
 	}
+	
+	public static String getPotionDurations(long duration) {
+		long minutes = (duration / 1000) / 60;
+		long seconds = (duration / 1000) % 60;
+		return minutes + ":" + seconds;
+	}
+	
+	public static String getEffectName(PotionEffectType type) {
+		if (type.equals(PotionEffectType.SPEED)) {
+			return ChatColor.AQUA + "Speed";
+		} else if (type.equals(PotionEffectType.INCREASE_DAMAGE)) {
+			return ChatColor.DARK_PURPLE + "Strength";
+		} else if (type.equals(PotionEffectType.REGENERATION)) {
+			return ChatColor.LIGHT_PURPLE + "Regeneration";
+		} else if (type.equals(PotionEffectType.FIRE_RESISTANCE)) {
+			return ChatColor.GOLD + "Fire Resistance";
+		} else if (type.equals(PotionEffectType.DAMAGE_RESISTANCE)) {
+			return ChatColor.DARK_GRAY + "Resistance";
+		} else if (type.equals(PotionEffectType.INVISIBILITY)) {
+			return ChatColor.GRAY + "Invisibility";
+		} else if (type.equals(PotionEffectType.JUMP)) {
+			return ChatColor.GREEN + "Jump Boost";
+		} else if (type.equals(PotionEffectType.FAST_DIGGING)) {
+			return ChatColor.YELLOW + "Haste";
+		} else if (type.equals(PotionEffectType.BLINDNESS)) {
+			return ChatColor.BLACK + "Blindness";
+		} else if (type.equals(PotionEffectType.WEAKNESS)) {
+			return ChatColor.DARK_GRAY + "Weakness";
+		} else if (type.equals(PotionEffectType.SLOW)) {
+			return ChatColor.GRAY + "Slownesss";
+		} else if (type.equals(PotionEffectType.POISON)) {
+			return ChatColor.DARK_GREEN + "Poison";
+		} else if (type.equals(PotionEffectType.GLOWING)) {
+			return ChatColor.YELLOW + "Spectral";
+		} else if (type.equals(PotionEffectType.LEVITATION)) {
+			return ChatColor.WHITE + "Levitation";
+		} else if (type.equals(PotionEffectType.CONFUSION)) {
+			return ChatColor.DARK_PURPLE + "Confusion";
+		} else if (type.equals(PotionEffectType.ABSORPTION)) {
+			return ChatColor.YELLOW + "Absorption";
+		} else if (type.equals(PotionEffectType.HARM)) {
+			return ChatColor.DARK_RED + "Harming";
+		} else if (type.equals(PotionEffectType.HEAL)) {
+			return ChatColor.RED + "Health";
+		} else if (type.equals(PotionEffectType.HEALTH_BOOST)) {
+			return ChatColor.WHITE + "Health Boost";
+		} else if (type.equals(PotionEffectType.NIGHT_VISION)) {
+			return ChatColor.DARK_BLUE + "Night Vision";
+		} else if (type.equals(PotionEffectType.SLOW_DIGGING)) {
+			return ChatColor.GRAY + "Fatigue";
+		} else if (type.equals(PotionEffectType.HUNGER)) {
+			return ChatColor.DARK_GREEN + "Hunger";
+		} else if (type.equals(PotionEffectType.WITHER)) {
+			return ChatColor.BLACK + "Wither";
+		} else if (type.equals(PotionEffectType.LUCK)) {
+			return ChatColor.GREEN + "Luck";
+		} else if (type.equals(PotionEffectType.SATURATION)) {
+			return ChatColor.GOLD + "Saturation";
+		} else if (type.equals(PotionEffectType.UNLUCK)) {
+			return ChatColor.DARK_GRAY + "Unluck";
+		} else if (type.equals(PotionEffectType.WATER_BREATHING)) {
+			return ChatColor.BLUE + "Water Breathing";
+		}
+		return "";
+	}
+	
 }

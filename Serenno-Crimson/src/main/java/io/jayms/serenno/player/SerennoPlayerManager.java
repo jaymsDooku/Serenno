@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
@@ -14,7 +14,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -32,6 +31,7 @@ import io.jayms.serenno.game.Duel;
 import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.kit.Kit;
+import io.jayms.serenno.manager.PlayerManager;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import vg.civcraft.mc.civmodcore.ui.ActionBarHandler;
@@ -40,9 +40,8 @@ import vg.civcraft.mc.civmodcore.ui.UIHandler;
 import vg.civcraft.mc.civmodcore.ui.UIManager;
 import vg.civcraft.mc.civmodcore.ui.UIScoreboard;
 
-public class SerennoPlayerManager implements Listener {
+public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 
-	private Map<UUID, SerennoPlayer> players = new HashMap<>();
 	private Map<Integer, SerennoBot> bots = new HashMap<>();
 	
 	public SerennoPlayerManager() {
@@ -51,7 +50,7 @@ public class SerennoPlayerManager implements Listener {
 	
 	public void killBot(SerennoBot bot) {
 		NPC npc = bot.getNpc();
-		bots.remove(npc.getId());
+		//bots.remove(npc.getId());
 		Bot.killAndRemoveNPC(npc);
 	}
 	
@@ -62,47 +61,6 @@ public class SerennoPlayerManager implements Listener {
 			bots.put(npc.getId(), bot);
 		}
 		return bot;
-	}
-	
-	public SerennoPlayer getPlayer(Player player) {
-		if (CitizensAPI.getNPCRegistry().isNPC(player)) {
-			return getBot(CitizensAPI.getNPCRegistry().getNPC(player));
-		}
-		
-		if (players.containsKey(player.getUniqueId())) {
-			return players.get(player.getUniqueId());
-		}
-		
-		if (!MongoAPI.isConnected()) {
-			return null;
-		}
-		
-		MongoCollection<Document> collection = SerennoCommon.get().getDBManager().getCollection("player");
-        FindIterable<Document> query = collection.find(Filters.eq("uuid", player.getUniqueId().toString()));
-        Document document = query.first();
-        
-        SerennoPlayer serennoPlayer = new SerennoPlayer(player); 
-        
-        if (document != null) {
-	        Map<DuelType, Kit[]> kits = serennoPlayer.getKits();
-	        Document kitDoc = (Document) document.get("kits");
-	        for (Entry<String, Object> kitEn : kitDoc.entrySet()) {
-	        	Kit[] kitArr = new Kit[9];
-	        	List<String> kitsStr = kitDoc.getList(kitEn.getKey(), String.class);
-	        	for (int i = 0; i < kitsStr.size(); i++) {
-	        		try {
-						kitArr[i] = Kit.fromBase64(kitsStr.get(i));
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-	        	}
-	        	kits.put(DuelType.valueOf(kitEn.getKey()), kitArr);
-	        }
-        }
-        
-        players.put(player.getUniqueId(), serennoPlayer);
-        SerennoCrimson.get().getLogger().info("Loaded player: " + player.getName());
-        return serennoPlayer;
 	}
 	
 	public Document document(SerennoPlayer player) {
@@ -123,15 +81,15 @@ public class SerennoPlayerManager implements Listener {
 	}
 	
 	public void savePlayer(Player player) {
-		SerennoPlayer serennoPlayer = players.get(player.getUniqueId());
+		SerennoPlayer serennoPlayer = get(player);
 		if (serennoPlayer == null) {
 			return;
 		}
 		
-		savePlayer(serennoPlayer);
+		savePlayer(serennoPlayer, true);
 	}
 	
-	public void savePlayer(SerennoPlayer player) {
+	public void savePlayer(SerennoPlayer player, boolean async) {
 		if (player instanceof SerennoBot) {
 			return;
 		}
@@ -142,26 +100,40 @@ public class SerennoPlayerManager implements Listener {
 			return;
 		}
 		
+		if (async) {
 		new BukkitRunnable() {
 			
 			@Override
 			public void run() {
-				MongoCollection<Document> collection = SerennoCommon.get().getDBManager().getCollection("player");
-				FindIterable<Document> query = collection.find(Filters.eq("uuid", player.getBukkitPlayer().getUniqueId()));
-				Document document = query.first();
-				
-				Document newDoc = document(player);
-				
-				if (document != null) {
-					collection.replaceOne(document, newDoc);
-				} else {
-					collection.insertOne(newDoc);
-				}
-				player.setDirty(false);
-				SerennoCrimson.get().getLogger().info("Saved player: " + player.getBukkitPlayer().getName());
+				savePlayer(player);
 			}
 			
 		}.runTaskAsynchronously(SerennoCrimson.get());
+		} else {
+			savePlayer(player);
+		}
+	}
+	
+	public void saveAll() {
+		for (SerennoPlayer sp : getPlayers().values()) {
+			savePlayer(sp, false);
+		}
+	}
+		
+	private void savePlayer(SerennoPlayer player) {
+		MongoCollection<Document> collection = SerennoCommon.get().getDBManager().getCollection("player");
+		FindIterable<Document> query = collection.find(Filters.eq("uuid", player.getBukkitPlayer().getUniqueId()));
+		Document document = query.first();
+		
+		Document newDoc = document(player);
+		
+		if (document != null) {
+			collection.replaceOne(document, newDoc);
+		} else {
+			collection.insertOne(newDoc);
+		}
+		player.setDirty(false);
+		SerennoCrimson.get().getLogger().info("Saved player: " + player.getBukkitPlayer().getName());
 	}
 	
 	private org.bukkit.scoreboard.Team getTeam(Scoreboard mcBoard, String t, boolean friendly, String prefix) {
@@ -186,7 +158,7 @@ public class SerennoPlayerManager implements Listener {
 			
 			@Override
 			public void handle(Player player, UIScoreboard board) {
-				SerennoPlayer sp = getPlayer(player);
+				SerennoPlayer sp = get(player);
 				Scoreboard sb = board.getScoreboard();
 				org.bukkit.scoreboard.Team norm, ally, enemy, tagged;
 				
@@ -197,6 +169,12 @@ public class SerennoPlayerManager implements Listener {
 				
 				board.add(ChatColor.STRIKETHROUGH + "--------------" + ChatColor.WHITE + ChatColor.STRIKETHROUGH + "----", 1);
 				board.add(ChatColor.WHITE + "" + ChatColor.STRIKETHROUGH + "-------------" + ChatColor.WHITE + ChatColor.STRIKETHROUGH + "-----", 15);
+				
+				if (SerennoCrimson.get().getLobby().inLobby(sp)) {
+					board.add(ChatColor.RED + "Online: " + ChatColor.WHITE + Bukkit.getOnlinePlayers().size(), 3);
+				} else {
+					board.remove(3, "");
+				}
 				
 				Duel duel = sp.getDuel();
 				if (duel != null) {
@@ -212,9 +190,9 @@ public class SerennoPlayerManager implements Listener {
 					board.add(ChatColor.RED + "Opponent: " + ChatColor.WHITE + otherTeam.getTeam().getLeader().getName(), 14);
 					
 					for (Player online : Bukkit.getOnlinePlayers()) {
-						SerennoPlayer sOnline = getPlayer(online);
+						SerennoPlayer sOnline = get(online);
 						String name = online.getName();
-						SerennoPlayer onlineSp = getPlayer(online);
+						SerennoPlayer onlineSp = get(online);
 						Duel onlineDuel = onlineSp.getDuel();
 						if (duel != null) {
 							if (norm.hasEntry(name)) {
@@ -264,7 +242,50 @@ public class SerennoPlayerManager implements Listener {
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
 		Player p = e.getPlayer();
-		savePlayer(getPlayer(p));
+		savePlayer(get(p));
+	}
+
+	@Override
+	protected Function<Player, SerennoPlayer> getPlayerInstantiator() {
+		return (player) -> {
+			if (CitizensAPI.getNPCRegistry().isNPC(player)) {
+				return getBot(CitizensAPI.getNPCRegistry().getNPC(player));
+			}
+			
+			if (isPlayer(player)) {
+				return get(player);
+			}
+			
+			if (!MongoAPI.isConnected()) {
+				return null;
+			}
+			
+			MongoCollection<Document> collection = SerennoCommon.get().getDBManager().getCollection("player");
+	        FindIterable<Document> query = collection.find(Filters.eq("uuid", player.getUniqueId().toString()));
+	        Document document = query.first();
+	        
+	        SerennoPlayer serennoPlayer = new SerennoPlayer(player); 
+	        
+	        if (document != null) {
+		        Map<DuelType, Kit[]> kits = serennoPlayer.getKits();
+		        Document kitDoc = (Document) document.get("kits");
+		        for (Entry<String, Object> kitEn : kitDoc.entrySet()) {
+		        	Kit[] kitArr = new Kit[9];
+		        	List<String> kitsStr = kitDoc.getList(kitEn.getKey(), String.class);
+		        	for (int i = 0; i < kitsStr.size(); i++) {
+		        		try {
+							kitArr[i] = Kit.fromBase64(kitsStr.get(i));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+		        	}
+		        	kits.put(DuelType.valueOf(kitEn.getKey()), kitArr);
+		        }
+	        }
+	        
+	        SerennoCrimson.get().getLogger().info("Loaded player: " + player.getName());
+	        return serennoPlayer;
+		};
 	}
 	
 }

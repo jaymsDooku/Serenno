@@ -1,21 +1,20 @@
 package io.jayms.serenno.command.bot;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import io.jayms.serenno.SerennoCrimson;
-import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.bot.Bot;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.player.SerennoPlayer;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.command.CivCommand;
 import vg.civcraft.mc.civmodcore.command.StandaloneCommand;
-import vg.civcraft.mc.civmodcore.inventorygui.IClickable;
-import vg.civcraft.mc.civmodcore.inventorygui.MultiPageView;
 
 @CivCommand(id = "duelbot")
 public class DuelBotCommand extends StandaloneCommand {
@@ -33,18 +32,12 @@ public class DuelBotCommand extends StandaloneCommand {
 			Player trainee = (Player) sender;
 			DuelType duelType = DuelType.NODEBUFF;
 			
-			SerennoPlayer sTrainee = SerennoCrimson.get().getPlayerManager().getPlayer(trainee);
-			SerennoPlayer sBotPlayer = SerennoCrimson.get().getPlayerManager().getPlayer(botPlayer);
+			SerennoPlayer sBotPlayer = SerennoCrimson.get().getPlayerManager().get(botPlayer);
 			
-			List<IClickable> mapClicks = Arena.getArenaClickables(sTrainee, sBotPlayer, duelType);
-			if (mapClicks.isEmpty()) {
-				sender.sendMessage(ChatColor.RED + "No maps exist for this gamemode. :(");
-				return;
-			}
-			
-			MultiPageView mapView = new MultiPageView(trainee, mapClicks,
-					ChatColor.YELLOW + "Choose Map", true);
-			mapView.showScreen();
+			Map<String, Object> initData = new HashMap<>();
+			initData.put("toDuel", sBotPlayer);
+			initData.put("duelType", duelType);
+			SerennoCrimson.get().getGameManager().getArenaSelectMenu().open(trainee, initData);
 		});
 		return true;
 	}

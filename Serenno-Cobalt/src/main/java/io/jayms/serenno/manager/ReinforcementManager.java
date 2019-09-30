@@ -7,11 +7,13 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Bed;
 
@@ -19,6 +21,7 @@ import com.google.common.collect.Maps;
 
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.event.reinforcement.ReinforcementCreationEvent;
+import io.jayms.serenno.event.reinforcement.ReinforcementDestroyEvent;
 import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.ReinforcementMode;
@@ -72,11 +75,23 @@ public class ReinforcementManager {
 		return reinWorld;
 	}
 	
-	public Reinforcement getReinforcement(Block block) {
+	public Reinforcement getDirectReinforcement(Block block) {
 		World world = block.getWorld();
 		ReinforcementWorld reinWorld = getReinforcementWorld(world, dataSource);
 		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
 		return reinChunkCache.get(block);
+	}
+	
+	public Reinforcement getReinforcement(Block block) {
+		Reinforcement directReinforcement = getDirectReinforcement(block);
+		if (directReinforcement != null) {
+			return directReinforcement;
+		}
+		Block responsible = getResponsibleBlock(block);
+		if (responsible == null) {
+			return null;
+		}
+		return getDirectReinforcement(responsible);
 	}
 	
 	public Set<Reinforcement> getReinforcementsInArea(Location l1, Location l2) {
@@ -94,8 +109,13 @@ public class ReinforcementManager {
 		int maxChunkX = l2.getChunk().getX();
 		int maxChunkZ = l2.getChunk().getZ();
 		
-		for (int x = minChunkX; x < maxChunkX + 1; x++) {
-			for (int z = minChunkZ; z < maxChunkZ + 1; z++) {
+		System.out.println("minChunkX: " + minChunkX);
+		System.out.println("minChunkZ: " + minChunkZ);
+		System.out.println("maxChunkX: " + maxChunkX);
+		System.out.println("maxChunkZ: " + maxChunkZ);
+		
+		for (int x = minChunkX; x <= maxChunkX + 1; x++) {
+			for (int z = minChunkZ; z <= maxChunkZ + 1; z++) {
 				ChunkCache<Reinforcement> reinforcements = reinWorld.getChunkCache(new ChunkCoord(x, z));
 				for (Reinforcement rein : reinforcements.getAll()) {
 					System.out.println("rein: " + rein);
@@ -185,6 +205,8 @@ public class ReinforcementManager {
 		ReinforcementWorld reinWorld = getReinforcementWorld(loc.getWorld(), dataSource);
 		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(loc);
 		reinChunkCache.delete(new Coords(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+		ReinforcementDestroyEvent reinDestroyEvent = new ReinforcementDestroyEvent(reinforcement, dataSource);
+		Bukkit.getPluginManager().callEvent(reinDestroyEvent);
 	}
 	
 	public static Block getResponsibleBlock(Block block) {
@@ -225,8 +247,42 @@ public class ReinforcementManager {
 				return block.getRelative(((Bed) block.getState()).getFacing().getOppositeFace());
 			}
 		default:
-			return block;
+			return null;
 		}
+	}
+	
+	public static boolean isPreventingBlockAccess(Player player, Block block) {
+		if (block == null) {
+			return false;
+		}
+		if (block.getState() instanceof InventoryHolder) {
+			Reinforcement rein = resolveDoubleChestReinforcement(block);
+			if (rein == null) {
+				return false;
+			}
+			return !rein.hasPermission(player, GroupPermissions.REINFORCEMENT_CONTAINER_BYPASS);
+		}
+		return false;
+	}
+
+	public static Reinforcement resolveDoubleChestReinforcement(Block b) {
+		Material mat = b.getType();
+		ReinforcementManager reinMan = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
+		Reinforcement rein = reinMan.getReinforcement(b);
+		if (rein != null || (mat != Material.CHEST && mat != Material.TRAPPED_CHEST)) {
+			return rein;
+		}
+		for (BlockFace face : LocationTools.PLANAR_SIDES) {
+			Block rel = b.getRelative(face);
+			if (rel.getType() != mat) {
+				continue;
+			}
+			rein = reinMan.getReinforcement(rel);
+			if (rein != null) {
+				return rein;
+			}
+		}
+		return null;
 	}
 	
 }

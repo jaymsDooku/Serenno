@@ -1,0 +1,237 @@
+package io.jayms.serenno.model.citadel.artillery.menu;
+
+import java.util.Map;
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+
+import io.jayms.serenno.kit.ItemMetaBuilder;
+import io.jayms.serenno.kit.ItemStackBuilder;
+import io.jayms.serenno.menu.Button;
+import io.jayms.serenno.menu.ClickHandler;
+import io.jayms.serenno.menu.SimpleButton;
+import io.jayms.serenno.menu.SingleMenu;
+import io.jayms.serenno.model.citadel.artillery.trebuchet.Trebuchet;
+import io.jayms.serenno.util.ItemUtil;
+
+public class TrebuchetMenu extends SingleMenu {
+	
+	public TrebuchetMenu() {
+		super("");
+	}
+	
+	@Override
+	public boolean allowPlayerInventory() {
+		return true;
+	}
+
+	@Override
+	public boolean onOpen(Player player) {
+		return true;
+	}
+	
+	@Override
+	public void onClose(Player player, Map<String, Object> data) {
+		Trebuchet trebuchet = (Trebuchet) data.get("artillery");
+		
+		int ammo = 0;
+		for (int i = 0; i < 3; i++) {
+			int k = 14;
+			for (int j = k; j < k + 3; j++) {
+				Button button = getButton(j);
+				ItemStack it = button.getItemStack();
+				if (it == null) continue;
+				if (it.getType() != trebuchet.getFiringAmmoMaterial()) {
+					throw new IllegalStateException("A non-ammo material found inside trebuchet.");
+				}
+				ammo += it.getAmount();
+			}
+			k += 9;
+		}
+		trebuchet.setFiringAmmoAmount(ammo);
+	}
+
+	@Override
+	public void onClose(Player player) {
+	}
+	
+	private ItemStack firingAngleDisplay;
+	private ItemStack firingPowerDisplay;
+
+	@Override
+	public Inventory newInventory(Map<String, Object> initData) {
+		Trebuchet trebuchet = (Trebuchet) initData.get("artillery");
+		setName(trebuchet.getDisplayName());
+		
+		int size = 45;
+		setSize(size);
+		
+		Inventory inventory = Bukkit.createInventory(null, this.getSize(), this.getName());
+		
+		addButton(1, getFiringAngleAdjustButton(trebuchet, Adjustment.ADD, 10));
+		addButton(10, getFiringAngleAdjustButton(trebuchet, Adjustment.ADD, 1));
+		addButton(37, getFiringAngleAdjustButton(trebuchet, Adjustment.SUB, 1));
+		addButton(46, getFiringAngleAdjustButton(trebuchet, Adjustment.SUB, 10));
+		
+		addButton(28, getFiringAngleDisplayButton(trebuchet));
+		
+		addButton(3, getFiringPowerAdjustButton(trebuchet, Adjustment.ADD, 10));
+		addButton(12, getFiringPowerAdjustButton(trebuchet, Adjustment.ADD, 1));
+		addButton(39, getFiringPowerAdjustButton(trebuchet, Adjustment.SUB, 1));
+		addButton(48, getFiringPowerAdjustButton(trebuchet, Adjustment.SUB, 10));
+		
+		addButton(30, getFiringPowerDisplayButton(trebuchet));
+		
+		addButton(6, getAmmoTitleButton());
+		
+		int ammoAmount = trebuchet.getFiringAmmoAmount();
+		for (int i = 0; i < 3; i++) {
+			int k = 14;
+			for (int j = k; j < k + 3; j++) {
+				if (ammoAmount <= 0) {
+					break;
+				}
+				if (ammoAmount >= 64) {
+					ammoAmount -= 64;
+				} else {
+					ammoAmount -= ammoAmount;
+				}
+				addButton(j, getAmmoItemButton(trebuchet, ammoAmount));
+			}
+			k += 9;
+		}
+		
+		refresh(inventory);
+		return inventory;
+	}
+	
+	private enum Adjustment {
+		ADD, SUB;
+	}
+	
+	private SimpleButton getFiringAngleAdjustButton(Trebuchet trebuchet, Adjustment adjustment, double step) {
+		return new SimpleButton.Builder(this)
+				.setItemStack(new ItemStackBuilder(Material.ARROW, 1)
+						.meta(new ItemMetaBuilder()
+								.name(adjustment == Adjustment.ADD ? ChatColor.GREEN + "+" + step : ChatColor.RED + "-" + step)).build())
+				.setPickUpAble(false)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
+						double newAngle = trebuchet.getFiringAngleThreshold();
+						if (adjustment == Adjustment.ADD) {
+							newAngle += step;
+						} else {
+							newAngle -= step;
+						}
+						trebuchet.setFiringAngleThreshold(newAngle);
+						ItemUtil.setName(firingAngleDisplay, ChatColor.RED + "Firing Angle: " + ChatColor.WHITE + trebuchet.getFiringAngleThreshold());
+					}
+					
+				}).build();
+	}
+	
+	private SimpleButton getFiringAngleDisplayButton(Trebuchet trebuchet) {
+		firingAngleDisplay = new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
+		.durability((short) 14)
+		.meta(new ItemMetaBuilder()
+				.name(ChatColor.RED + "Firing Angle: " + ChatColor.WHITE + trebuchet.getFiringAngleThreshold())).build();
+		
+		return new SimpleButton.Builder(this)
+				.setItemStack(firingAngleDisplay)
+				.setPickUpAble(false)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
+					}
+					
+				}).build();
+	}
+	
+	private SimpleButton getFiringPowerAdjustButton(Trebuchet trebuchet, Adjustment adjustment, double step) {
+		return new SimpleButton.Builder(this)
+				.setItemStack(new ItemStackBuilder(Material.ARROW, 1)
+						.meta(new ItemMetaBuilder()
+								.name(adjustment == Adjustment.ADD ? ChatColor.GREEN + "+" + step : ChatColor.RED + "-" + step)).build())
+				.setPickUpAble(false)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
+						double power = trebuchet.getFiringPower();
+						if (adjustment == Adjustment.ADD) {
+							power += step;
+						} else {
+							power -= step;
+						}
+						trebuchet.setFiringPower(power);
+						ItemUtil.setName(firingPowerDisplay, ChatColor.RED + "Firing Power: " + ChatColor.WHITE + trebuchet.getFiringPower());
+					}
+					
+				}).build();
+	}
+	
+	private SimpleButton getFiringPowerDisplayButton(Trebuchet trebuchet) {
+		firingAngleDisplay = new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
+		.durability((short) 14)
+		.meta(new ItemMetaBuilder()
+				.name(ChatColor.RED + "Firing Power: " + ChatColor.WHITE + trebuchet.getFiringPower())).build();
+		
+		return new SimpleButton.Builder(this)
+				.setItemStack(firingPowerDisplay)
+				.setPickUpAble(false)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
+					}
+					
+				}).build();
+	}
+	
+	private SimpleButton getAmmoTitleButton() {
+		return new SimpleButton.Builder(this)
+				.setItemStack(new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
+						.durability((short) 4)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.YELLOW + "Place ammo below.")).build())
+				.setPickUpAble(false)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
+					}
+					
+				}).build();
+	}
+	
+	private SimpleButton getAmmoItemButton(Trebuchet trebuchet, int amount) {
+		return new SimpleButton.Builder(this)
+				.setItemStack(new ItemStack(trebuchet.getFiringAmmoMaterial(), amount))
+				.setPickUpAble(true)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
+						Player player = (Player) e.getWhoClicked();
+						if (e.getCursor() == null) {
+							return;
+						}
+						
+						if (e.getCursor().getType() != trebuchet.getFiringAmmoMaterial()) {
+							e.setCancelled(true);
+							player.sendMessage(ChatColor.RED + "You can only ammo here.");
+						}
+					}
+					
+				}).build();
+	}
+	
+}

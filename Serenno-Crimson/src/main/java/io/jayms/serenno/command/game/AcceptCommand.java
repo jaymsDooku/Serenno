@@ -25,7 +25,7 @@ public class AcceptCommand extends StandaloneCommand {
 			return true;
 		}
 		Player senderPlayer = (Player) sender;
-		SerennoPlayer serennoSender = SerennoCrimson.get().getPlayerManager().getPlayer(senderPlayer);
+		SerennoPlayer serennoSender = SerennoCrimson.get().getPlayerManager().get(senderPlayer);
 		if (!serennoSender.hasRequest(opponent)) {
 			sender.sendMessage(ChatColor.RED + "You do not have a pending invite from this player.");
 			return true;

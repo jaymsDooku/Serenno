@@ -71,6 +71,10 @@ public class Reinforcement {
 		return broken;
 	}
 	
+	public boolean hasPermission(Player player, String permission) {
+		return group.isAuthorized(player, permission);
+	}
+	
 	// alive = true, dead = false
 	public boolean damage(double dmg) {
 		health -= dmg;
@@ -82,6 +86,8 @@ public class Reinforcement {
 	}
 	
 	public void destroy() {
+		broken = true;
+		if (health != 0) health = 0;
 		SerennoCobalt.get().getCitadelManager().getReinforcementManager().destroyReinforcement(this);
 	}
 	

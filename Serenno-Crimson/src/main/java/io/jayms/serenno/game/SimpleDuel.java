@@ -18,12 +18,15 @@ import de.tr7zw.changeme.nbtapi.NBTItem;
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.game.event.DuelPlayerStartEvent;
+import io.jayms.serenno.game.menu.MatchReportMenu;
 import io.jayms.serenno.game.statistics.DuelStatistics;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.kit.Kit;
+import io.jayms.serenno.menu.MenuController;
 import io.jayms.serenno.player.SerennoBot;
 import io.jayms.serenno.player.SerennoPlayer;
+import io.jayms.serenno.team.TeamManager;
 import io.jayms.serenno.util.PlayerTools;
 import mkremins.fanciful.FancyMessage;
 
@@ -70,15 +73,11 @@ public class SimpleDuel extends AbstractGame implements Duel {
 	
 	@Override
 	protected void initGame() {
-		System.out.println("team 1 color: " + team1.getTeamColor());
-		System.out.println("team 2 color: " + team2.getTeamColor());
 		Location spawn1 = getMap().getSpawnPoints().get(team1.getTeamColor());
 		Location spawn2 = getMap().getSpawnPoints().get(team2.getTeamColor());
 		team1.getTeam().clean();
 		team2.getTeam().clean();
 		
-		System.out.println("team 1 spawn: " + spawn1);
-		System.out.println("team 2 spawn: " + spawn2);
 		team1.getTeam().teleport(spawn1);
 		team2.getTeam().teleport(spawn2);
 		
@@ -114,8 +113,19 @@ public class SimpleDuel extends AbstractGame implements Duel {
 	
 	@Override
 	protected void disposeGame() {
+		TeamManager tm = SerennoCrimson.get().getTeamManager();
+		if (team1.isTemporary()) {
+			tm.disbandTeam(team1.getTeam());
+		}
+		if (team2.isTemporary()) {
+			tm.disbandTeam(team2.getTeam());
+		}
+		
 		List<SerennoPlayer> playing = getPlaying();
 		for (SerennoPlayer player : playing) {
+			if (player instanceof SerennoBot) {
+				SerennoCrimson.get().getPlayerManager().killBot((SerennoBot) player);
+			}
 			player.setCurrentGame(null);
 			SerennoCrimson.get().getLobby().sendToLobby(player);
 		}
@@ -178,16 +188,13 @@ public class SimpleDuel extends AbstractGame implements Duel {
 	
 	@Override
 	public void die(SerennoPlayer deadPlayer) {
-		System.out.println("DEAD PLAYER1");
 		DuelTeam duelTeam = getTeam(deadPlayer);
 		if (duelTeam == null) {
-			System.out.println("NULL DUEL TEAM");
 			return;
 		}
 		
 		DuelStatistics duelStats = getStatistics();
 		
-		System.out.println("DEAD PLAYER2");
 		duelStats.death(deadPlayer.getBukkitPlayer());
 		duelTeam.die(deadPlayer);
 		
@@ -199,7 +206,6 @@ public class SimpleDuel extends AbstractGame implements Duel {
 		}
 		
 		int alive = duelTeam.alive();
-		System.out.println("ALIVE: " + alive);
 		if (alive <= 0) { // Lost
 			finish(getOtherTeam(duelTeam), duelTeam);
 		}
@@ -210,13 +216,18 @@ public class SimpleDuel extends AbstractGame implements Duel {
 		this.winner = winners;
 		this.loser = losers;
 		
+		winners.getAlive().forEach(a -> {
+			getStatistics().death(a.getBukkitPlayer());
+		});
+		
 		String winnerMsg = winners.getTeam().getLeader().getName() +  (winners.getTeam().size() > 1 ? "'s team" : "") + ChatColor.YELLOW + " has won the game.";  
 		winners.getTeam().sendMessage(ChatColor.DARK_GREEN + winnerMsg);
 		losers.getTeam().sendMessage(ChatColor.DARK_RED + winnerMsg);
 		
-		FancyMessage matchReport = new FancyMessage(ChatColor.GOLD + "" + ChatColor.BOLD + ChatColor.UNDERLINE + "Click here for the Match Report")
-				.command("/gamestats " + this.getID());
-		
+		FancyMessage matchReport = new FancyMessage(ChatColor.GOLD + "" + ChatColor.UNDERLINE + "Click here for the Match Report")
+				.command("/game stats " + this.getID());
+		winners.getTeam().sendMessage(matchReport);
+		losers.getTeam().sendMessage(matchReport);
 		
 		new BukkitRunnable() {
 			
@@ -226,6 +237,18 @@ public class SimpleDuel extends AbstractGame implements Duel {
 			}
 			
 		}.runTaskLater(SerennoCrimson.get(), 6 * 20L);
+	}
+	
+	private MatchReportMenu reportMenu;
+	private MenuController reportMenuController;
+	
+	@Override
+	public MatchReportMenu getMatchReportMenu() {
+		if (reportMenu == null) {
+			this.reportMenu = new MatchReportMenu(this);
+			this.reportMenuController = new MenuController(reportMenu);
+		}
+		return reportMenu;
 	}
 
 	@Override

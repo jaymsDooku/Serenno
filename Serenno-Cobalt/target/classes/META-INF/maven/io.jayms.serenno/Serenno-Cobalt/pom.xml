@@ -11,6 +11,13 @@
   		<groupId>io.jayms.serenno</groupId>
   		<artifactId>Serenno-Common</artifactId>
   		<version>0.0.1-SNAPSHOT</version>
+  		<scope>provided</scope>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.github.maxopoly</groupId>
+  		<artifactId>Finale</artifactId>
+  		<version>1.3.0</version>
+  		<scope>provided</scope>
   	</dependency>
   </dependencies>
 </project>

@@ -2,6 +2,7 @@ package io.jayms.serenno.game.statistics;
 
 import java.text.DecimalFormat;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ import com.google.common.collect.Sets;
 
 import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.kit.Kit;
+import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.util.PlayerTools;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.itemHandling.ISUtils;
@@ -56,13 +58,23 @@ public class DuelStatistics {
 	}
 	
 	public void death(Player dead) {
-		Map<PotionEffectType, Double> durations = PlayerTools.getPotionDurations(dead);
+		Map<PotionEffectType, Long> durations = PlayerTools.getPotionDurations(dead);
 		Kit finalInv = new Kit(dead);
 		deaths.add(new Death(dead.getUniqueId(), durations, finalInv, dead.getHealth(), dead.getFoodLevel()));
 	}
 	
-	public double getDamage(Player player, PlayerType type) {
-		return getDamage(player.getUniqueId(), type);
+	public Death getDeath(SerennoPlayer dead) {
+		return getDeath(dead.getID());
+	}
+	
+	public Death getDeath(UUID id) {
+		return deaths.stream()
+				.filter(d -> d.getDeadID().equals(id))
+				.findFirst().orElse(null);
+	}
+	
+	public double getDamage(SerennoPlayer player, PlayerType type) {
+		return getDamage(player.getID(), type);
 	}
 	
 	public double getDamage(UUID uid, PlayerType type) {
@@ -77,7 +89,7 @@ public class DuelStatistics {
 	
 	public double getDamage(DuelTeam team, PlayerType type) {
 		return team.getTeam().getAll().stream()
-			.mapToDouble(p -> getDamage(p.getBukkitPlayer(), type))
+			.mapToDouble(p -> getDamage(p, type))
 			.sum();
 	}
 	
@@ -91,8 +103,8 @@ public class DuelStatistics {
 	}
 	
 	public double getHitsPercent(DuelTeam team, PlayerType type) {
-		int hits = getHits(team, type);
-		int totalHits = getTotalHits();
+		double hits = getHits(team, type);
+		double totalHits = getTotalHits();
 		if (totalHits == 0) {
 			return Double.NaN;
 		}
@@ -100,8 +112,8 @@ public class DuelStatistics {
 	}
 	
 	public double getCritsPercent(DuelTeam team, PlayerType type) {
-		int crits = getCrits(team, type);
-		int totalCrits = getTotalCrits();
+		double crits = getCrits(team, type);
+		double totalCrits = getTotalCrits();
 		if (totalCrits == 0) {
 			return Double.NaN;
 		}
@@ -109,16 +121,16 @@ public class DuelStatistics {
 	}
 	
 	public double getPotionsThrownPercent(DuelTeam team) {
-		int potionsThrown = getPotionsThrown(team);
-		int totalPotionsThrown = getPotionsThrown();
+		double potionsThrown = getPotionsThrown(team);
+		double totalPotionsThrown = getPotionsThrown();
 		if (totalPotionsThrown == 0) {
 			return Double.NaN;
 		}
 		return potionsThrown / totalPotionsThrown;
 	}
 	
-	public int getHits(Player player, PlayerType type) {
-		return getHits(player.getUniqueId(), type);
+	public int getHits(SerennoPlayer player, PlayerType type) {
+		return getHits(player.getID(), type);
 	}
 	
 	public int getHits(UUID uid, PlayerType type) {
@@ -133,12 +145,12 @@ public class DuelStatistics {
 	
 	public int getHits(DuelTeam team, PlayerType type) {
 		return team.getTeam().getAll().stream()
-			.mapToInt(p -> getHits(p.getBukkitPlayer(), type))
+			.mapToInt(p -> getHits(p, type))
 			.sum();
 	}
 	
-	public int getCrits(Player player, PlayerType type) {
-		return getCrits(player.getUniqueId(), type);
+	public int getCrits(SerennoPlayer player, PlayerType type) {
+		return getCrits(player.getID(), type);
 	}
 	
 	public int getCrits(UUID uid, PlayerType type) {
@@ -153,32 +165,61 @@ public class DuelStatistics {
 	
 	public int getCrits(DuelTeam team, PlayerType type) {
 		return team.getTeam().getAll().stream()
-			.mapToInt(p -> getCrits(p.getBukkitPlayer(), type))
+			.mapToInt(p -> getCrits(p, type))
 			.sum();
 	}
 	
-	public int getPotionsThrown(Player thrower) {
+	public int getPotionsThrown(SerennoPlayer thrower) {
 		return (int) potionThrows.stream().filter(p -> {
-			return thrower.getUniqueId().equals(p.getThrowerID());
+			return thrower.getID().equals(p.getThrowerID());
 		}).count();
 	}
 	
 	public int getPotionsThrown(DuelTeam team) {
 		return team.getTeam().getAll().stream()
-			.mapToInt(p -> getPotionsThrown(p.getBukkitPlayer()))
+			.mapToInt(p -> getPotionsThrown(p))
 			.sum();
 	}
 	
-	public double getArrowDamageDealt(Player shooter) {
+	public int getPotionsMissed(SerennoPlayer thrower) {
+		long missed = potionThrows.stream()
+				.filter(pt -> pt.getThrowerID().equals(thrower.getID()))
+				.filter(pt -> {
+					Map<LivingEntity, Double> affected = pt.getAffectedEntities();
+					return !affected.keySet().stream().filter(le -> le.getUniqueId().equals(thrower.getID())).findFirst().isPresent();
+				})
+				.count();
+		return (int) missed;
+	}
+	
+	public double getTotalPotionIntensity(SerennoPlayer thrower) {
+		return potionThrows.stream()
+				.filter(pt -> pt.getThrowerID().equals(thrower.getID()))
+				.mapToDouble(pt -> {
+					Map<LivingEntity, Double> affected = pt.getAffectedEntities();
+					for (Entry<LivingEntity, Double> affectedEn : affected.entrySet()) {
+						if (affectedEn.getKey().getUniqueId().equals(thrower.getID())) {
+							return affectedEn.getValue();
+						}
+					}
+					return 0;
+				}).sum();
+	}
+	
+	public double getPotionAccuracy(SerennoPlayer thrower) {
+		return getTotalPotionIntensity(thrower) / (double) getPotionsThrown(thrower);
+	}
+	
+	public double getArrowDamageDealt(SerennoPlayer shooter) {
 		return arrowShots.stream()
-				.filter(s -> s.getShooterID().equals(shooter.getUniqueId()))
+				.filter(s -> s.getShooterID().equals(shooter.getID()))
 				.mapToDouble(s -> s.getDamage())
 				.sum();
 	}
 	
 	public double getArrowDamageDealt(DuelTeam team) {
 		return team.getTeam().getAll().stream()
-			.mapToDouble(p -> getArrowDamageDealt(p.getBukkitPlayer()))
+			.mapToDouble(p -> getArrowDamageDealt(p))
 			.sum();
 	}
 	
@@ -214,19 +255,23 @@ public class DuelStatistics {
 		String[] lore = {ChatColor.RED 
 				+ "Damage: " 
 				+ ChatColor.WHITE + dp1.format(getDamage(team, PlayerType.DAMAGER))
-				+ color2 + " (" + color1 + dp1.format(damagePercent) + color2 + "%)",
+				+ color2 
+				+ (!Double.isNaN(damagePercent) ? " (" + color1 + dp1.format(damagePercent) + color2 + "%)" : ""),
 				ChatColor.RED 
 				+ "Hits: " 
 				+ ChatColor.WHITE + getHits(team, PlayerType.DAMAGER)
-				+ color2 + " (" + color1 + dp1.format(hitsPercent) + color2 + "%)",
+				+ color2 
+				+ (!Double.isNaN(hitsPercent) ? " (" + color1 + dp1.format(hitsPercent) + color2 + "%)" : ""),
 				ChatColor.RED 
 				+ "Crits: " 
 				+ ChatColor.WHITE + getCrits(team, PlayerType.DAMAGER)
-				+ color2 + " (" + color1 + dp1.format(critsPercent) + color2 + "%)",
+				+ color2 
+				+ (!Double.isNaN(critsPercent) ? " (" + color1 + dp1.format(critsPercent) + color2 + "%)" : ""),
 				ChatColor.RED 
 				+ "Potions Thrown: " 
 				+ ChatColor.WHITE + getPotionsThrown(team)
-				+ color2 + " (" + color1 + dp1.format(thrownPercent) + color2 + "%)"};
+				+ color2
+				+ (!Double.isNaN(thrownPercent) ? " (" + color1 + dp1.format(thrownPercent) + color2 + "%)" : "")};
 		
 		ISUtils.setLore(is, lore);
 	}
@@ -241,22 +286,26 @@ public class DuelStatistics {
 				+ "Total Damage: " 
 				+ ChatColor.WHITE 
 				+ (Double.isNaN(damagePercent) ? "N/A" :
-					(Double.toString(getTotalDamage()) + ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(damagePercent) + ChatColor.DARK_GREEN + "%)")),
+					dp1.format(getTotalDamage()))
+				+ (team != null && !Double.isNaN(critsPercent) ? ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(damagePercent) + ChatColor.DARK_GREEN + "%)" : ""),
 				ChatColor.RED 
 				+ "Total Hits: " 
 				+ ChatColor.WHITE 
 				+ (Double.isNaN(hitsPercent) ? "N/A" :
-					(Double.toString(getTotalHits()) + ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(hitsPercent) + ChatColor.DARK_GREEN + "%)")),
+					dp1.format(getTotalHits()))
+				+ (team != null && !Double.isNaN(critsPercent) ? ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(hitsPercent) + ChatColor.DARK_GREEN + "%)" : ""),
 				ChatColor.RED 
 				+ "Total Crits: " 
 				+ ChatColor.WHITE 
 				+ (Double.isNaN(critsPercent) ? "N/A" :
-					(Double.toString(getTotalCrits()) + ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(critsPercent) + ChatColor.DARK_GREEN + "%)")),
+					dp1.format(getTotalCrits()))
+				+ (team != null && !Double.isNaN(critsPercent) ? ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(critsPercent) + ChatColor.DARK_GREEN + "%)" : ""),
 				ChatColor.RED 
 				+ "Potions Thrown: " 
 				+ ChatColor.WHITE 
 				+ (Double.isNaN(thrownPercent) ? "N/A" :
-					(Double.toString(getPotionsThrown()) + ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(thrownPercent) + ChatColor.DARK_GREEN + "%)"))};
+					dp1.format(getPotionsThrown()))
+				+ (team != null && !Double.isNaN(critsPercent) ? ChatColor.DARK_GREEN + " (" + ChatColor.GREEN + dp1.format(thrownPercent) + ChatColor.DARK_GREEN + "%)" : "")};
 		
 		ISUtils.setLore(is, lore);
 	} 

@@ -1,5 +1,7 @@
 package io.jayms.serenno;
 
+import java.util.List;
+
 import org.bukkit.configuration.ConfigurationSection;
 
 import vg.civcraft.mc.civmodcore.ACivMod;
@@ -13,7 +15,6 @@ public class SerennoCommonConfigManager extends CoreConfigManager {
 
 	@Override
 	protected boolean parseInternal(ConfigurationSection config) {
-		
 		host = config.getString("database.host");
 		port = config.getInt("database.port");
 		user = config.getString("database.user");
@@ -21,7 +22,21 @@ public class SerennoCommonConfigManager extends CoreConfigManager {
 		db = config.getString("database.db");
 		creds = config.getBoolean("database.creds");
 		
+		maintenanceEnabled = config.getBoolean("maintenance.enabled");
+		maintenanceWhitelist = config.getStringList("maintenance.whitelist");
+		
 		return true;
+	}
+	
+	private boolean maintenanceEnabled;
+	private List<String> maintenanceWhitelist;
+	
+	public boolean isMaintenanceEnabled() {
+		return maintenanceEnabled;
+	}
+	
+	public List<String> getMaintenanceWhitelist() {
+		return maintenanceWhitelist;
 	}
 	
 	private String host;

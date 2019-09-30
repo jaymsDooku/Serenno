@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
@@ -132,7 +133,7 @@ public class ArenaManager implements Listener {
                     }
                     
                     List<String> duelTypesStr = document.getList("duelTypes", String.class);
-                    List<DuelType> duelTypes = duelTypesStr.stream().map(s -> DuelType.valueOf(s)).collect(Collectors.toList());
+                    Set<DuelType> duelTypes = duelTypesStr.stream().map(s -> DuelType.valueOf(s)).collect(Collectors.toSet());
                     Arena arena = new SimpleArena(region, description, creators, displayItem, spawns, duelTypes);
                     arenas.put(regionName, arena);
                     SerennoCrimson.get().getLogger().info("Loaded arena: " + arena.getRegion().getName());
@@ -158,7 +159,7 @@ public class ArenaManager implements Listener {
 		}
 		doc.append("spawns", spawnsDoc);
 		
-		List<DuelType> duelTypes = arena.getDuelTypes();
+		Set<DuelType> duelTypes = arena.getDuelTypes();
 		List<String> duelTypesStr = duelTypes.stream().map(d -> d.toString()).collect(Collectors.toList());
 		doc.append("duelTypes", duelTypesStr);
 		return doc;

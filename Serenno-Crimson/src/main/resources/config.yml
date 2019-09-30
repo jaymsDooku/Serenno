@@ -1,8 +1,44 @@
 lobby:
   spawn:
     world: world
-    x: 0
-    y: 70
-    z: 0
+    x: 73
+    y: 76
+    z: 73
+kitEditor:
+  location:
+    world: world
+    x: 73
+    y: 65
+    z: 73
+  diamondChest:
+    world: world
+    x: 73
+    y: 65
+    z: 73
+  archerChest:
+    world: world
+    x: 73
+    y: 65
+    z: 73
+  saveSign:
+    world: world
+    x: 73
+    y: 65
+    z: 73
+damagers:
+  easy:
+    p1:
+      world: world
+      x: 67
+      y: 64
+      z: 13
+    p2:
+      world: world
+      x: 71
+      y: 69
+      z: 17
+    damage: 2.5
+
+
      
   

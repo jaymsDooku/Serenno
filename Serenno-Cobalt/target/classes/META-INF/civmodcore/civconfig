@@ -1,0 +1,6 @@
+io.jayms.serenno.command.citadel.ReinforcementReinforceCommand
+io.jayms.serenno.command.citadel.ReinforcementBypassCommand
+io.jayms.serenno.command.citadel.BastionInfoCommand
+io.jayms.serenno.command.citadel.ReinforcementOffCommand
+io.jayms.serenno.command.citadel.ReinforcementInfoCommand
+io.jayms.serenno.command.citadel.ReinforcementFortificationCommand

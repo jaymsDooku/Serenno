@@ -30,7 +30,7 @@ public class Cooldown<K> {
 	
 	public long getTimeLeft(K key) {
 		if (!cooldowns.containsKey(key)) {
-			return -1;
+			return 0;
 		}
 		
 		Long endCooldown = cooldowns.get(key);

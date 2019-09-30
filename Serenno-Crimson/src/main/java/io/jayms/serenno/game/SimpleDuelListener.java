@@ -17,9 +17,13 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 
+import com.github.maxopoly.finale.classes.archer.ArcherPlayer;
+import com.github.maxopoly.finale.classes.archer.event.ArcherLinkPlayerEvent;
+import com.github.maxopoly.finale.classes.archer.event.ArcherLinkPlayerEvent.LinkType;
 import com.github.maxopoly.finale.combat.event.CritHitEvent;
 
 import de.tr7zw.changeme.nbtapi.NBTItem;
@@ -37,8 +41,11 @@ public class SimpleDuelListener implements Listener {
 	
 	@EventHandler
 	public void onInteract(PlayerInteractEvent e) {
+		if (e.getHand() != EquipmentSlot.HAND) {
+			return;
+		}
 		Player player = e.getPlayer();
-		SerennoPlayer serennoPlayer = SerennoCrimson.get().getPlayerManager().getPlayer(player);
+		SerennoPlayer serennoPlayer = SerennoCrimson.get().getPlayerManager().get(player);
 		Duel duel = serennoPlayer.getDuel();
 		
 		if (duel == null) {
@@ -71,7 +78,7 @@ public class SimpleDuelListener implements Listener {
 		}
 		
 		Player victim = (Player) e.getEntity();
-		SerennoPlayer serennoVictim = SerennoCrimson.get().getPlayerManager().getPlayer(victim);
+		SerennoPlayer serennoVictim = SerennoCrimson.get().getPlayerManager().get(victim);
 		Duel victimDuel = serennoVictim.getDuel();
 		
 		if (victimDuel == null) {
@@ -102,8 +109,8 @@ public class SimpleDuelListener implements Listener {
 		Player damager = (Player) e.getDamager();
 		Player victim = (Player) e.getEntity();
 		
-		SerennoPlayer damagerSP = SerennoCrimson.get().getPlayerManager().getPlayer(damager);
-		SerennoPlayer victimSP = SerennoCrimson.get().getPlayerManager().getPlayer(victim);
+		SerennoPlayer damagerSP = SerennoCrimson.get().getPlayerManager().get(damager);
+		SerennoPlayer victimSP = SerennoCrimson.get().getPlayerManager().get(victim);
 		
 		Duel damagerDuel = damagerSP.getDuel();
 		Duel victimDuel = victimSP.getDuel();
@@ -112,13 +119,11 @@ public class SimpleDuelListener implements Listener {
 		}
 		
 		if (damagerDuel == null || victimDuel == null || !damagerDuel.isRunning() || !victimDuel.isRunning() || damagerDuel.getID() != victimDuel.getID()) {
-			System.out.println("cancel1");
 			e.setCancelled(true);
 			return;
 		}
 		
 		if (damagerDuel.isSpectating(damagerSP) || damagerDuel.isSpectating(victimSP)) {
-			System.out.println("cancel2");
 			e.setCancelled(true);
 			return;
 		}
@@ -130,7 +135,6 @@ public class SimpleDuelListener implements Listener {
 		double newHealth = (victim.getHealth() - finalDmg);
 		
 		if (newHealth <= 0) { // Dead
-			System.out.println("dead");
 			e.setCancelled(true);
 			DuelPlayerDeathEvent deathEvent = new DuelPlayerDeathEvent(victimDuel, victimSP, e);
 			Bukkit.getPluginManager().callEvent(deathEvent);
@@ -146,8 +150,8 @@ public class SimpleDuelListener implements Listener {
 		}
 		
 		Player playerVictim = (Player) victim;
-		SerennoPlayer serennoAttacker = SerennoCrimson.get().getPlayerManager().getPlayer(attacker);
-		SerennoPlayer serennoVictim = SerennoCrimson.get().getPlayerManager().getPlayer(playerVictim);
+		SerennoPlayer serennoAttacker = SerennoCrimson.get().getPlayerManager().get(attacker);
+		SerennoPlayer serennoVictim = SerennoCrimson.get().getPlayerManager().get(playerVictim);
 		
 		Duel attackerDuel = serennoAttacker.getDuel();
 		Duel victimDuel = serennoVictim.getDuel();
@@ -170,7 +174,7 @@ public class SimpleDuelListener implements Listener {
 		}
 		
 		Player playerShooter = (Player) shooter;
-		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().getPlayer(playerShooter);
+		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(playerShooter);
 		Duel duel = sp.getDuel();
 		if (duel == null) {
 			return;
@@ -195,7 +199,7 @@ public class SimpleDuelListener implements Listener {
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
 		Player player = e.getPlayer();
-		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().getPlayer(player);
+		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(player);
 		Duel duel = sp.getDuel();
 		
 		if (duel == null) {
@@ -220,7 +224,33 @@ public class SimpleDuelListener implements Listener {
 			
 			SerennoPlayer leader = enemyTeam.getTeam().getLeader();
 			BotTrait botTrait = bot.getBot().getBotTrait();
+			botTrait.setBot(bot.getBot());
 			botTrait.setTarget(leader.getBukkitPlayer());
 		}
+	}
+	
+	@EventHandler
+	public void onArcherLink(ArcherLinkPlayerEvent e) {
+		if (e.getLinkType()  != LinkType.LINK) {
+			return;
+		}
+		
+		ArcherPlayer archer = e.getArcher();
+		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(archer.getBukkitPlayer());
+		Duel duel = sp.getDuel();
+		
+		if (duel == null) {
+			return;
+		}
+		
+		DuelTeam team = duel.getTeam(sp);
+		Player linked = e.getLinked();
+		SerennoPlayer linkedSP = SerennoCrimson.get().getPlayerManager().get(linked);
+		
+		if (team.getTeam().inTeam(linkedSP)) {
+			return;
+		}
+		
+		archer.getBukkitPlayer().sendMessage(ChatColor.RED + "Are you really sure you want to link with the enemy?");
 	}
 }

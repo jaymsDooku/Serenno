@@ -13,7 +13,8 @@ import com.google.common.collect.Maps;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
-import io.jayms.serenno.listener.CitadelListener;
+import io.jayms.serenno.listener.citadel.CitadelBlockListener;
+import io.jayms.serenno.listener.citadel.CitadelEntityListener;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.RegenRate;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
@@ -27,11 +28,15 @@ public class CitadelManager {
 	private Map<UUID, CitadelPlayer> citadelPlayers = Maps.newConcurrentMap();
 	private BastionManager bastionManager;
 	private ReinforcementManager reinforcementManager;
-	private CitadelListener listener;
+	private ArtilleryManager artilleryManager;
+	
+	private CitadelBlockListener blockListener;
+	private CitadelEntityListener entityListener;
 	
 	public CitadelManager() {
 		reinforcementManager = new ReinforcementManager(this, null);
 		bastionManager = new BastionManager(reinforcementManager, null);
+		artilleryManager = new ArtilleryManager(this);
 		
 		reinforcementManager.registerReinforcementBlueprint(ReinforcementBlueprint.builder()
 				.name("stone")
@@ -61,8 +66,14 @@ public class CitadelManager {
 				.radius(10)
 				.build());
 		
-		listener = new CitadelListener(this, reinforcementManager, bastionManager);
-		Bukkit.getPluginManager().registerEvents(listener, SerennoCobalt.get());
+		blockListener = new CitadelBlockListener(this, reinforcementManager, bastionManager);
+		entityListener = new CitadelEntityListener(this, reinforcementManager, bastionManager);
+		Bukkit.getPluginManager().registerEvents(blockListener, SerennoCobalt.get());
+		Bukkit.getPluginManager().registerEvents(entityListener, SerennoCobalt.get());
+	}
+	
+	public ArtilleryManager getArtilleryManager() {
+		return artilleryManager;
 	}
 	
 	public BastionManager getBastionManager() {

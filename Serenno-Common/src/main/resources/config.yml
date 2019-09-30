@@ -5,3 +5,9 @@ database:
   user: 
   pass: 
   db: serenno
+maintenance:
+  enabled: true
+  whitelist:
+    - jayms
+    - dookoo782
+    - EmperorDooku

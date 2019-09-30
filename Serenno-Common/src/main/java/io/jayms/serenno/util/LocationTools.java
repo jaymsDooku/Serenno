@@ -1,8 +1,17 @@
 package io.jayms.serenno.util;
 
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
+
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.LivingEntity;
 
 public final class LocationTools {
+	
+	public static final Set<BlockFace> PLANAR_SIDES = EnumSet.of(BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST,
+			BlockFace.EAST);
 
 	public static boolean isBetween(Location l1, Location l2, Location p) {
 		if (!(l1.getWorld().getUID().equals(l2.getWorld().getUID()))) {
@@ -50,6 +59,10 @@ public final class LocationTools {
 		int z = p.getBlockZ();
 		
 		return (minX <= x && minY <= y && minZ <= z) && (maxX >= x && maxY >= y && maxZ >= z);
+	}
+	
+	public static Collection<LivingEntity> getNearbyLivingEntities(Location l, double r) {
+		return l.getNearbyLivingEntities(r);
 	}
 	
 }

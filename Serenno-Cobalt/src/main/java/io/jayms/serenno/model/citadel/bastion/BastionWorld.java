@@ -26,6 +26,12 @@ public class BastionWorld {
 		}
 	}
 	
+	public void addBastion(Bastion b) {
+		bastions.add(b);
+		if (dataSource != null)
+			dataSource.create(b);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public Set<Bastion> getBastions(Location loc) {
 		Set<? extends QTBox> boxes = bastions.find(loc.getBlockX(), loc.getBlockZ());
@@ -40,7 +46,8 @@ public class BastionWorld {
 	
 	public void deleteBastion(Bastion bastion) {
 		bastions.remove(bastion);
-		dataSource.delete(bastion);
+		if (dataSource != null) 
+			dataSource.delete(bastion);
 	}
 	
 	public World getWorld() {

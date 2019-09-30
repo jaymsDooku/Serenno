@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.HashMultimap;
@@ -26,10 +28,11 @@ import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
+import io.jayms.serenno.model.group.Group;
+import io.jayms.serenno.util.Coords;
 import io.jayms.serenno.util.gson.ItemStackDeserializer;
 import io.jayms.serenno.util.gson.ItemStackSerializer;
-import io.jayms.serenno.util.gson.MultimapJsonDeserializer;
-import io.jayms.serenno.util.gson.MultimapJsonSerializer;
+import io.jayms.serenno.util.gson.MultimapAdapter;
 
 public class PrebuiltStructure {
 
@@ -37,9 +40,10 @@ public class PrebuiltStructure {
 		try (Reader reader = new FileReader(loadFrom)) {
 			Gson gson = new GsonBuilder()
 					.registerTypeAdapter(ItemStack.class, new ItemStackDeserializer())
-					.registerTypeAdapter(Multimap.class, new MultimapJsonDeserializer<>())
+					.registerTypeAdapter(Multimap.class, new MultimapAdapter())
 					.create();
-			return gson.fromJson(reader, PrebuiltStructure.class);
+			PrebuiltStructure ps = gson.fromJson(reader, PrebuiltStructure.class);
+			return ps;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -52,7 +56,7 @@ public class PrebuiltStructure {
 		try (Writer writer = new FileWriter(toSave)) {
 			Gson gson = new GsonBuilder()
 					.registerTypeAdapter(ItemStack.class, new ItemStackSerializer())
-					.registerTypeAdapter(Multimap.class, new MultimapJsonSerializer<>())
+					.registerTypeAdapter(Multimap.class, new MultimapAdapter())
 					.setPrettyPrinting()
 					.create();
 			gson.toJson(ps, writer);
@@ -64,7 +68,7 @@ public class PrebuiltStructure {
 	private String name;
 	private Map<String, ReinforcementBlueprint> reinforcementBlueprints;
 	private Map<String, BastionBlueprint> bastionBlueprints;
-	private Multimap<PrebuiltBlockType, PrebuiltBlock> prebuiltBlocks;
+	private Multimap<String, PrebuiltBlock> prebuiltBlocks;
 	
 	private PrebuiltStructure(Builder builder) {
 		this.name = builder.getName();
@@ -85,22 +89,32 @@ public class PrebuiltStructure {
 		return bastionBlueprints;
 	}
 	
-	public Multimap<PrebuiltBlockType, PrebuiltBlock> getPrebuiltBlocks() {
+	public Multimap<String, PrebuiltBlock> getPrebuiltBlocks() {
 		return prebuiltBlocks;
 	}
 	
-	public void load(World world) {
+	public void load(Player loader, Group group, World world) {
 		CitadelManager cm = SerennoCobalt.get().getCitadelManager();
 		ReinforcementManager rm = cm.getReinforcementManager();
 		BastionManager bm = cm.getBastionManager();
 		
-		Map<PrebuiltBlockType, Collection<PrebuiltBlock>> pbMap = prebuiltBlocks.asMap();
-		Collection<PrebuiltBlock> reinforcements = pbMap.get(PrebuiltBlockType.REINFORCEMENT);
+		Collection<PrebuiltBlock> reinforcements = prebuiltBlocks.get(PrebuiltBlockType.REINFORCEMENT.toString());
 		for (PrebuiltBlock rein : reinforcements) {
-			
+			String blueprintType = rein.getBlueprintType();
+			ReinforcementBlueprint blueprint = reinforcementBlueprints.get(blueprintType);
+			Coords coords = rein.getCoords();
+			Block block = world.getBlockAt(coords.getX(), coords.getY(), coords.getZ());
+			rm.reinforceBlock(loader, block, blueprint, group);
 		}
 		
-		Collection<PrebuiltBlock> bastions = pbMap.get(PrebuiltBlockType.BASTION);
+		Collection<PrebuiltBlock> bastions = prebuiltBlocks.get(PrebuiltBlockType.BASTION.toString());
+		for (PrebuiltBlock bastion : bastions) {
+			String blueprintType = bastion.getBlueprintType();
+			BastionBlueprint blueprint = bastionBlueprints.get(blueprintType);
+			Coords coords = bastion.getCoords();
+			Block block = world.getBlockAt(coords.getX(), coords.getY(), coords.getZ());
+			bm.placeBastion(block, blueprint);
+		}
 	}
 	
 	public static Builder builder() {
@@ -112,7 +126,7 @@ public class PrebuiltStructure {
 		private String name;
 		private Map<String, ReinforcementBlueprint> reinforcementBlueprints;
 		private Map<String, BastionBlueprint> bastionBlueprints;
-		private Multimap<PrebuiltBlockType, PrebuiltBlock> prebuiltBlocks;
+		private Multimap<String, PrebuiltBlock> prebuiltBlocks;
 		
 		private Builder() {
 		}
@@ -154,7 +168,7 @@ public class PrebuiltStructure {
 			return bastionBlueprints;
 		}
 		
-		public Builder prebuiltBlocks(Multimap<PrebuiltBlockType, PrebuiltBlock> prebuiltBlocks) {
+		public Builder prebuiltBlocks(Multimap<String, PrebuiltBlock> prebuiltBlocks) {
 			this.prebuiltBlocks = prebuiltBlocks;
 			return this;
 		}
@@ -163,7 +177,7 @@ public class PrebuiltStructure {
 			if (prebuiltBlocks == null) {
 				prebuiltBlocks = HashMultimap.create();
 			}
-			prebuiltBlocks.put(type, block);
+			prebuiltBlocks.put(type.toString(), block);
 			return this;
 		}
 		
@@ -171,11 +185,11 @@ public class PrebuiltStructure {
 			if (prebuiltBlocks == null) {
 				prebuiltBlocks = HashMultimap.create();
 			}
-			prebuiltBlocks.putAll(type, blocks);
+			prebuiltBlocks.putAll(type.toString(), blocks);
 			return this;
 		}
 		
-		public Multimap<PrebuiltBlockType, PrebuiltBlock> getPrebuiltBlocks() {
+		public Multimap<String, PrebuiltBlock> getPrebuiltBlocks() {
 			return prebuiltBlocks;
 		}
 		

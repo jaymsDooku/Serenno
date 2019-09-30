@@ -1,0 +1,18 @@
+artillery:
+  trebuchet:
+    schematic: trebuchet.schematic
+    width:
+      right: 10
+      left: 10
+    length:
+      forward: 10
+      backward: 10
+    trebuchetHeight: 16
+    pointOfRotation:
+      horizontalOffset: 3
+      verticalOffset: 14
+    cooldown: 6000
+    missiles: 5
+    bastionDamagePerMissile: 5
+    reinforcementDamagePerMissile: 5
+

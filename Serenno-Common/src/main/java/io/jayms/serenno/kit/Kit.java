@@ -10,7 +10,6 @@ import org.bukkit.inventory.PlayerInventory;
 import io.jayms.serenno.armourtype.ArmorEquipEvent;
 import io.jayms.serenno.armourtype.ArmorEquipEvent.EquipMethod;
 import io.jayms.serenno.armourtype.ArmorType;
-import io.jayms.serenno.util.MaterialTools;
 
 public class Kit {
 
@@ -18,6 +17,7 @@ public class Kit {
 		return new Kit(ItemStackDecoder.itemStackArrayFromBase64(b64));
 	}
 	
+	private int heldSlot = -1;
 	private ItemStack[] contents;
 	
 	public Kit() {
@@ -29,7 +29,12 @@ public class Kit {
 	}
 	
 	public Kit(Player player) {
+		heldSlot = player.getInventory().getHeldItemSlot();
 		contents = player.getInventory().getContents();
+	}
+	
+	public void setHeldSlot(int heldSlot) {
+		this.heldSlot = heldSlot;
 	}
 	
 	public ItemStack helmet() {
@@ -122,36 +127,32 @@ public class Kit {
 		ItemStack newLegs = newArmour[1];
 		ItemStack newBoots = newArmour[0];
 		
-		if (MaterialTools.isHelmet(newHelm) || MaterialTools.isHelmet(oldHelm)) {
-			ArmorEquipEvent armorEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.HELMET, oldHelm, newHelm);
-			Bukkit.getPluginManager().callEvent(armorEvent);
-			if (!armorEvent.isCancelled()) {
-				inv.setHelmet(newHelm);
-			}
+		ArmorEquipEvent helmetEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.HELMET, oldHelm, newHelm);
+		Bukkit.getPluginManager().callEvent(helmetEvent);
+		if (!helmetEvent.isCancelled()) {
+			inv.setHelmet(newHelm);
 		}
-		if (MaterialTools.isChestplate(newChest) || MaterialTools.isChestplate(oldChest)) {
-			ArmorEquipEvent armorEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.CHESTPLATE, oldChest, newChest);
-			Bukkit.getPluginManager().callEvent(armorEvent);
-			if (!armorEvent.isCancelled()) {
-				inv.setChestplate(newChest);
-			}
+		ArmorEquipEvent chestEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.CHESTPLATE, oldChest, newChest);
+		Bukkit.getPluginManager().callEvent(chestEvent);
+		if (!chestEvent.isCancelled()) {
+			inv.setChestplate(newChest);
 		}
-		if (MaterialTools.isLeggings(newLegs) || MaterialTools.isLeggings(oldLegs)) {
-			ArmorEquipEvent armorEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.LEGGINGS, oldLegs, newLegs);
-			Bukkit.getPluginManager().callEvent(armorEvent);
-			if (!armorEvent.isCancelled()) {
-				inv.setLeggings(newLegs);
-			}
+		ArmorEquipEvent leggingsEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.LEGGINGS, oldLegs, newLegs);
+		Bukkit.getPluginManager().callEvent(leggingsEvent);
+		if (!leggingsEvent.isCancelled()) {
+			inv.setLeggings(newLegs);
 		}
-		if (MaterialTools.isBoots(newBoots) || MaterialTools.isLeggings(oldBoots)) {
-			ArmorEquipEvent armorEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.BOOTS, oldBoots, newBoots);
-			Bukkit.getPluginManager().callEvent(armorEvent);
-			if (!armorEvent.isCancelled()) {
-				inv.setBoots(newBoots);
-			}
+		ArmorEquipEvent bootsEvent = new ArmorEquipEvent(player, EquipMethod.ARTIFICIAL, ArmorType.BOOTS, oldBoots, newBoots);
+		Bukkit.getPluginManager().callEvent(bootsEvent);
+		if (!bootsEvent.isCancelled()) {
+			inv.setBoots(newBoots);
 		}
 		
 		inv.setContents(contents);
+		
+		if (heldSlot != -1) {
+			inv.setHeldItemSlot(heldSlot);
+		}
 		player.updateInventory();
 	}
 	

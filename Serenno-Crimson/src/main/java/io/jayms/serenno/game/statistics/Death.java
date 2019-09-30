@@ -10,12 +10,12 @@ import io.jayms.serenno.kit.Kit;
 public class Death {
 
 	private UUID deadID;
-	private Map<PotionEffectType, Double> potionDurations;
+	private Map<PotionEffectType, Long> potionDurations;
 	private Kit finalInventory;
 	private double finalHealth;
 	private int finalHunger;
 	
-	public Death(UUID deadID, Map<PotionEffectType, Double> potionDurations, Kit finalInventory, double finalHealth, int finalHunger) {
+	public Death(UUID deadID, Map<PotionEffectType, Long> potionDurations, Kit finalInventory, double finalHealth, int finalHunger) {
 		super();
 		this.deadID = deadID;
 		this.potionDurations = potionDurations;
@@ -28,7 +28,7 @@ public class Death {
 		return deadID;
 	}
 
-	public Map<PotionEffectType, Double> getPotionDurations() {
+	public Map<PotionEffectType, Long> getPotionDurations() {
 		return potionDurations;
 	}
 

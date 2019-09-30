@@ -76,10 +76,29 @@ public class Bot {
 	private int strafeCounter;
 	private int strafeThreshold = 20;
 	
+	private BotState state = BotState.ATTACKING;
+	private boolean throwingPotion;
+	
 	public Bot(String name) {
 		this.npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, name);
 		this.botTrait = new BotTrait();
 		aliveNPC(this);
+	}
+	
+	public void setThrowingPotion(boolean throwingPotion) {
+		this.throwingPotion = throwingPotion;
+	}
+	
+	public boolean isThrowingPotion() {
+		return throwingPotion;
+	}
+	
+	public void setState(BotState state) {
+		this.state = state;
+	}
+	
+	public BotState getState() {
+		return state;
 	}
 	
 	public void spawn(SpawnCallback spawnCb) {

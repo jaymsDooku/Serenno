@@ -5,17 +5,17 @@ import io.jayms.serenno.player.SerennoPlayer;
 
 public class DuelRequest {
 
-	private SerennoPlayer sender;
+	private Duelable sender;
 	private DuelType duelType;
 	private Arena map;
 	
-	public DuelRequest(SerennoPlayer sender, DuelType duelType, Arena map) {
+	public DuelRequest(Duelable sender, DuelType duelType, Arena map) {
 		this.sender = sender;
 		this.duelType = duelType;
 		this.map = map;
 	}
 	
-	public SerennoPlayer getSender() {
+	public Duelable getSender() {
 		return sender;
 	}
 

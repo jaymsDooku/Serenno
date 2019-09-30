@@ -1,6 +1,7 @@
 package io.jayms.serenno.player;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,16 +11,19 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import io.jayms.serenno.SerennoCommon;
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.game.Duel;
 import io.jayms.serenno.game.DuelRequest;
 import io.jayms.serenno.game.DuelType;
+import io.jayms.serenno.game.Duelable;
 import io.jayms.serenno.game.Game;
 import io.jayms.serenno.kit.Kit;
+import io.jayms.serenno.team.Team;
 import mkremins.fanciful.FancyMessage;
 import net.md_5.bungee.api.ChatColor;
 
-public class SerennoPlayer {
+public class SerennoPlayer implements Duelable {
 
 	private final Player bukkitPlayer;
 	
@@ -36,7 +40,8 @@ public class SerennoPlayer {
 		this.bukkitPlayer = bukkitPlayer;
 	}
 	
-	public UUID getUniqueId() {
+	@Override
+	public UUID getID() {
 		return bukkitPlayer.getUniqueId();
 	}
 	
@@ -46,6 +51,14 @@ public class SerennoPlayer {
 	
 	public Player getBukkitPlayer() {
 		return bukkitPlayer;
+	}
+	
+	public CommonPlayer getCommonPlayer() {
+		return SerennoCommon.get().getCommonPlayerManager().get(bukkitPlayer);
+	}
+	
+	public boolean hasPermission(String permission) {
+		return bukkitPlayer.hasPermission(permission);
 	}
 	
 	public void setCurrentGame(Game currentGame) {
@@ -67,20 +80,19 @@ public class SerennoPlayer {
 		return bukkitPlayer.getLocation();
 	}
 	
+	@Override
 	public void teleport(Location loc) {
 		bukkitPlayer.teleport(loc);
 	}
 	
-	public void showPlayer(SerennoPlayer player) {
-		bukkitPlayer.showPlayer(SerennoCrimson.get(), player.getBukkitPlayer());
-	}
-	
-	public void hidePlayer(SerennoPlayer player) {
-		bukkitPlayer.hidePlayer(SerennoCrimson.get(), player.getBukkitPlayer());
-	}
-	
+	@Override
 	public void sendMessage(String message) {
 		bukkitPlayer.sendMessage(message);
+	}
+	
+	@Override
+	public void sendMessage(FancyMessage message) {
+		message.send(bukkitPlayer);
 	}
 	
 	public Kit[] getDuelingKits(DuelType duelType) {
@@ -203,5 +215,49 @@ public class SerennoPlayer {
 	@Override
 	public int hashCode() {
 		return bukkitPlayer.getUniqueId().hashCode();
+	}
+
+	@Override
+	public boolean inDuel() {
+		return currentGame != null;
+	}
+
+	@Override
+	public boolean isSpectating() {
+		return inDuel() && currentGame.isSpectating(this);
+	}
+
+	@Override
+	public void showPlayer(Duelable duelable) {
+		if (duelable instanceof SerennoPlayer) {
+			showPlayer((SerennoPlayer) duelable);
+		} else if (duelable instanceof Team) {
+			Team team = (Team) duelable;
+			List<SerennoPlayer> members = team.getAvailableMembers();
+			members.forEach(m -> {
+				showPlayer(m);
+			});
+		}
+	}
+	
+	@Override
+	public void hidePlayer(Duelable duelable) {
+		if (duelable instanceof SerennoPlayer) {
+			hidePlayer((SerennoPlayer) duelable);
+		} else if (duelable instanceof Team) {
+			Team team = (Team) duelable;
+			List<SerennoPlayer> members = team.getAvailableMembers();
+			members.forEach(m -> {
+				hidePlayer(m);
+			});
+		}
+	}
+	
+	private void showPlayer(SerennoPlayer player) {
+		bukkitPlayer.showPlayer(SerennoCrimson.get(), player.getBukkitPlayer());
+	}
+	
+	private void hidePlayer(SerennoPlayer player) {
+		bukkitPlayer.hidePlayer(SerennoCrimson.get(), player.getBukkitPlayer());
 	}
 }

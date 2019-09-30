@@ -5,15 +5,16 @@ import org.bukkit.inventory.ItemStack;
 
 public class Hotbar {
 
+	private int heldSlot;
 	private ItemStack[] items = new ItemStack[9];
 	
 	public Hotbar() {
 	}
 	
 	public Hotbar(Player player) {
+		heldSlot = player.getInventory().getHeldItemSlot();
 		for (int i = 0; i < items.length; i++) {
 			items[i] = player.getInventory().getItem(i);
-			//System.out.println(i + "item type: " + (items[i] != null ? items[i].getType() : ""));
 		} 
 	}
 	
@@ -22,6 +23,7 @@ public class Hotbar {
 	}
 	
 	public void load(Player player) {
+		player.getInventory().setHeldItemSlot(heldSlot);
 		for (int i = 0; i < items.length; i++) {
 			player.getInventory().setItem(i, items[i]);
 		}

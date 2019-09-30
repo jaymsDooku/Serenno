@@ -17,7 +17,9 @@ import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
 import io.jayms.serenno.model.citadel.bastion.BastionWorld;
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.util.LocationTools;
+import net.md_5.bungee.api.ChatColor;
 
 public class BastionManager {
 
@@ -81,14 +83,31 @@ public class BastionManager {
 	// false = allow block
 	// true = dont allow block
 	public boolean placeBlock(CitadelPlayer cp, Block b) {
-		Set<Bastion> bastions = getBastions(b.getLocation());
-		if (!bastions.isEmpty()) {
-			for (Bastion bastion : bastions) {
-				
-			}
-			return true;
+		ItemStack it = cp.getBukkitPlayer().getInventory().getItemInMainHand();
+		if (it == null) {
+			return false;
 		}
 		
+		BastionBlueprint bb = getBastionBlueprint(it);
+		if (bb == null) {
+			return false;
+		}
+		
+		cp.getBukkitPlayer().sendMessage(ChatColor.YELLOW + "You have placed a " + bb.getDisplayName());
+		return placeBastion(b, bb);
+	}
+	
+	public boolean placeBastion(Block b, BastionBlueprint bb) {
+		Reinforcement reinforcement = rm.getReinforcement(b);
+		return placeBastion(reinforcement, bb);
+	}
+	
+	public boolean placeBastion(Reinforcement reinforcement, BastionBlueprint bb) {
+		Bastion bastion = new Bastion(reinforcement, bb);
+		
+		World world = bastion.getReinforcement().getLocation().getWorld();
+		BastionWorld bastionWorld = getBastionWorld(world, dataSource);
+		bastionWorld.addBastion(bastion);
 		return false;
 	}
 	

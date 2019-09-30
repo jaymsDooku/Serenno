@@ -55,6 +55,11 @@ public class SimpleRegion implements Region {
 	}
 	
 	@Override
+	public void setParentWorld(World world) {
+		this.parentWorld = world;
+	}
+	
+	@Override
 	public World getParentWorld() {
 		return parentWorld;
 	}
@@ -63,10 +68,20 @@ public class SimpleRegion implements Region {
 	public Set<World> getChildWorlds() {
 		return childWorlds;
 	}
+	
+	@Override
+	public void setPoint1(Vector v) {
+		this.p1 = v;
+	}
 
 	@Override
 	public Vector getPoint1() {
 		return p1;
+	}
+	
+	@Override
+	public void setPoint2(Vector v) {
+		this.p2 = v;
 	}
 
 	@Override

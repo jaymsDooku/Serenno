@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.jayms.serenno.player.SerennoPlayer;
+import io.jayms.serenno.team.Team;
 import net.md_5.bungee.api.ChatColor;
 
 public class DuelTeam {
@@ -33,18 +34,27 @@ public class DuelTeam {
 		return temporary;
 	}
 	
+	public List<SerennoPlayer> getAlive() {
+		return alive;
+	}
+	
 	public void die(SerennoPlayer player) {
 		if (!team.inTeam(player)) {
 			return;
 		}
 		
-		System.out.println("TEAM DIE");
 		dead.add(player);
 		alive.remove(player);
 	}
 	
 	public int alive() {
 		return alive.size();
+	}
+
+	@Override
+	public String toString() {
+		return "DuelTeam [teamColor=" + teamColor.name() + ", team=" + team + ", temporary=" + temporary + ", dead=" + dead
+				+ ", alive=" + alive + "]";
 	}
 	
 }

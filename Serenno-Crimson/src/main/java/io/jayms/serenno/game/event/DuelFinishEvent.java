@@ -3,7 +3,7 @@ package io.jayms.serenno.game.event;
 import org.bukkit.event.HandlerList;
 
 import io.jayms.serenno.game.Duel;
-import io.jayms.serenno.game.Team;
+import io.jayms.serenno.team.Team;
 
 public class DuelFinishEvent extends DuelEvent {
 
