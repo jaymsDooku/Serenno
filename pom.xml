@@ -62,6 +62,10 @@
 	        <id>aikar</id>
 	        <url>https://repo.aikar.co/content/groups/aikar/</url>
 	    </repository>
+	    <repository>
+	    	<id>codemc</id>
+	    	<url>https://repo.codemc.io</url>
+	    </repository>
   </repositories>
 	 <dependencies>
 	 	<dependency>
@@ -150,9 +154,9 @@
 			<version>1.0.0</version>
 		</dependency>
 		<dependency>
-			 <groupId>com.github.tr7zw</groupId>
-			 <artifactId>Item-NBT-API</artifactId>
-			 <version>master-SNAPSHOT</version>
+		  <groupId>de.tr7zw</groupId>
+	      <artifactId>item-nbt-api</artifactId>
+	      <version>2.1.0</version>
 		</dependency>
 		<!-- FAWE legacy API -->
 		<dependency>

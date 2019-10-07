@@ -1,5 +1,7 @@
 package io.jayms.serenno.model.citadel.artillery;
 
+import java.util.UUID;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,7 +19,7 @@ import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCobaltConfigManager;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 
-public abstract class AbstractArtillery implements Artillery {
+public abstract class AbstractArtillery implements Artillery, Comparable<Artillery> {
 
 	private static int ID = 0;
 	
@@ -28,7 +30,6 @@ public abstract class AbstractArtillery implements Artillery {
 	private int id;
 	private ArtilleryCrate crate;
 	private BlockFace direction = BlockFace.NORTH;
-	private Reinforcement reinforcement;
 	private boolean assembled;
 	
 	protected SerennoCobaltConfigManager config = SerennoCobalt.get().getConfigManager();
@@ -36,7 +37,6 @@ public abstract class AbstractArtillery implements Artillery {
 	protected AbstractArtillery(ArtilleryCrate crate) {
 		this.id = newID();
 		this.crate = crate;
-		this.reinforcement = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getDirectReinforcement(crate.getLocation().getBlock());
 	}
 	
 	@Override
@@ -66,7 +66,10 @@ public abstract class AbstractArtillery implements Artillery {
 	
 	@Override
 	public Location getLocation() {
-		return crate.getLocation().clone().add(0, 1, 0);
+		Location crateLoc = crate.getLocation(); 
+		Location loc = new Location(crateLoc.getWorld(), this.qtXMid(), crateLoc.getBlockY(), this.qtZMid());
+		loc = loc.add(0, 1, 0);
+		return loc;
 	}
 	
 	@Override
@@ -100,22 +103,25 @@ public abstract class AbstractArtillery implements Artillery {
 		AffineTransform transform = new AffineTransform();
 		switch (getDirection()) {
 			case EAST:
-				transform.rotateY(90);
+				//position = position.add(-config.getTrebuchetRightWidth(), 0, -config.getTrebuchetBackwardLength());
+				transform = transform.rotateY(90);
 				break;
 			case NORTH:
 				position = position.add(config.getTrebuchetRightWidth(), 0, config.getTrebuchetBackwardLength());
-				transform.rotateY(180);
+				transform = transform.rotateY(180);
 				break;
 			case WEST:
-				transform.rotateY(270);
+				//position = position.add(-config.getTrebuchetRightWidth(), 0, config.getTrebuchetBackwardLength());
+				transform = transform.rotateY(270);
 				break;
 			case SOUTH:
-				//position = position.add(config.getTrebuchetRightWidth(), 0, config.getTrebuchetBackwardLength());
+				position = position.add(-config.getTrebuchetRightWidth(), 0, -config.getTrebuchetBackwardLength());
 			default:
 				break;
 		}
 		schematic.paste(world, position, allowUndo, !noAir, transform);
 		assembled = true;
+		SerennoCobalt.get().getCitadelManager().getArtilleryManager().assemble(this);
 		player.sendMessage(ChatColor.YELLOW + "You have assembled a " + getDisplayName());
 	}
 	
@@ -124,7 +130,7 @@ public abstract class AbstractArtillery implements Artillery {
 		Location loc = getLocation();
 		
 		int minX = qtXMin();
-		int minZ = qtXMin();
+		int minZ = qtZMin();
 		int maxX = qtXMax();
 		int maxZ = qtZMax();
 		int minY = crate.getLocation().getBlockY();
@@ -138,6 +144,7 @@ public abstract class AbstractArtillery implements Artillery {
 				}
 			}
 		}
+		SerennoCobalt.get().getCitadelManager().getArtilleryManager().disassemble(this);
 	}
 
 	@Override
@@ -145,10 +152,57 @@ public abstract class AbstractArtillery implements Artillery {
 		return assembled;
 	}
 	
+	private Reinforcement reinforcement;
+	
 	@Override
 	public void dealBlockDamage(Player player) {
+		if (reinforcement == null) {
+			this.reinforcement = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getDirectReinforcement(crate.getLocation().getBlock());
+		}
 		reinforcement.damage(1);
-		player.sendMessage("You've damaged the " + getDisplayName());
+	}
+	
+	@Override
+	public int compareTo(Artillery other) {
+		Location location = getLocation();
+		UUID thisWorld = location.getWorld().getUID();
+		int thisX = location.getBlockX();
+		int thisY = location.getBlockY();
+		int thisZ = location.getBlockZ();
+
+		Location otherLocation = other.getLocation();
+		UUID otherWorld = otherLocation.getWorld().getUID();
+		int otherX = otherLocation.getBlockX();
+		int otherY = otherLocation.getBlockY();
+		int otherZ = otherLocation.getBlockZ();
+
+		int worldCompare = thisWorld.compareTo(otherWorld);
+		if (worldCompare != 0) {
+			return worldCompare;
+		}
+
+		if (thisX < otherX) {
+			return -1;
+		}
+		if (thisX > otherX) {
+			return 1;
+		}
+
+		if (thisY < otherY) {
+			return -1;
+		}
+		if (thisY > otherY) {
+			return 1;
+		}
+		
+		if (thisZ < otherZ) {
+			return -1;
+		}
+		if (thisZ > otherZ) {
+			return 1;
+		}
+
+		return 0;
 	}
 	
 }

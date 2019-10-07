@@ -22,7 +22,6 @@ public class ReinforcementWorld {
 		this.world = world;
 		this.dataSource = source;
 		reinCache = Caffeine.newBuilder()
-				.maximumSize(2000)
 				.expireAfterAccess(20, TimeUnit.MINUTES)
 				.build(k -> {
 					return new ChunkCache<>(k,

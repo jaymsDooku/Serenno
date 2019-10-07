@@ -5,7 +5,7 @@ artillery:
       right: 10
       left: 10
     length:
-      forward: 10
+      forward: 11
       backward: 10
     trebuchetHeight: 16
     pointOfRotation:

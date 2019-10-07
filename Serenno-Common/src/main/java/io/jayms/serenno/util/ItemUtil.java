@@ -18,9 +18,9 @@ import org.bukkit.potion.PotionType;
 
 import com.google.common.collect.ImmutableMap;
 
-import de.tr7zw.nbtapi.NBTCompoundList;
-import de.tr7zw.nbtapi.NBTItem;
-import de.tr7zw.nbtapi.NBTListCompound;
+import de.tr7zw.changeme.nbtapi.NBTCompoundList;
+import de.tr7zw.changeme.nbtapi.NBTItem;
+import de.tr7zw.changeme.nbtapi.NBTListCompound;
 import net.md_5.bungee.api.ChatColor;
 import net.minecraft.server.v1_12_R1.Item;
 

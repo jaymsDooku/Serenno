@@ -54,6 +54,7 @@ public class ParticleTools {
 		}
 	}
 	
+	@FunctionalInterface
 	public interface ParticlePlay {
 		
 		void play(Location loc);

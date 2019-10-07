@@ -7,9 +7,11 @@ import com.boydti.fawe.object.schematic.Schematic;
 import com.github.maxopoly.finale.classes.engineer.EngineerPlayer;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.manager.ArtilleryManager;
 import io.jayms.serenno.menu.Menu;
 import io.jayms.serenno.model.citadel.artillery.AbstractArtillery;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileRunner;
 import net.md_5.bungee.api.ChatColor;
 
 public class Trebuchet extends AbstractArtillery {
@@ -17,23 +19,50 @@ public class Trebuchet extends AbstractArtillery {
 	public static final String NAME = "trebuchet";
 	public static final String DISPLAY_NAME = ChatColor.DARK_RED + "" + ChatColor.BOLD + "Trebuchet";
 	
-	private double firingAngleThreshold = 30;
+	private double firingAngleThreshold = 110;
 	private double firingPower;
 	private int firingAmmoAmount = 0;
 	private Material firingAmmoMaterial;
 	
 	public Trebuchet(ArtilleryCrate crate) {
 		super(crate);
+		System.out.println("qtXMin: " + qtXMin());
+		System.out.println("qtZMin: " + qtZMin());
+		System.out.println("qtXMid: " + qtXMid());
+		System.out.println("qtZMid: " + qtZMid());
+		System.out.println("qtXMax: " + qtXMax());
+		System.out.println("qtZMax: " + qtZMax());
+		System.out.println("loc: " + getLocation());
 	}
 	
+	private Location rotPoint;
+	
 	public Location getRotationPoint() {
-		Location origin = getLocation();
-		int horizontalOffset = config.getTrebuchetHorizontalOffset();
-		int verticalOffset = config.getTrebuchetVerticalOffset();
-		
-		
-		
-		return origin;
+		if (rotPoint == null) {
+			Location origin = getLocation();
+			int horizontalOffset = config.getTrebuchetHorizontalOffset();
+			int verticalOffset = config.getTrebuchetVerticalOffset();
+			rotPoint = origin.clone();
+			
+			switch (getDirection()) {
+				case NORTH:
+					rotPoint.add(0, verticalOffset, horizontalOffset);
+					break;
+				case EAST:
+					rotPoint.add(horizontalOffset, verticalOffset, 0);
+					break;
+				case SOUTH:
+					rotPoint.add(0, verticalOffset, -horizontalOffset);
+					break;
+				case WEST:
+					rotPoint.add(-horizontalOffset, verticalOffset, 0);
+					break;
+				default:
+					break;
+			}
+			rotPoint.add(0.5, 0.5, 0.5);
+		}
+		return rotPoint;
 	}
 	
 	public void setFiringAngleThreshold(double firingAngleThreshold) {
@@ -105,7 +134,21 @@ public class Trebuchet extends AbstractArtillery {
 
 	@Override
 	public int qtXMid() {
-		return getLocation().getBlockX();
+		Location crateLoc = getCrate().getLocation();
+		int x = crateLoc.getBlockX();
+		switch (getDirection()) {
+			case EAST:
+				x += config.getTrebuchetBackwardLength(); 
+				break;
+			case WEST:
+				x -= config.getTrebuchetBackwardLength();
+				break;
+			case NORTH:
+			case SOUTH:
+			default:
+				break;
+		}
+		return x;
 	}
 
 	@Override
@@ -158,7 +201,21 @@ public class Trebuchet extends AbstractArtillery {
 
 	@Override
 	public int qtZMid() {
-		return getLocation().getBlockZ();
+		Location crateLoc = getCrate().getLocation();
+		int x = crateLoc.getBlockX();
+		switch (getDirection()) {
+			case SOUTH:
+				x += config.getTrebuchetBackwardLength(); 
+				break;
+			case NORTH:
+				x -= config.getTrebuchetBackwardLength();
+				break;
+			case EAST:
+			case WEST:
+			default:
+				break;
+		}
+		return x;
 	}
 
 	@Override
@@ -182,12 +239,15 @@ public class Trebuchet extends AbstractArtillery {
 				throw new IllegalStateException("Direction must be a primary cardinal.");
 		}
 		
-		return qtZMid() - sub;
+		return qtZMid() + sub;
 	}
 
 	@Override
 	public void fire(EngineerPlayer player) {
-		player.sendMessage(ChatColor.YELLOW + "You have fired the " + getDisplayName());
+		ArtilleryManager am = SerennoCobalt.get().getCitadelManager().getArtilleryManager();
+		ArtilleryMissileRunner missileRunner = am.getMissileRunner(Trebuchet.class);
+		missileRunner.fireMissile(player, this);
+		player.notify(ChatColor.YELLOW + "You have fired the " + getDisplayName());
 	}
 
 	@Override

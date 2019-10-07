@@ -7,6 +7,7 @@ import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.util.Vector;
 
 public final class LocationTools {
 	
@@ -63,6 +64,24 @@ public final class LocationTools {
 	
 	public static Collection<LivingEntity> getNearbyLivingEntities(Location l, double r) {
 		return l.getNearbyLivingEntities(r);
+	}
+	
+	public static Location rotateAroundAxisX(Location loc, double angle) {
+		Vector v = loc.toVector();
+		Vector rotated = MathTools.rotateAroundAxisX(v, angle);
+		return loc.set(rotated.getX(), rotated.getY(), rotated.getZ());
+	}
+	
+	public static Location rotateAroundAxisZ(Location loc, double angle) {
+		Vector v = loc.toVector();
+		Vector rotated = MathTools.rotateAroundAxisZ(v, angle);
+		return loc.set(rotated.getX(), rotated.getY(), rotated.getZ());
+	}
+	
+	public static Location rotateAroundAxisY(Location loc, double angle) {
+		Vector v = loc.toVector();
+		Vector rotated = MathTools.rotateAroundAxisY(v, angle);
+		return loc.set(rotated.getX(), rotated.getY(), rotated.getZ());
 	}
 	
 }

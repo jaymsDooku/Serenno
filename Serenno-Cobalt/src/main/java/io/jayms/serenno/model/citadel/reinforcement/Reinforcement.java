@@ -3,6 +3,8 @@ package io.jayms.serenno.model.citadel.reinforcement;
 import java.util.UUID;
 
 import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import io.jayms.serenno.SerennoCobalt;
@@ -77,6 +79,9 @@ public class Reinforcement {
 	
 	// alive = true, dead = false
 	public boolean damage(double dmg) {
+		Block block = loc.getBlock();
+		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
+		
 		health -= dmg;
 		if (health < 0 ) {
 			health = 0;
@@ -91,6 +96,14 @@ public class Reinforcement {
 		SerennoCobalt.get().getCitadelManager().getReinforcementManager().destroyReinforcement(this);
 	}
 	
+	
+	@Override
+	public String toString() {
+		return "Reinforcement [id=" + id + ", placer=" + placer + ", blueprint=" + blueprint + ", health=" + health
+				+ ", loc=" + loc + ", creationTime=" + creationTime + ", group=" + group + ", inMemory=" + inMemory
+				+ ", broken=" + broken + "]";
+	}
+
 	public static Builder builder() {
 		return new Builder();
 	}

@@ -69,5 +69,10 @@ public class ChunkCache<T> {
 	public boolean isDirty() {
 		return dirty;
 	}
+
+	@Override
+	public String toString() {
+		return "ChunkCache [chunkPair=" + chunkPair + ", cache=" + cache.asMap().toString() + ", dirty=" + dirty + "]";
+	}
 	
 }

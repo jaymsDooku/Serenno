@@ -44,6 +44,7 @@ public class TrebuchetMenu extends SingleMenu {
 			int k = 14;
 			for (int j = k; j < k + 3; j++) {
 				Button button = getButton(j);
+				if (button == null) continue;
 				ItemStack it = button.getItemStack();
 				if (it == null) continue;
 				if (it.getType() != trebuchet.getFiringAmmoMaterial()) {
@@ -73,34 +74,36 @@ public class TrebuchetMenu extends SingleMenu {
 		
 		Inventory inventory = Bukkit.createInventory(null, this.getSize(), this.getName());
 		
-		addButton(1, getFiringAngleAdjustButton(trebuchet, Adjustment.ADD, 10));
-		addButton(10, getFiringAngleAdjustButton(trebuchet, Adjustment.ADD, 1));
-		addButton(37, getFiringAngleAdjustButton(trebuchet, Adjustment.SUB, 1));
-		addButton(46, getFiringAngleAdjustButton(trebuchet, Adjustment.SUB, 10));
+		addButton(1, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.ADD, 10));
+		addButton(10, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.ADD, 1));
+		addButton(28, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.SUB, 1));
+		addButton(37, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.SUB, 10));
 		
-		addButton(28, getFiringAngleDisplayButton(trebuchet));
+		addButton(19, getFiringAngleDisplayButton(trebuchet));
 		
-		addButton(3, getFiringPowerAdjustButton(trebuchet, Adjustment.ADD, 10));
-		addButton(12, getFiringPowerAdjustButton(trebuchet, Adjustment.ADD, 1));
-		addButton(39, getFiringPowerAdjustButton(trebuchet, Adjustment.SUB, 1));
-		addButton(48, getFiringPowerAdjustButton(trebuchet, Adjustment.SUB, 10));
+		addButton(3, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.ADD, 10));
+		addButton(12, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.ADD, 1));
+		addButton(30, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.SUB, 1));
+		addButton(39, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.SUB, 10));
 		
-		addButton(30, getFiringPowerDisplayButton(trebuchet));
+		addButton(21, getFiringPowerDisplayButton(trebuchet));
 		
 		addButton(6, getAmmoTitleButton());
 		
 		int ammoAmount = trebuchet.getFiringAmmoAmount();
+		int k = 14;
 		for (int i = 0; i < 3; i++) {
-			int k = 14;
+			System.out.println("k: " + k);
 			for (int j = k; j < k + 3; j++) {
-				if (ammoAmount <= 0) {
-					break;
-				}
 				if (ammoAmount >= 64) {
 					ammoAmount -= 64;
 				} else {
 					ammoAmount -= ammoAmount;
 				}
+				if (ammoAmount <= 0) {
+					ammoAmount = 0;
+				}
+				System.out.println("j: " + j);
 				addButton(j, getAmmoItemButton(trebuchet, ammoAmount));
 			}
 			k += 9;
@@ -114,7 +117,7 @@ public class TrebuchetMenu extends SingleMenu {
 		ADD, SUB;
 	}
 	
-	private SimpleButton getFiringAngleAdjustButton(Trebuchet trebuchet, Adjustment adjustment, double step) {
+	private SimpleButton getFiringAngleAdjustButton(Inventory inventory, Trebuchet trebuchet, Adjustment adjustment, double step) {
 		return new SimpleButton.Builder(this)
 				.setItemStack(new ItemStackBuilder(Material.ARROW, 1)
 						.meta(new ItemMetaBuilder()
@@ -132,6 +135,7 @@ public class TrebuchetMenu extends SingleMenu {
 						}
 						trebuchet.setFiringAngleThreshold(newAngle);
 						ItemUtil.setName(firingAngleDisplay, ChatColor.RED + "Firing Angle: " + ChatColor.WHITE + trebuchet.getFiringAngleThreshold());
+						inventory.setItem(19, firingAngleDisplay);
 					}
 					
 				}).build();
@@ -155,7 +159,7 @@ public class TrebuchetMenu extends SingleMenu {
 				}).build();
 	}
 	
-	private SimpleButton getFiringPowerAdjustButton(Trebuchet trebuchet, Adjustment adjustment, double step) {
+	private SimpleButton getFiringPowerAdjustButton(Inventory inventory, Trebuchet trebuchet, Adjustment adjustment, double step) {
 		return new SimpleButton.Builder(this)
 				.setItemStack(new ItemStackBuilder(Material.ARROW, 1)
 						.meta(new ItemMetaBuilder()
@@ -173,13 +177,14 @@ public class TrebuchetMenu extends SingleMenu {
 						}
 						trebuchet.setFiringPower(power);
 						ItemUtil.setName(firingPowerDisplay, ChatColor.RED + "Firing Power: " + ChatColor.WHITE + trebuchet.getFiringPower());
+						inventory.setItem(21, firingPowerDisplay);
 					}
 					
 				}).build();
 	}
 	
 	private SimpleButton getFiringPowerDisplayButton(Trebuchet trebuchet) {
-		firingAngleDisplay = new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
+		firingPowerDisplay = new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
 		.durability((short) 14)
 		.meta(new ItemMetaBuilder()
 				.name(ChatColor.RED + "Firing Power: " + ChatColor.WHITE + trebuchet.getFiringPower())).build();
@@ -214,7 +219,7 @@ public class TrebuchetMenu extends SingleMenu {
 	
 	private SimpleButton getAmmoItemButton(Trebuchet trebuchet, int amount) {
 		return new SimpleButton.Builder(this)
-				.setItemStack(new ItemStack(trebuchet.getFiringAmmoMaterial(), amount))
+				.setItemStack(amount == 0 ? null : new ItemStack(trebuchet.getFiringAmmoMaterial(), amount))
 				.setPickUpAble(true)
 				.setClickHandler(new ClickHandler() {
 					

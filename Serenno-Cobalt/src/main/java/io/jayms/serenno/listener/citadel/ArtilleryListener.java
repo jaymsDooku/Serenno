@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
@@ -19,6 +20,7 @@ import io.jayms.serenno.event.reinforcement.ReinforcementDestroyEvent;
 import io.jayms.serenno.manager.ArtilleryManager;
 import io.jayms.serenno.model.citadel.artillery.Artillery;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
+import io.jayms.serenno.util.PlayerTools;
 
 public class ArtilleryListener implements Listener {
 
@@ -46,15 +48,27 @@ public class ArtilleryListener implements Listener {
 			return;
 		}
 		
-		if (!crate.isAssembled()) {
+		PlayerInteractEvent interactEvent = e.getInteractEvent();
+		if (PlayerTools.isRightClick(interactEvent.getAction())) {
+			if (!crate.isAssembled()) {
+				Map<String, Object> initData = new HashMap<>();
+				initData.put("crate", crate);
+				crate.getInterface().open(engineer.getBukkitPlayer(), initData);
+				return;
+			}
+			
+			Artillery artillery = crate.getArtillery();
+			artillery.fire(e.getUser());
+		} else if (PlayerTools.isLeftClick(interactEvent.getAction())) {
+			if (!crate.isAssembled()) {
+				return;
+			}
+			
+			Artillery artillery = crate.getArtillery();
 			Map<String, Object> initData = new HashMap<>();
-			initData.put("crate", crate);
-			crate.getInterface().open(engineer.getBukkitPlayer(), initData);
-			return;
+			initData.put("artillery", artillery);
+			artillery.getInterface().open(engineer.getBukkitPlayer(), initData);
 		}
-		
-		Artillery artillery = crate.getArtillery();
-		artillery.fire(e.getUser());
 	}
 	
 	@EventHandler
@@ -95,4 +109,5 @@ public class ArtilleryListener implements Listener {
 		
 		artillery.dealBlockDamage(player);
 	}
+
 }

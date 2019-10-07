@@ -1,7 +1,5 @@
 package io.jayms.serenno.listener.citadel;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Material;
@@ -34,6 +32,7 @@ import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.model.group.GroupPermissions;
+import io.jayms.serenno.util.Cooldown;
 import io.jayms.serenno.util.LocationTools;
 import io.jayms.serenno.util.NumberUtils;
 import io.jayms.serenno.util.PlayerTools;
@@ -92,7 +91,7 @@ public class CitadelBlockListener extends CitadelListener {
 		e.setCancelled(rm.breakBlock(cp, b));
 	}
 	
-	private Map<Player, Long> lastInfo = new HashMap<>();
+	private Cooldown<Player> lastInfo = new Cooldown<>();
 	
 	@EventHandler
 	public void reinforceInfo(PlayerInteractEvent e) {
@@ -101,7 +100,7 @@ public class CitadelBlockListener extends CitadelListener {
 		}
 		Player player = e.getPlayer();
 		
-		if (lastInfo.containsKey(player)) {
+		if (lastInfo.isOnCooldown(player)) {
 			return;
 		}
 		
@@ -130,7 +129,7 @@ public class CitadelBlockListener extends CitadelListener {
 				+ getReinforcementHealth(player, reinforcement) + ChatColor.YELLOW + " | "
 				+ ChatColor.GOLD + "Group: " + grpColor + grpName 
 				);
-		lastInfo.put(player, System.currentTimeMillis());
+		lastInfo.putOnCooldown(player, 1000L);
 	}
 	
 	@EventHandler

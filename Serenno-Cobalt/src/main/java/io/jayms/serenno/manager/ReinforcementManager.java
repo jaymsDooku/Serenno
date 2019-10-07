@@ -184,10 +184,8 @@ public class ReinforcementManager {
 		
 		Group group = reinforcement.getGroup();
 		Group bypassGroup = cp.getReinforcementBypass();
-		if (!group.equals(bypassGroup)) {
-			return false;
-		}
-		if (!group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_BYPASS)) {
+		if (group.equals(bypassGroup) && group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_BYPASS)) {
+			reinforcement.destroy();
 			return false;
 		}
 		

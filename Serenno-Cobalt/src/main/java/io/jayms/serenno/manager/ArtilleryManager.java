@@ -1,10 +1,12 @@
 package io.jayms.serenno.manager;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import com.google.common.collect.Maps;
@@ -14,8 +16,13 @@ import io.jayms.serenno.listener.citadel.ArtilleryListener;
 import io.jayms.serenno.menu.MenuController;
 import io.jayms.serenno.model.citadel.artillery.Artillery;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileRunner;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryRunnable;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryWorld;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetCrateMenu;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
+import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetMissileRunner;
+import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
 import io.jayms.serenno.util.Coords;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.locations.QTBox;
@@ -26,7 +33,10 @@ public class ArtilleryManager {
 	private CitadelManager cm;
 	
 	private Map<Coords, ArtilleryCrate> crates = Maps.newConcurrentMap();
-	private SparseQuadTree artilleries;
+	private Map<String, ArtilleryWorld> artilleryWorlds = Maps.newConcurrentMap();
+	
+	private ArtilleryRunnable artilleryRunnable;
+	private Map<Class<? extends Artillery>, ArtilleryMissileRunner> missileRunners = Maps.newConcurrentMap();
 	
 	private ArtilleryListener artilleryListener;
 	
@@ -38,10 +48,25 @@ public class ArtilleryManager {
 	
 	public ArtilleryManager(CitadelManager cm) {
 		this.cm = cm;
-		this.artilleries = new SparseQuadTree(900);
 		this.artilleryListener = new ArtilleryListener(this);
 		
+		registerMissileRunner(new TrebuchetMissileRunner());
+		
 		Bukkit.getPluginManager().registerEvents(artilleryListener, SerennoCobalt.get());
+		
+		Bukkit.getScheduler().runTaskTimer(SerennoCobalt.get(), artilleryRunnable = new ArtilleryRunnable(), 0L, 1L);
+	}
+	
+	public void registerMissileRunner(ArtilleryMissileRunner runner) {
+		missileRunners.put(runner.getArtilleryType(), runner);
+	}
+	
+	public Collection<ArtilleryMissileRunner> getMissileRunners() {
+		return missileRunners.values();
+	}
+	
+	public ArtilleryMissileRunner getMissileRunner(Class<? extends Artillery> clazz) {
+		return missileRunners.get(clazz);
 	}
 	
 	public void placeArtilleryCrate(Player player, ArtilleryCrate crate, Location loc) {
@@ -54,20 +79,30 @@ public class ArtilleryManager {
 		return crates.get(Coords.fromLocation(loc));
 	}
 	
+	public ArtilleryWorld getArtilleryWorld(World world) {
+		ArtilleryWorld artilleryWorld = artilleryWorlds.get(world.getName());
+		if (artilleryWorld == null) {
+			artilleryWorld = new ArtilleryWorld(world);
+			artilleryWorlds.put(world.getName(), artilleryWorld);
+		}
+		return artilleryWorld;
+	}
+	
 	public void assemble(Artillery artillery) {
-		artilleries.add(artillery);
+		ArtilleryWorld artilleryWorld = getArtilleryWorld(artillery.getLocation().getWorld());
+		artilleryWorld.addArtillery(artillery);
 	}
 	
 	public void disassemble(Artillery artillery) {
-		artilleries.remove(artillery);
+		ArtilleryWorld artilleryWorld = getArtilleryWorld(artillery.getLocation().getWorld());
+		artilleryWorld.deleteArtillery(artillery);
 	}
 	
 	public Artillery getArtillery(Location loc) {
-		Set<? extends QTBox> boxes = artilleries.find(loc.getBlockX(), loc.getBlockZ());
-		if (boxes.isEmpty()) {
-			return null;
-		}
-		return (Artillery) boxes.iterator().next();
+		ArtilleryWorld artilleryWorld = getArtilleryWorld(loc.getWorld());
+		Set<Artillery> artilleries = artilleryWorld.getArtilleries(loc);
+		if (artilleries.isEmpty()) return null;
+		return artilleries.iterator().next();
 	}
 	
 	public TrebuchetCrateMenu getTrebuchetCrateMenu() {
