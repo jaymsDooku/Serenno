@@ -36,7 +36,7 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 			e.printStackTrace();
 		}
 		
-		trebuchetForwardLength = config.getInt("artillery.trebuchet.length.forward", 10);
+		trebuchetForwardLength = config.getInt("artillery.trebuchet.length.forward", 11);
 		trebuchetBackwardLength = config.getInt("artillery.trebuchet.length.backward", 10);
 		trebuchetLeftWidth = config.getInt("artillery.trebuchet.width.left", 10);
 		trebuchetRightWidth = config.getInt("artillery.trebuchet.width.right", 10);
@@ -46,10 +46,10 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 		trebuchetVerticalOffset = config.getInt("artillery.trebuchet.pointOfRotation.verticalOffset", 14);
 		
 		trebuchetCooldown = config.getLong("artillery.trebuchet.cooldown", 6000);
-		trebuchetMissiles = config.getInt("artillery.trebuchet.missiles", 5);
-		
-		trebuchetBastionDamage = config.getDouble("artillery.trebuchet.bastionDamagePerMissile", 5);
-		trebuchetReinforcementDamage = config.getDouble("artillery.trebuchet.reinforcementDamagePerMissile", 5);
+		trebuchetImpactRadius = config.getInt("artillery.trebuchet.missile.impactRadius", 4);
+		trebuchetPlayerDamage = config.getInt("artillery.trebuchet.missile.playerDamage", 5);
+		trebuchetBastionDamage = config.getDouble("artillery.trebuchet.missile.bastionDamage", 5);
+		trebuchetReinforcementDamage = config.getDouble("artillery.trebuchet.missile.reinforcementDamage", 5);
 		
 		trebuchetBlockDamageCD = config.getLong("artillery.trebuchet.blockDamageCD", 2500);
 		return true;
@@ -66,12 +66,26 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 	private int trebuchetVerticalOffset;
 	
 	private long trebuchetCooldown;
-	private int trebuchetMissiles;
-	
+	private int trebuchetImpactRadius;
+	private double trebuchetImpactHorizontal;
+	private double trebuchetImpactVertical;
+	private double trebuchetPlayerDamage;
 	private double trebuchetBastionDamage;
 	private double trebuchetReinforcementDamage;
 	
 	private long trebuchetBlockDamageCD;
+	
+	public double getTrebuchetImpactHorizontal() {
+		return trebuchetImpactHorizontal;
+	}
+	
+	public double getTrebuchetImpactVertical() {
+		return trebuchetImpactVertical;
+	}
+	
+	public int getTrebuchetImpactRadius() {
+		return trebuchetImpactRadius;
+	}
 	
 	public long getTrebuchetBlockDamageCD() {
 		return trebuchetBlockDamageCD;
@@ -85,8 +99,8 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 		return trebuchetReinforcementDamage;
 	}
 	
-	public int getTrebuchetMissiles() {
-		return trebuchetMissiles;
+	public double getTrebuchetPlayerDamage() {
+		return trebuchetPlayerDamage;
 	}
 	
 	public long getTrebuchetCooldown() {

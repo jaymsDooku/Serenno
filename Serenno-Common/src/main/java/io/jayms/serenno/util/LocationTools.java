@@ -1,7 +1,9 @@
 package io.jayms.serenno.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 import org.bukkit.Location;
@@ -82,6 +84,27 @@ public final class LocationTools {
 		Vector v = loc.toVector();
 		Vector rotated = MathTools.rotateAroundAxisY(v, angle);
 		return loc.set(rotated.getX(), rotated.getY(), rotated.getZ());
+	}
+	
+	public static List<Location> getCircle(final Location loc, final int radius, final int height, final boolean hollow, final boolean sphere, final int plusY) {
+		final List<Location> circleblocks = new ArrayList<Location>();
+		final int cx = loc.getBlockX();
+		final int cy = loc.getBlockY();
+		final int cz = loc.getBlockZ();
+
+		for (int x = cx - radius; x <= cx + radius; x++) {
+			for (int z = cz - radius; z <= cz + radius; z++) {
+				for (int y = (sphere ? cy - radius : cy); y < (sphere ? cy + radius : cy + height); y++) {
+					final double dist = (cx - x) * (cx - x) + (cz - z) * (cz - z) + (sphere ? (cy - y) * (cy - y) : 0);
+
+					if (dist < radius * radius && !(hollow && dist < (radius - 1) * (radius - 1))) {
+						final Location l = new Location(loc.getWorld(), x, y + plusY, z);
+						circleblocks.add(l);
+					}
+				}
+			}
+		}
+		return circleblocks;
 	}
 	
 }

@@ -57,6 +57,7 @@ io\jayms\serenno\model\citadel\artillery\ArtilleryMissileRunner.class
 io\jayms\serenno\model\citadel\artillery\trebuchet\TrebuchetMissile.class
 io\jayms\serenno\model\citadel\artillery\ArtilleryType.class
 io\jayms\serenno\model\citadel\bastion\BastionBlueprint$PearlConfig$Builder.class
+io\jayms\serenno\model\citadel\reinforcement\ReinforcementWorld$1.class
 io\jayms\serenno\model\citadel\artillery\menu\TrebuchetMenu$5.class
 io\jayms\serenno\model\group\GroupRank.class
 io\jayms\serenno\model\citadel\reinforcement\Reinforcement$Builder.class
@@ -100,6 +101,7 @@ io\jayms\serenno\manager\ReinforcementManager$1.class
 io\jayms\serenno\model\group\GroupRank$1.class
 io\jayms\serenno\listener\citadel\ArtilleryListener.class
 io\jayms\serenno\model\citadel\ReinforcementMode$ReinforceMethod.class
+io\jayms\serenno\model\citadel\reinforcement\ReinforcementWorld$1$2.class
 io\jayms\serenno\model\citadel\artillery\trebuchet\TrebuchetMissileFinishState.class
 io\jayms\serenno\model\finance\company\SimpleCompany.class
 io\jayms\serenno\model\finance\FinancialPlayer.class
@@ -117,6 +119,7 @@ META-INF\civmodcore\civconfig
 io\jayms\serenno\manager\FinanceManager.class
 io\jayms\serenno\model\citadel\artillery\ArtilleryMissile.class
 io\jayms\serenno\manager\ArtilleryManager.class
+io\jayms\serenno\model\citadel\reinforcement\ReinforcementWorld$1$1.class
 io\jayms\serenno\model\prebuilt\PrebuiltStructure.class
 io\jayms\serenno\model\finance\Resource.class
 io\jayms\serenno\model\group\GroupMember.class

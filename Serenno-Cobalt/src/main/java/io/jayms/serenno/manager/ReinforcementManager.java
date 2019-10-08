@@ -184,17 +184,15 @@ public class ReinforcementManager {
 		
 		Group group = reinforcement.getGroup();
 		Group bypassGroup = cp.getReinforcementBypass();
+		System.out.println("group: " + group);
+		System.out.println("bypassGroup: " + bypassGroup);
 		if (group.equals(bypassGroup) && group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_BYPASS)) {
 			reinforcement.destroy();
 			return false;
 		}
 		
 		ReinforcementBlueprint rb = reinforcement.getBlueprint();
-		if (reinforcement.getHealth() > 0) {
-			reinforcement.damage(rb.getDefaultDamage());
-		} else {
-			reinforcement.destroy();
-		}
+		reinforcement.damage(rb.getDefaultDamage());
 		return true;
 	}
 

@@ -1,5 +1,6 @@
 package io.jayms.serenno.model.citadel.artillery;
 
+import java.util.Objects;
 import java.util.UUID;
 
 import org.bukkit.ChatColor;
@@ -203,6 +204,21 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		}
 
 		return 0;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Artillery)) {
+			return false;
+		}
+		
+		Artillery art = (Artillery) obj;
+		return this.id == art.getID();
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
 	}
 	
 }

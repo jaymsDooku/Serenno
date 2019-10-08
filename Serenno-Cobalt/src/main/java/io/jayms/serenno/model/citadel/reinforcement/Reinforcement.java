@@ -84,7 +84,7 @@ public class Reinforcement {
 		
 		health -= dmg;
 		if (health < 0 ) {
-			health = 0;
+			destroy();
 			return false;
 		}
 		return true;

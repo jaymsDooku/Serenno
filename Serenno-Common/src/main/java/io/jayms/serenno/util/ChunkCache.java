@@ -1,14 +1,13 @@
 package io.jayms.serenno.util;
 
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 
 import org.bukkit.block.Block;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
 
 public class ChunkCache<T> {
 
@@ -18,10 +17,7 @@ public class ChunkCache<T> {
 	
 	public ChunkCache(ChunkCoord chunkPair, CacheLoader<Coords, T> loader, RemovalListener<Coords, T> remover) {
 		this.chunkPair = chunkPair;
-		cache = Caffeine.newBuilder()
-		.recordStats()
-		.expireAfterAccess(5, TimeUnit.MINUTES)
-		.maximumSize(70_000)
+		cache = CacheBuilder.newBuilder()
 		.removalListener(remover)
 		.build(loader);
 	}
@@ -47,7 +43,7 @@ public class ChunkCache<T> {
 	}
 	
 	public T get(Coords coords) {
-		return cache.get(coords);
+		return cache.getIfPresent(coords);
 	}
 	
 	public Collection<T> getAll() {

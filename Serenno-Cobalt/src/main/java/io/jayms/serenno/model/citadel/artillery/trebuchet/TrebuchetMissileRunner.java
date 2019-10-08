@@ -1,22 +1,16 @@
 package io.jayms.serenno.model.citadel.artillery.trebuchet;
 
-import java.util.Iterator;
 import java.util.Set;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.FallingBlock;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
 
 import com.github.maxopoly.finale.classes.engineer.EngineerPlayer;
 import com.google.common.collect.Sets;
 
-import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.model.citadel.artillery.AbstractMissileRunner;
 import io.jayms.serenno.model.citadel.artillery.Artillery;
 
-public class TrebuchetMissileRunner extends AbstractMissileRunner<TrebuchetMissile> implements Listener {
+public class TrebuchetMissileRunner extends AbstractMissileRunner<TrebuchetMissile> {
 	
 	private static Set<FallingBlock> missileBlocks = Sets.newConcurrentHashSet();
 	
@@ -25,7 +19,6 @@ public class TrebuchetMissileRunner extends AbstractMissileRunner<TrebuchetMissi
 	}
 
 	public TrebuchetMissileRunner() {
-		Bukkit.getPluginManager().registerEvents(this, SerennoCobalt.get());
 	}
 	
 	@Override
@@ -42,19 +35,6 @@ public class TrebuchetMissileRunner extends AbstractMissileRunner<TrebuchetMissi
 	@Override
 	public boolean update(TrebuchetMissile missile) {
 		return missile.update();
-	}
-	
-	@EventHandler
-	public void onMissileLand(EntityChangeBlockEvent e) {
-		if (missiles.isEmpty()) {
-			return;
-		}
-		for (TrebuchetMissile missile : missiles) {
-			if (missile.getMissileBlock().getUniqueId().equals(e.getEntity().getUniqueId())) {
-				missile.setMissileBlock(null);
-				e.setCancelled(true);
-			}
-		}
 	}
 	
 }

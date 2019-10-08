@@ -93,7 +93,6 @@ public class TrebuchetMenu extends SingleMenu {
 		int ammoAmount = trebuchet.getFiringAmmoAmount();
 		int k = 14;
 		for (int i = 0; i < 3; i++) {
-			System.out.println("k: " + k);
 			for (int j = k; j < k + 3; j++) {
 				if (ammoAmount >= 64) {
 					ammoAmount -= 64;

@@ -19,7 +19,7 @@ public class Trebuchet extends AbstractArtillery {
 	public static final String NAME = "trebuchet";
 	public static final String DISPLAY_NAME = ChatColor.DARK_RED + "" + ChatColor.BOLD + "Trebuchet";
 	
-	private double firingAngleThreshold = 110;
+	private double firingAngleThreshold = 150;
 	private double firingPower;
 	private int firingAmmoAmount = 0;
 	private Material firingAmmoMaterial;
@@ -253,11 +253,6 @@ public class Trebuchet extends AbstractArtillery {
 	@Override
 	public long getCooldown() {
 		return config.getTrebuchetCooldown();
-	}
-
-	@Override
-	public int getMissileCount() {
-		return config.getTrebuchetMissiles();
 	}
 
 	@Override

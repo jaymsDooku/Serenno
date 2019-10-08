@@ -1,8 +1,12 @@
 package io.jayms.serenno.model.citadel.artillery.trebuchet;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.FallingBlock;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 
 import com.github.maxopoly.finale.classes.engineer.EngineerPlayer;
 
@@ -11,7 +15,7 @@ import io.jayms.serenno.SerennoCobaltConfigManager;
 import io.jayms.serenno.model.citadel.artillery.AbstractMissile;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileState;
 
-public class TrebuchetMissile extends AbstractMissile<Trebuchet> {
+public class TrebuchetMissile extends AbstractMissile<Trebuchet> implements Listener {
 
 	public static final ArtilleryMissileState<TrebuchetMissile> LAUNCH = new TrebuchetMissileLaunchState();
 	public static final ArtilleryMissileState<TrebuchetMissile> PROGRESS = new TrebuchetMissileProgressState();
@@ -32,7 +36,7 @@ public class TrebuchetMissile extends AbstractMissile<Trebuchet> {
 	public TrebuchetMissile(EngineerPlayer engineer, Trebuchet trebuchet) {
 		super(engineer);
 		this.trebuchet = trebuchet;
-		this.lowStart = trebuchet.getRotationPoint().clone().subtract(0, config.getTrebuchetHeight() - 3, 0);
+		this.lowStart = trebuchet.getRotationPoint().clone().subtract(0, config.getTrebuchetHeight() - 4, 0);
 		this.loc = getStartingPoint(trebuchet);
 		
 		this.missileBlock = loc.getWorld().spawnFallingBlock(loc, Material.STONE, (byte) 1);
@@ -40,6 +44,7 @@ public class TrebuchetMissile extends AbstractMissile<Trebuchet> {
 		TrebuchetMissileRunner.addMissileBlock(missileBlock);
 		
 		setMissileState(LAUNCH);
+		Bukkit.getPluginManager().registerEvents(this, SerennoCobalt.get());
 	}
 	
 	public void setPrevLocation(Location prevLocation) {
@@ -74,16 +79,16 @@ public class TrebuchetMissile extends AbstractMissile<Trebuchet> {
 		Location loc = lowStart;
 		switch (trebuchet.getDirection()) {
 			case NORTH:
-				loc = loc.add(0, 0, -5);
+				loc = loc.add(0, 0, -7);
 				break;
 			case EAST:
-				loc = loc.add(5, 0, 0);
+				loc = loc.add(7, 0, 0);
 				break;
 			case SOUTH:
-				loc = loc.add(0, 0, 5);
+				loc = loc.add(0, 0, 7);
 				break;
 			case WEST:
-				loc = loc.add(-5, 0, 0);
+				loc = loc.add(-7, 0, 0);
 				break;
 			default:
 				break;
@@ -145,6 +150,14 @@ public class TrebuchetMissile extends AbstractMissile<Trebuchet> {
 	@Override
 	public Trebuchet getArtillery() {
 		return trebuchet;
+	}
+	
+	@EventHandler
+	public void onMissileLand(EntityChangeBlockEvent e) {
+		if (getMissileBlock().getUniqueId().equals(e.getEntity().getUniqueId())) {
+			setMissileBlock(null);
+			e.setCancelled(true);
+		}
 	}
 	
 }

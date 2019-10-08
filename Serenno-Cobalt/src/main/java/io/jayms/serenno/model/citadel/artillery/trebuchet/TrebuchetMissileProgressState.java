@@ -1,5 +1,6 @@
 package io.jayms.serenno.model.citadel.artillery.trebuchet;
 
+import org.bukkit.Location;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.util.Vector;
 
@@ -16,18 +17,30 @@ public class TrebuchetMissileProgressState implements ArtilleryMissileState<Treb
 			return TrebuchetMissile.FINISH;
 		}
 		
+		Location loc = fallBlock.getLocation();
+		Location prevLoc = missile.getPrevLocation();
+		
+		if (Math.abs(prevLoc.getBlockX() - loc.getBlockX()) < 0.1
+				&& Math.abs(prevLoc.getBlockZ() - loc.getBlockZ()) < 0.1) {
+			fallBlock.remove();
+			missile.setMissileBlock(null);
+			return TrebuchetMissile.FINISH;
+		}
+		
 		if (missile.isLaunching()) {
 			Vector dir = missile.getLocation().getDirection();
-			if (missile.getPrevLocation() != null) {
-				dir = missile.getPrevLocation().clone().toVector().subtract(missile.getLocation().toVector());
+			if (prevLoc != null) {
+				dir = missile.getLocation().clone().toVector().subtract(missile.getPrevLocation().toVector());
 			}
-			fallBlock.setVelocity(dir.multiply(2));
+			fallBlock.setVelocity(dir.multiply(12));
 			missile.setLaunching(false);
 		}
 		
 		ParticleEffect.FLAME.display(fallBlock.getLocation(), 0.5f, 0.5f, 0.5f, 0f, 15);
 		ParticleEffect.SMOKE_NORMAL.display(fallBlock.getLocation(), 0.5f, 0.5f, 0.5f, 0f, 7);
 		ParticleEffect.SMOKE_LARGE.display(fallBlock.getLocation(), 0.5f, 0.5f, 0.5f, 0f, 2);
+		missile.setLocation(loc);
+		missile.setPrevLocation(loc);
 		return this;
 	}
 

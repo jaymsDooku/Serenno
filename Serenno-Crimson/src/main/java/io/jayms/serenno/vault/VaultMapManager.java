@@ -1,6 +1,7 @@
 package io.jayms.serenno.vault;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
 
@@ -82,6 +83,14 @@ public class VaultMapManager {
 	
 	public boolean isVaultMap(String name) {
 		return vaultMaps.containsKey(name);
+	}
+	
+	public VaultMap getVaultMap(String name) {
+		return vaultMaps.get(name);
+	}
+	
+	public Collection<VaultMap> listVaults() {
+		return vaultMaps.values();
 	}
 
 }

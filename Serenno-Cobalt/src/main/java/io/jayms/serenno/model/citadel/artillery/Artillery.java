@@ -39,8 +39,6 @@ public interface Artillery extends QTBox {
 	
 	long getCooldown();
 	
-	int getMissileCount();
-	
 	double getReinforcementDamage();
 	
 	double getBastionDamage();

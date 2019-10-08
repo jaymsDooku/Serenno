@@ -142,5 +142,11 @@ public class Group {
 	public int hashCode() {
 		return Objects.hash(name, owner);
 	}
+
+	@Override
+	public String toString() {
+		return "Group [name=" + name + ", owner=" + owner + ", defaultRank=" + defaultRank + ", ranks=" + ranks
+				+ ", members=" + members + "]";
+	}
 	
 }

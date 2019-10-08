@@ -22,14 +22,14 @@ public class TrebuchetMissileLaunchState implements ArtilleryMissileState<Trebuc
 		ArtilleryMissileState<TrebuchetMissile> result = this;
 		Location rotPoint = trebuchet.getRotationPoint();
 		Location loc = missile.getLocation();
+		double rotation = missile.getRotation();
 		missile.setPrevLocation(loc);
 		if (missile.isLaunching()) {
 			Vector vDir = loc.clone().toVector().subtract(rotPoint.toVector());
 			
-			double rotation = missile.getRotation();
-			double rotate = negative ? -1 : 1;
+			double dRotate = 6;
+			double rotate = negative ? -dRotate : dRotate;
 			//double dRotate = missile.getdRotation();
-			double dRotate = 2;
 			if (axis == RotAxis.X) {
 				vDir = MathTools.rotateAroundAxisX(vDir, Math.toRadians(rotate));
 			} else if (axis == RotAxis.Z) {
@@ -45,16 +45,6 @@ public class TrebuchetMissileLaunchState implements ArtilleryMissileState<Trebuc
 			missile.setdRotation(dRotate);
 			
 			loc = rotPoint.clone().add(vDir.normalize().multiply(10));
-			
-			if (negative) {
-				if (rotation < -trebuchet.getFiringAngleThreshold()) {
-					result = TrebuchetMissile.PROGRESS;
-				}
-			} else {
-				if (rotation > trebuchet.getFiringAngleThreshold()) {
-					result = TrebuchetMissile.PROGRESS;
-				}
-			}
 		} else {
 			Location lowStart = missile.getLowStart();
 			Vector vDir = loc.clone().toVector().subtract(lowStart.toVector());
@@ -76,6 +66,16 @@ public class TrebuchetMissileLaunchState implements ArtilleryMissileState<Trebuc
 		ParticleTools.drawLine(rotPoint, fallBlock.getLocation(), 20, (l) -> {
 			ParticleTools.displayColoredParticle(l, "#855F08");
 		});
+		
+		if (negative) {
+			if (rotation < -trebuchet.getFiringAngleThreshold()) {
+				result = TrebuchetMissile.PROGRESS;
+			}
+		} else {
+			if (rotation > trebuchet.getFiringAngleThreshold()) {
+				result = TrebuchetMissile.PROGRESS;
+			}
+		}
 		
 		return result;
 	}
