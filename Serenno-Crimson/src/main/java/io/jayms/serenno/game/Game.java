@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.player.SerennoPlayer;
 import mkremins.fanciful.FancyMessage;
+import net.md_5.bungee.api.ChatColor;
 
 public interface Game {
 	
@@ -45,6 +46,8 @@ public interface Game {
 	void stopSpectating(SerennoPlayer spectator);
 	
 	int getCountdown();
+	
+	Location getSpawnPoint(ChatColor teamColor);
 	
 	Arena getMap();
 	

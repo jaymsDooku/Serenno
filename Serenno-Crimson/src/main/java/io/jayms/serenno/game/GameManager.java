@@ -93,12 +93,10 @@ public class GameManager {
 		
 		ChatColor color1 = teamColors.get(0);
 		ChatColor color2 = teamColors.get(1);
-		System.out.println("color1: " + color1.name());
-		System.out.println("color2: " + color2.name());
 		DuelTeam duelTeam1 = new DuelTeam(color1, team1, team1Temp);
 		DuelTeam duelTeam2 = new DuelTeam(color2, team2, team2Temp);
 		
-		Duel duel = new SimpleDuel(id++, request.getMap(), request.getDuelType(), duelTeam1, duelTeam2);
+		Duel duel = new SimpleDuel(id++, request.getMap(), request.getDuelType(), duelTeam1, duelTeam2) {};
 		duel.start();
 		games.put(duel.getID(), duel);
 		return duel;

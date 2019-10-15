@@ -170,7 +170,7 @@ public class RegionCommand extends BaseCommand {
 	}
 	
 	@Subcommand("list")
-	public void list(CommandSender sender, String regionName) {
+	public void list(CommandSender sender) {
 		List<Region> regions = regionManager.listRegions();
 		sender.sendMessage(ChatColor.YELLOW + "Regions");
 		sender.sendMessage(ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "---------------");

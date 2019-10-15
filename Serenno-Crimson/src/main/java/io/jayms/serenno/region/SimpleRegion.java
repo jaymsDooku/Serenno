@@ -9,11 +9,14 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
+import io.jayms.serenno.util.LocationTools;
+
 public class SimpleRegion implements Region {
 
 	private String name;
 	private String displayName;
-	private World parentWorld;
+	private String parentWorld;
+	private World world;
 	private Set<World> childWorlds;
 	private Vector p1;
 	private Vector p2;
@@ -21,18 +24,10 @@ public class SimpleRegion implements Region {
 	private List<String> possibleFlags = new ArrayList<>();
 	private boolean dirty = true;
 	
-	public SimpleRegion(String name, Location l1, Location l2) {
-		parentWorld = l1.getWorld();
-		
-		if (!parentWorld.getUID().equals(l2.getWorld().getUID())) {
-			throw new IllegalArgumentException("Tried to create a region with 2 points, not in the same world.");
-		}
-		
+	public SimpleRegion(String name, String parentWorld, Vector p1, Vector p2) {
+		this.parentWorld = parentWorld;
 		this.name = name;
 		this.displayName = name;
-		
-		Vector p1 = l1.toVector();
-		Vector p2 = l2.toVector();
 		
 		this.childWorlds = new HashSet<>();
 		this.p1 = Vector.getMinimum(p1, p2);
@@ -56,12 +51,22 @@ public class SimpleRegion implements Region {
 	
 	@Override
 	public void setParentWorld(World world) {
-		this.parentWorld = world;
+		this.world = world;
+		this.parentWorld = world.getName();
 	}
 	
 	@Override
 	public World getParentWorld() {
-		return parentWorld;
+		if (world == null) {
+			world = LocationTools.loadWorld(parentWorld);
+		}
+		
+		return world;
+	}
+	
+	@Override
+	public boolean isWorldLoaded() {
+		return world != null;
 	}
 	
 	@Override
@@ -91,12 +96,13 @@ public class SimpleRegion implements Region {
 	
 	@Override
 	public Location getParentLocation1() {
-		return new Location(parentWorld, p1.getX(), p1.getY(), p1.getZ());
+		return new Location(world, p1.getX(), p1.getY(), p1.getZ());
 	}
 
 	@Override
 	public Location getParentLocation2() {
-		return new Location(parentWorld, p2.getX(), p2.getY(), p2.getZ());
+		
+		return new Location(world, p2.getX(), p2.getY(), p2.getZ());
 	}
 
 	@Override
@@ -144,6 +150,14 @@ public class SimpleRegion implements Region {
 
 	@Override
 	public boolean isInside(Location loc) {
+		if (!isWorldLoaded()) {
+			return false;
+		}
+		
+		if (!getParentWorld().getUID().equals(loc.getWorld().getUID())) {
+			return false;
+		}
+		
 		Vector vec = loc.toVector();
 		return (p1.getX() <= vec.getX() &&
 				p1.getY() <= vec.getY() && 

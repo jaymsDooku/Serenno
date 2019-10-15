@@ -15,16 +15,16 @@ public abstract class Company implements FinancialEntity {
 	private UUID id;
 	private String name;
 	private String displayName;
-	private Player founder;
+	private UUID founder;
 	private long foundingTime;
 	
 	private Set<Employee> employees = new HashSet<>();
 
-	public Company(String name, Player founder) {
+	public Company(String name, UUID founder) {
 		this(UUID.randomUUID(), name, founder, System.currentTimeMillis());
 	}
 	
-	public Company(UUID id, String name, Player founder, long foundingTime) {
+	public Company(UUID id, String name, UUID founder, long foundingTime) {
 		this.id = id;
 		this.name = name;
 		this.founder = founder;
@@ -46,7 +46,7 @@ public abstract class Company implements FinancialEntity {
 		return displayName;
 	}
 	
-	public Player getFounder() {
+	public UUID getFounder() {
 		return founder;
 	}
 	

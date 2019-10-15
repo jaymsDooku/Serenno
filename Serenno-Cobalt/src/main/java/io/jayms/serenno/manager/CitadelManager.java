@@ -14,6 +14,7 @@ import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.listener.citadel.CitadelBlockListener;
+import io.jayms.serenno.listener.citadel.CitadelChunkListener;
 import io.jayms.serenno.listener.citadel.CitadelEntityListener;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.RegenRate;
@@ -32,6 +33,7 @@ public class CitadelManager {
 	
 	private CitadelBlockListener blockListener;
 	private CitadelEntityListener entityListener;
+	private CitadelChunkListener chunkListener;
 	
 	public CitadelManager() {
 		reinforcementManager = new ReinforcementManager(this, null);
@@ -68,8 +70,10 @@ public class CitadelManager {
 		
 		blockListener = new CitadelBlockListener(this, reinforcementManager, bastionManager);
 		entityListener = new CitadelEntityListener(this, reinforcementManager, bastionManager);
+		chunkListener = new CitadelChunkListener(reinforcementManager);
 		Bukkit.getPluginManager().registerEvents(blockListener, SerennoCobalt.get());
 		Bukkit.getPluginManager().registerEvents(entityListener, SerennoCobalt.get());
+		Bukkit.getPluginManager().registerEvents(chunkListener, SerennoCobalt.get());
 	}
 	
 	public ArtilleryManager getArtilleryManager() {

@@ -27,6 +27,10 @@ public class SQLite extends Database {
 
 		this.SQLfile = new File(folder.getAbsolutePath() + File.separator + this.database);
 	}
+	
+	public File getSQLfile() {
+		return SQLfile;
+	}
 
 	@Override
 	public Connection open() {

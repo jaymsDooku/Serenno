@@ -21,7 +21,7 @@ public abstract class Bank extends Company {
 	}
 	
 	public Bank(UUID id, String name, Player owner, long foundingTime, Multimap<UUID, Account> bankAccounts) {
-		super(id, name, owner, foundingTime);
+		super(id, name, owner.getUniqueId(), foundingTime);
 		this.bankAccounts = bankAccounts;
 	}
 	

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -29,8 +28,9 @@ import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.team.TeamManager;
 import io.jayms.serenno.util.PlayerTools;
 import mkremins.fanciful.FancyMessage;
+import net.md_5.bungee.api.ChatColor;
 
-public class SimpleDuel extends AbstractGame implements Duel {
+public abstract class SimpleDuel extends AbstractGame implements Duel {
 
 	private DuelTeam team1;
 	private DuelTeam team2;
@@ -72,9 +72,14 @@ public class SimpleDuel extends AbstractGame implements Duel {
 	}
 	
 	@Override
+	public Location getSpawnPoint(ChatColor teamColor) {
+		return getMap().getSpawnPoints().get(team1.getTeamColor());
+	}
+	
+	@Override
 	protected void initGame() {
-		Location spawn1 = getMap().getSpawnPoints().get(team1.getTeamColor());
-		Location spawn2 = getMap().getSpawnPoints().get(team2.getTeamColor());
+		Location spawn1 = getSpawnPoint(team1.getTeamColor());
+		Location spawn2 = getSpawnPoint(team2.getTeamColor());
 		team1.getTeam().clean();
 		team2.getTeam().clean();
 		
@@ -100,7 +105,6 @@ public class SimpleDuel extends AbstractGame implements Duel {
 									.enchant(Enchantment.DURABILITY, 1, true)
 									.flag(ItemFlag.HIDE_ENCHANTS)).build();
 					ItemMeta meta = kitBook.getItemMeta();
-					//meta.getCustomTagContainer().setCustomTag(new NamespacedKey(SerennoCrimson.get(), "kit-index"), ItemTagType.INTEGER, i);
 					NBTItem nbtKitBook = new NBTItem(kitBook);
 					nbtKitBook.setInteger("index", i);
 					kitBook = nbtKitBook.getItem();

@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 public class SimpleCompany extends Company {
 
 	public SimpleCompany(String name, Player founder) {
-		super(name, founder);
+		super(name, founder.getUniqueId());
 	}
 
 	@Override

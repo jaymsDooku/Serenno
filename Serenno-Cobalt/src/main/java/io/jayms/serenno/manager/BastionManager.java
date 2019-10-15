@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -11,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.Maps;
 
+import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
@@ -31,6 +33,9 @@ public class BastionManager {
 	public BastionManager(ReinforcementManager rm, BastionDataSource dataSource) {
 		this.rm = rm;
 		this.dataSource = dataSource;
+		
+		World world = Bukkit.getWorld(SerennoCobalt.get().getConfigManager().getDefaultReinforcementWorld());
+		newBastionWorld(world, dataSource);
 	}
 	
 	public void registerBastionBlueprint(BastionBlueprint blueprint) {
@@ -48,17 +53,18 @@ public class BastionManager {
 		return bastionBlueprints.get(new ItemStackKey(it));
 	}
 	
-	public BastionWorld getBastionWorld(World world, BastionDataSource dataSource) {
-		BastionWorld bastionWorld = bastionWorlds.get(world.getName());
-		if (bastionWorld == null) {
-			bastionWorld = new BastionWorld(world, dataSource);
-			bastionWorlds.put(world.getName(), bastionWorld);
-		}
+	public BastionWorld newBastionWorld(World world, BastionDataSource dataSource) {
+		BastionWorld bastionWorld = new BastionWorld(world, dataSource);
+		bastionWorlds.put(world.getName(), bastionWorld);
 		return bastionWorld;
 	}
 	
+	public BastionWorld getBastionWorld(World world) {
+		return bastionWorlds.get(world.getName());
+	}
+	
 	public Set<Bastion> getBastions(Location l) {
-		BastionWorld bastionWorld = getBastionWorld(l.getWorld(), dataSource);
+		BastionWorld bastionWorld = getBastionWorld(l.getWorld());
 		return bastionWorld.getBastions(l);
 	}
 	
@@ -70,7 +76,7 @@ public class BastionManager {
 		Set<Bastion> bastions = new HashSet<>();
 		
 		World world = l1.getWorld();
-		BastionWorld bastionWorld = getBastionWorld(world, dataSource);
+		BastionWorld bastionWorld = getBastionWorld(world);
 		for (Bastion bastion : bastionWorld.getAllBastions()) {
 			if (LocationTools.isBetween(l1, l2, bastion.getLocation())) {
 				bastions.add(bastion);
@@ -106,14 +112,14 @@ public class BastionManager {
 		Bastion bastion = new Bastion(reinforcement, bb);
 		
 		World world = bastion.getReinforcement().getLocation().getWorld();
-		BastionWorld bastionWorld = getBastionWorld(world, dataSource);
+		BastionWorld bastionWorld = getBastionWorld(world);
 		bastionWorld.addBastion(bastion);
 		return false;
 	}
 	
 	public void destroyBastion(Bastion bastion) {
 		World world = bastion.getLocation().getWorld();
-		BastionWorld bastionWorld = getBastionWorld(world, dataSource);
+		BastionWorld bastionWorld = getBastionWorld(world);
 		bastionWorld.deleteBastion(bastion);
 	}
 	

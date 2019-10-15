@@ -69,14 +69,7 @@ public class RegionManager implements Listener {
 
                     String regionName = document.getString("regionName");
                     String displayName = document.getString("displayName");
-                    String parentWorldStr = document.getString("parentWorld");
-                    World parentWorld = Bukkit.getWorld(parentWorldStr);
-                    
-                    if (parentWorld == null) {
-                    	SerennoCrimson.get().getLogger().severe("Parent world of region " + regionName + " no longer exists. Failed to load this region.");
-                    	cancel();
-                    	return;
-                    }
+                    String parentWorld = document.getString("parentWorld");
                     
                     Vector point1 = MongoTools.vector((Document) document.get("point1"));
                     Vector point2 = MongoTools.vector((Document) document.get("point2"));
@@ -85,9 +78,7 @@ public class RegionManager implements Listener {
                     List<String> flagsList = document.getList("flags", String.class);
                     //List<String> possibleFlagsList = document.getList("possibleFlags", String.class);
                     
-                    Location p1 = new Location(parentWorld, point1.getX(), point1.getY(), point1.getZ());
-                    Location p2 = new Location(parentWorld, point2.getX(), point2.getY(), point2.getZ());
-                    Region region = new SimpleRegion(regionName, p1, p2);
+                    Region region = new SimpleRegion(regionName, parentWorld, point1, point2);
                     region.setDisplayName(displayName);
                     
                     Set<World> childWorlds = new HashSet<>();
@@ -196,7 +187,7 @@ public class RegionManager implements Listener {
 			return null;
 		}
 		
-		Region region = new SimpleRegion(name, p1, p2);
+		Region region = new SimpleRegion(name, p1.getWorld().getName(), p1.toVector(), p2.toVector());
 		Region overlap = regions.values().stream().filter(r -> r.overlaps(region)).findFirst().orElse(null);
 		if (overlap != null) {
 			player.sendMessage(ChatColor.RED + "Overlapping region:" + overlap.getName());
@@ -233,11 +224,12 @@ public class RegionManager implements Listener {
 		return null;
 	}
 	
-	private void deleteRegion(Region region) {
+	public void deleteRegion(Region region) {
 		if (!MongoAPI.isConnected()) {
 			return;
 		}
 		
+		regions.remove(region.getName());
 		new BukkitRunnable() {
 			
 			@Override
@@ -264,7 +256,6 @@ public class RegionManager implements Listener {
 		}
 		Bukkit.getPluginManager().callEvent(new RegionDeletionEvent(region));
 		
-		regions.remove(name);
 		deleteRegion(region);
 		player.sendMessage(ChatColor.YELLOW + "You've deleted region: " + ChatColor.GOLD + region.getName());
 	}

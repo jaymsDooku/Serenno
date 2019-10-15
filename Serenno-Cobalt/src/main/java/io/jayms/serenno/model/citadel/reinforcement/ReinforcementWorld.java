@@ -1,7 +1,10 @@
 package io.jayms.serenno.model.citadel.reinforcement;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -68,6 +71,24 @@ public class ReinforcementWorld {
 			SerennoCobalt.get().getLogger().warning("Failed to load from cache: " + e.getMessage());
 			return null;
 		}
+	}
+	
+	public void loadChunkData(Chunk chunk) {
+		reinCache.refresh(ChunkCoord.fromChunk(chunk));
+	}
+	
+	public void unloadChunkData(Chunk chunk) {
+		reinCache.invalidate(ChunkCoord.fromChunk(chunk));
+	}
+	
+	public Set<Reinforcement> getAllReinforcements() {
+		Set<Reinforcement> reinforcements = new HashSet<>();
+		
+		for (ChunkCache<Reinforcement> chunks : reinCache.asMap().values()) {
+			reinforcements.addAll(chunks.getAll());
+		}
+		
+		return reinforcements;
 	}
 	
 	public ReinforcementDataSource getDataSource() {

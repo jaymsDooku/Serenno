@@ -27,4 +27,5 @@ public interface Duel extends Game {
 	void die(SerennoPlayer player);
 	
 	void finish(DuelTeam winners, DuelTeam losers);
+
 }

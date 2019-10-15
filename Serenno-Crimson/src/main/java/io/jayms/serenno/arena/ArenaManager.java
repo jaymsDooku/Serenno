@@ -25,6 +25,7 @@ import com.mongodb.client.model.Filters;
 
 import io.jayms.serenno.SerennoCommon;
 import io.jayms.serenno.SerennoCrimson;
+import io.jayms.serenno.arena.event.ArenaLoadEvent;
 import io.jayms.serenno.db.MongoAPI;
 import io.jayms.serenno.db.event.DBConnectEvent;
 import io.jayms.serenno.game.DuelType;
@@ -135,6 +136,11 @@ public class ArenaManager implements Listener {
                     List<String> duelTypesStr = document.getList("duelTypes", String.class);
                     Set<DuelType> duelTypes = duelTypesStr.stream().map(s -> DuelType.valueOf(s)).collect(Collectors.toSet());
                     Arena arena = new SimpleArena(region, description, creators, displayItem, spawns, duelTypes);
+                    
+                    ArenaLoadEvent event = new ArenaLoadEvent(arena);
+                    Bukkit.getPluginManager().callEvent(event);
+                    arena = event.getArena();
+                    
                     arenas.put(regionName, arena);
                     SerennoCrimson.get().getLogger().info("Loaded arena: " + arena.getRegion().getName());
                 }

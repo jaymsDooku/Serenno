@@ -10,6 +10,8 @@ public interface SerennoDataSource<T, K> {
 	
 	public T get(K key);
 	
+	public boolean exists(K key);
+	
 	public Set<T> getAll();
 	
 	public void delete(T value);

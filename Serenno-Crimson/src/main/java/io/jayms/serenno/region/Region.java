@@ -19,6 +19,8 @@ public interface Region {
 	
 	World getParentWorld();
 	
+	boolean isWorldLoaded();
+	
 	Set<World> getChildWorlds();
 	
 	void setPoint1(Vector v);

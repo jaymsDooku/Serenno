@@ -176,7 +176,7 @@ public abstract class Database {
 		}
 	}
 
-	private synchronized void doQuery(final String query) {
+	private void doQuery(final String query) {
 		try {
 			if (this.connection == null || this.connection.isClosed()) {
 				this.open();

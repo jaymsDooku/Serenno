@@ -1,5 +1,6 @@
 package io.jayms.serenno.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -78,5 +79,53 @@ public class MaterialTools {
 	
 	public static boolean isChest(Block block) {
 		return isChest(block.getType());
+	}
+	
+	public static List<MaterialNumbers> getListOfMaterialNumbers(String txt) throws IllegalArgumentException {
+		List<MaterialNumbers> result = new ArrayList<>();
+		String[] materialParts = txt.split(",");
+		for (int i = 0; i < materialParts.length; i++) {
+			result.add(getMaterialNumbers(materialParts[i]));
+		}
+		return result;
+	}
+	
+	public static MaterialNumbers getMaterialNumbers(String txt) throws IllegalArgumentException {
+		String[] newMaterialParts = txt.split(":");
+		if (newMaterialParts.length != 2) {
+			throw new IllegalArgumentException("Invalid material data.");
+		}
+		
+		int id;
+		int data;
+		
+		try {
+			id = Integer.parseInt(newMaterialParts[0]);
+			data = Integer.parseInt(newMaterialParts[1]);
+		} catch(NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid material data.");
+		}
+		
+		return new MaterialNumbers(id, data);
+	}
+	
+	public static class MaterialNumbers {
+		
+		private int id;
+		private int data;
+		
+		public MaterialNumbers(int id, int data) {
+			this.id = id;
+			this.data = data;
+		}
+		
+		public int getData() {
+			return data;
+		}
+		
+		public int getId() {
+			return id;
+		}
+		
 	}
 }

@@ -1,14 +1,28 @@
 package io.jayms.serenno.util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.WorldType;
+import org.bukkit.World.Environment;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.util.Vector;
 
 public final class LocationTools {
@@ -105,6 +119,67 @@ public final class LocationTools {
 			}
 		}
 		return circleblocks;
+	}
+	
+	public static World loadWorld(String name) {
+		WorldCreator creator = new WorldCreator(name);
+		creator.generator(new ChunkGenerator() {
+		    @Override
+		    public byte[] generate(World world, Random random, int x, int z) {
+		        return new byte[32768]; //Empty byte array
+		    }
+		});
+		creator.environment(Environment.NORMAL);
+		creator.generateStructures(false);
+		creator.type(WorldType.FLAT);
+		World world = Bukkit.createWorld(creator);
+		world.setAnimalSpawnLimit(0);
+		world.setAmbientSpawnLimit(0);
+		world.setMonsterSpawnLimit(0);
+		return world;
+	}
+	
+	public static void copyWorld(File source, File target){
+	    try {
+	        ArrayList<String> ignore = new ArrayList<String>(Arrays.asList("uid.dat", "session.dat"));
+	        if(!ignore.contains(source.getName())) {
+	            if(source.isDirectory()) {
+	                if(!target.exists())
+	                target.mkdirs();
+	                String files[] = source.list();
+	                for (String file : files) {
+	                    File srcFile = new File(source, file);
+	                    File destFile = new File(target, file);
+	                    copyWorld(srcFile, destFile);
+	                }
+	            } else {
+	                InputStream in = new FileInputStream(source);
+	                OutputStream out = new FileOutputStream(target);
+	                byte[] buffer = new byte[1024];
+	                int length;
+	                while ((length = in.read(buffer)) > 0)
+	                    out.write(buffer, 0, length);
+	                in.close();
+	                out.close();
+	            }
+	        }
+	    } catch (IOException e) {
+	 
+	    }
+	}
+	
+	public static boolean deleteWorld(File path) {
+	      if(path.exists()) {
+	          File files[] = path.listFiles();
+	          for(int i=0; i<files.length; i++) {
+	              if(files[i].isDirectory()) {
+	                  deleteWorld(files[i]);
+	              } else {
+	                  files[i].delete();
+	              }
+	          }
+	      }
+	      return(path.delete());
 	}
 	
 }

@@ -17,6 +17,7 @@ import com.comphenix.protocol.wrappers.WrappedServerPing;
 
 import io.jayms.serenno.armourtype.ArmorListener;
 import io.jayms.serenno.db.DBManager;
+import io.jayms.serenno.db.MongoAPI;
 import io.jayms.serenno.player.CommonPlayerManager;
 import vg.civcraft.mc.civmodcore.ACivMod;
 
@@ -100,6 +101,7 @@ public class SerennoCommon extends ACivMod {
 	@Override
 	public void onDisable() {
 		super.onDisable();
+		MongoAPI.close();
 	}
 
 	@Override

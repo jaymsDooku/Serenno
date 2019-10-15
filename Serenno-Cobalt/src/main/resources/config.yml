@@ -17,4 +17,7 @@ artillery:
       reinforcementDamage: 5
       playerDamage: 5
       impactRadius: 4
+citadel:
+  reinforcement:
+    defaultWorld: world
 

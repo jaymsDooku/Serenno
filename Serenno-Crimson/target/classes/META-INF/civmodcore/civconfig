@@ -1,5 +1,0 @@
-io.jayms.serenno.command.game.DuelCommand
-io.jayms.serenno.command.game.AcceptCommand
-io.jayms.serenno.command.game.SpectateCommand
-io.jayms.serenno.command.bot.DuelBotCommand
-io.jayms.serenno.command.game.KitEditorCommand

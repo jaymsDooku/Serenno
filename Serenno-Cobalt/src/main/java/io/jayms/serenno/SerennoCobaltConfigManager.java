@@ -52,7 +52,15 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 		trebuchetReinforcementDamage = config.getDouble("artillery.trebuchet.missile.reinforcementDamage", 5);
 		
 		trebuchetBlockDamageCD = config.getLong("artillery.trebuchet.blockDamageCD", 2500);
+		
+		defaultReinforcementWorld = config.getString("citadel.reinforcement.defaultWorld", "world");
 		return true;
+	}
+	
+	private String defaultReinforcementWorld;
+	
+	public String getDefaultReinforcementWorld() {
+		return defaultReinforcementWorld;
 	}
 	
 	private Schematic trebuchetSchematic;

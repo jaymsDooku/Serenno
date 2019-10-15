@@ -14,6 +14,7 @@ import io.jayms.serenno.command.ArenaCommand;
 import io.jayms.serenno.command.GameCommand;
 import io.jayms.serenno.command.RegionCommand;
 import io.jayms.serenno.command.TeamCommand;
+import io.jayms.serenno.command.VaultCommand;
 import io.jayms.serenno.db.MongoAPI;
 import io.jayms.serenno.game.GameManager;
 import io.jayms.serenno.game.kiteditor.KitEditor;
@@ -143,6 +144,7 @@ public class SerennoCrimson extends ACivMod {
 		commandManager.registerCommand(new GameCommand());
 		commandManager.registerCommand(new RegionCommand());
 		commandManager.registerCommand(new TeamCommand());
+		commandManager.registerCommand(new VaultCommand());
 	}
 	
 	@Override
@@ -157,8 +159,6 @@ public class SerennoCrimson extends ACivMod {
 		
 		regionManager.saveAll();
 		arenaManager.saveAll();
-		
-		MongoAPI.close();
 	}
 
 }

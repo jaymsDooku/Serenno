@@ -24,12 +24,18 @@ import io.jayms.serenno.model.finance.FinancialPlayer;
 import io.jayms.serenno.model.finance.company.Bank;
 import io.jayms.serenno.model.finance.company.Company;
 import io.jayms.serenno.model.finance.company.CompanyType;
+import io.jayms.serenno.model.finance.company.ServerCompany;
 import io.jayms.serenno.model.finance.company.SimpleCompany;
 
 public class FinanceManager implements Listener {
 
+	private UUID serverID = UUID.randomUUID();
 	private Map<UUID, FinancialPlayer> players = Maps.newConcurrentMap();
 	private Map<String, Company> companies = Maps.newConcurrentMap();
+	
+	public UUID getServerID() {
+		return serverID;
+	}
 	
 	public Company createCompany(Player creator, String name, CompanyType type) {
 		if (companyExists(name)) {
@@ -37,6 +43,16 @@ public class FinanceManager implements Listener {
 		}
 		
 		Company company = new SimpleCompany(name, creator);
+		companies.put(name, company);
+		return company;
+	}
+	
+	public Company createServerCompany(String name) {
+		if (companyExists(name)) {
+			throw new IllegalArgumentException("Company with this name already exists.");
+		}
+		
+		Company company = new ServerCompany(name, serverID);
 		companies.put(name, company);
 		return company;
 	}

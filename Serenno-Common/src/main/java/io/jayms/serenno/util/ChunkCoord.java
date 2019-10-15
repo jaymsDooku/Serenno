@@ -13,8 +13,11 @@ public class ChunkCoord {
 	}
 	
 	public static ChunkCoord fromLocation(Location l) {
-		Chunk c = l.getChunk();
-		return new ChunkCoord(c.getX(), c.getZ());
+		return fromChunk(l.getChunk());
+	}
+	
+	public static ChunkCoord fromChunk(Chunk chunk) {
+		return new ChunkCoord(chunk.getX(), chunk.getZ()); 
 	}
 
 	private int x;

@@ -41,3 +41,9 @@ commands:
         min-args: 1
         max-args: 1
         player-only: true
+    lobby:
+        usage: /lobby
+        description: Teleport to the lobby.
+        min-args: 0
+        max-args: 0
+        player-only: true
