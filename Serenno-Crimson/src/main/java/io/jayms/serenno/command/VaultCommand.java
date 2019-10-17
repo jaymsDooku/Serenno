@@ -159,7 +159,7 @@ public class VaultCommand extends BaseCommand {
 		RegionVisitor visitor = new RegionVisitor(region, filter,
 				editSession.getQueue() instanceof MappedFaweQueue ? (MappedFaweQueue) editSession.getQueue() : null);
 		Operations.completeBlindly(visitor);
-		player.sendMessage(ChatColor.YELLOW + "You have reinforced: " + visitor.getAffected() + " blocks");
+		player.sendMessage(ChatColor.YELLOW + "You have reinforced: " + ChatColor.GOLD + visitor.getAffected() + ChatColor.YELLOW + " blocks");
 		
 		BaseBlock replacement = FaweCache.getBlock(materialNumbers.getId(), materialNumbers.getData());
 		

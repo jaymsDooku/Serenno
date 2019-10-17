@@ -33,6 +33,10 @@ public class Kit {
 		contents = player.getInventory().getContents();
 	}
 	
+	public int getHeldSlot() {
+		return heldSlot;
+	}
+	
 	public void setHeldSlot(int heldSlot) {
 		this.heldSlot = heldSlot;
 	}

@@ -14,6 +14,7 @@ import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.finance.FinancialEntity;
 import io.jayms.serenno.model.finance.FinancialPlayer;
+import mkremins.fanciful.FancyMessage;
 
 public class Group {
 	
@@ -114,6 +115,18 @@ public class Group {
 		GroupMember member = getMember(player);
 		if (member == null) return false;
 		return member.hasPermission(permission) || member.hasPermission(GroupPermissions.ALL);
+	}
+	
+	public void sendMessage(String message) {
+		for (GroupMember member : getMembers()) {
+			member.getPlayer().sendMessage(message);
+		}
+	}
+	
+	public void sendMessage(FancyMessage message) {
+		for (GroupMember member : getMembers()) {
+			message.send(member.getPlayer());
+		}
 	}
 	
 	public Collection<GroupMember> getMembers() {

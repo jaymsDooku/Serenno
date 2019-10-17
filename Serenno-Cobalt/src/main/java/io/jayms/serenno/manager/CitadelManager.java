@@ -30,6 +30,7 @@ public class CitadelManager {
 	private BastionManager bastionManager;
 	private ReinforcementManager reinforcementManager;
 	private ArtilleryManager artilleryManager;
+	private SnitchManager snitchManager;
 	
 	private CitadelBlockListener blockListener;
 	private CitadelEntityListener entityListener;
@@ -38,6 +39,7 @@ public class CitadelManager {
 	public CitadelManager() {
 		reinforcementManager = new ReinforcementManager(this, null);
 		bastionManager = new BastionManager(reinforcementManager, null);
+		snitchManager = new SnitchManager(reinforcementManager, null);
 		artilleryManager = new ArtilleryManager(this);
 		
 		reinforcementManager.registerReinforcementBlueprint(ReinforcementBlueprint.builder()
@@ -86,6 +88,10 @@ public class CitadelManager {
 	
 	public ReinforcementManager getReinforcementManager() {
 		return reinforcementManager;
+	}
+	
+	public SnitchManager getSnitchManager() {
+		return snitchManager;
 	}
 	
 	public CitadelPlayer getCitadelPlayer(Player player) {

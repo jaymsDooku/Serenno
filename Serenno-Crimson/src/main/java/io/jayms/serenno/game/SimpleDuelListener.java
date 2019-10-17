@@ -8,8 +8,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -67,7 +69,7 @@ public class SimpleDuelListener implements Listener {
 		}
 	}
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onDamage(EntityDamageEvent e) {
 		if (!(e.getEntity() instanceof Player)) {
 			return;
@@ -100,13 +102,19 @@ public class SimpleDuelListener implements Listener {
 		}
 	}
 	
-	@EventHandler()
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDamage(EntityDamageByEntityEvent e) {
-		if (!(e.getDamager() instanceof Player) || !(e.getEntity() instanceof Player)) {
+		if (!(e.getDamager() instanceof Player || (e.getDamager() instanceof Projectile && ((Projectile) e.getDamager()).getShooter() instanceof Player)) 
+				|| !(e.getEntity() instanceof Player)) {
 			return;
 		}
 		
-		Player damager = (Player) e.getDamager();
+		Player damager;
+		if (e.getDamager() instanceof Projectile) {
+			damager = (Player) ((Projectile) e.getDamager()).getShooter();
+		} else {
+			damager = (Player) e.getDamager();
+		}
 		Player victim = (Player) e.getEntity();
 		
 		SerennoPlayer damagerSP = SerennoCrimson.get().getPlayerManager().get(damager);
@@ -217,7 +225,7 @@ public class SimpleDuelListener implements Listener {
 		
 		if (player instanceof SerennoBot) {
 			SerennoBot bot = (SerennoBot) player;
-			Bot.loadKit(bot.getBot(), duel.getDuelType().getDefaultKit());
+			Bot.loadKit(bot.getBot(), duel.getDuelType().getDefaultKitArray()[0]);
 			
 			DuelTeam allyTeam = duel.getTeam(player);
 			DuelTeam enemyTeam = duel.getOtherTeam(allyTeam);

@@ -18,9 +18,11 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Comparator;
 import org.bukkit.material.Openable;
 
+import io.jayms.serenno.event.reinforcement.PlayerReinforcementCreationEvent;
 import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.manager.ReinforcementManager;
@@ -73,13 +75,20 @@ public class CitadelBlockListener extends CitadelListener {
 			}
 		}
 		
-		if (rm.placeBlock(cp, b)) {
+		if (rm.placeBlock(cp, b, e.getItemInHand())) {
 			e.setCancelled(true);
 			return;
 		}
-		if (bm.placeBlock(cp, b)) {
-			e.setCancelled(true);
+	}
+	
+	@EventHandler
+	public void onReinforce(PlayerReinforcementCreationEvent e) {
+		ItemStack item = e.getItemPlaced();
+		if (item == null) {
 			return;
+		}
+		if (bm.hasBastionBlueprint(item)) {
+			bm.placeBlock(cm.getCitadelPlayer(e.getPlacer()), e.getReinforcement(), item);
 		}
 	}
 	
@@ -157,7 +166,7 @@ public class CitadelBlockListener extends CitadelListener {
 			return;
 		}
 		
-		rm.reinforceBlock(cp, clickedBlock);
+		rm.reinforceBlock(cp, clickedBlock, player.getInventory().getItemInMainHand());
 	}
 	
 	@EventHandler
@@ -333,20 +342,6 @@ public class CitadelBlockListener extends CitadelListener {
 					break;
 				}
 			}
-		}
-	}
-	
-	@EventHandler
-	public void removeReinforcedAir(BlockPlaceEvent e) {
-		if (e.getBlockReplacedState() == null) {
-			return;
-		}
-		if (e.getBlockReplacedState().getType() != Material.AIR) {
-			return;
-		}
-		Reinforcement rein = rm.getReinforcement(e.getBlock());
-		if (rein != null) {
-			rein.destroy();
 		}
 	}
 	

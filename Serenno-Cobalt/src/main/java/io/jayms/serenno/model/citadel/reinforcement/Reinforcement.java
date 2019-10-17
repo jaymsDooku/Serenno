@@ -77,8 +77,12 @@ public class Reinforcement {
 		return group.isAuthorized(player, permission);
 	}
 	
-	// alive = true, dead = false
 	public boolean damage(double dmg) {
+		return damage(null, dmg);
+	}
+	
+	// alive = true, dead = false
+	public boolean damage(Player player, double dmg) {
 		Block block = loc.getBlock();
 		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
 		
@@ -91,11 +95,29 @@ public class Reinforcement {
 	}
 	
 	public void destroy() {
-		broken = true;
-		if (health != 0) health = 0;
-		SerennoCobalt.get().getCitadelManager().getReinforcementManager().destroyReinforcement(this);
+		destroy(null);
 	}
 	
+	public void destroy(Player player) {
+		broken = true;
+		if (health != 0) health = 0;
+		SerennoCobalt.get().getCitadelManager().getReinforcementManager().destroyReinforcement(player, this);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Reinforcement)) {
+			return false;
+		}
+		
+		Reinforcement rein = (Reinforcement) obj;
+		return rein.id.equals(id);
+	}
+	
+	@Override
+	public int hashCode() {
+		return id.hashCode();
+	}
 	
 	@Override
 	public String toString() {

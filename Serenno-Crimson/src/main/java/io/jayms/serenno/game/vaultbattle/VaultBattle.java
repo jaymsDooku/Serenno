@@ -1,9 +1,13 @@
-package io.jayms.serenno.game;
+package io.jayms.serenno.game.vaultbattle;
 
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import io.jayms.serenno.game.DuelTeam;
+import io.jayms.serenno.game.DuelType;
+import io.jayms.serenno.game.SimpleDuel;
 import io.jayms.serenno.vault.VaultMap;
+import io.jayms.serenno.vault.VaultMapDatabase;
 import net.md_5.bungee.api.ChatColor;
 
 public class VaultBattle extends SimpleDuel {
@@ -20,6 +24,21 @@ public class VaultBattle extends SimpleDuel {
 		activeWorld = vaultMap.activateWorld();
 		
 		super.initGame();
+	}
+	
+	@Override
+	public void broadcast(String message) {
+		super.broadcast(ChatColor.BLACK + "[" + ChatColor.DARK_RED + "VaultBattle" + ChatColor.BLACK + "]: " + ChatColor.RESET + message);
+	}
+	
+	@Override
+	protected void disposeGame() {
+		super.disposeGame();
+		
+		VaultMap vaultMap = getVaultMap();
+		VaultMapDatabase vaultDatabase = vaultMap.getDatabase(activeWorld);
+		vaultDatabase.delete();
+		vaultMap.deactivateWorld(activeWorld);
 	}
 	
 	public VaultMap getVaultMap() {

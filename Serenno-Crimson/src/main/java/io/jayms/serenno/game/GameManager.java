@@ -14,9 +14,11 @@ import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.game.menu.ArenaSelectMenu;
 import io.jayms.serenno.game.menu.DuelTypeMenu;
 import io.jayms.serenno.game.menu.KitSlotMenu;
+import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import io.jayms.serenno.menu.MenuController;
 import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.team.Team;
+import io.jayms.serenno.vault.VaultMap;
 import net.md_5.bungee.api.ChatColor;
 
 public class GameManager {
@@ -96,7 +98,16 @@ public class GameManager {
 		DuelTeam duelTeam1 = new DuelTeam(color1, team1, team1Temp);
 		DuelTeam duelTeam2 = new DuelTeam(color2, team2, team2Temp);
 		
-		Duel duel = new SimpleDuel(id++, request.getMap(), request.getDuelType(), duelTeam1, duelTeam2) {};
+		DuelType duelType = request.getDuelType();
+		Duel duel;
+		int gameId = id++;
+		
+		if (duelType == DuelType.VAULTBATTLE) {
+			duel = new VaultBattle(gameId, (VaultMap) request.getMap(), duelTeam1, duelTeam2);
+		} else {
+			duel = new SimpleDuel(gameId, request.getMap(), request.getDuelType(), duelTeam1, duelTeam2) {};
+		}
+			
 		duel.start();
 		games.put(duel.getID(), duel);
 		return duel;
@@ -105,6 +116,16 @@ public class GameManager {
 	public void finishGame(Game game) {
 		games.remove(game.getID());
 		SerennoCrimson.get().getLogger().info("Game " + game.getID() + " has finished.");
+	}
+	
+	public void shutdown() {
+		if (games.isEmpty()) {
+			return;
+		}
+		
+		for (Game game : games.values()) {
+			game.stop(ChatColor.RED + "Games shutting down");
+		}
 	}
 	
 	public List<Game> listGames() {

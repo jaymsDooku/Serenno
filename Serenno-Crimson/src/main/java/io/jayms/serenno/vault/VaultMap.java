@@ -14,6 +14,8 @@ public interface VaultMap extends Arena {
 	
 	void save();
 	
+	void delete();
+	
 	void gotoVaultMap(Player player);
 
 	void setGotoLocation(Location location);
@@ -22,9 +24,13 @@ public interface VaultMap extends Arena {
 	
 	VaultMapDatabase newDatabase(World world);
 	
+	VaultMapDatabase getDatabase(World world);
+	
 	VaultMapDatabase getDatabase();
 	
 	Arena getArena();
+	
+	boolean isOriginalWorldLoaded();
 	
 	World getOriginalWorld();
 	

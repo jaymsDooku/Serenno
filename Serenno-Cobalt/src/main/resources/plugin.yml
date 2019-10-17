@@ -41,5 +41,10 @@ commands:
     min-args: 0
     max-args: 0
     player-only: true
-  
+  janame:
+    usage: /janame <name>
+    description: Give a name to a snitch.
+    min-args: 1
+    max-args: 1
+    player-only: true
    

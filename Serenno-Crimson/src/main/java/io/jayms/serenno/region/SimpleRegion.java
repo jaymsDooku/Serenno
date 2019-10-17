@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -154,7 +155,15 @@ public class SimpleRegion implements Region {
 			return false;
 		}
 		
-		if (!getParentWorld().getUID().equals(loc.getWorld().getUID())) {
+		World parentWorld = getParentWorld();
+		//System.out.println("parentWorld: " + parentWorld);
+		UUID parentWorldUUID = parentWorld.getUID();
+		//System.out.println("parentWorldUUID: " + parentWorldUUID);
+		World locWorld = loc.getWorld();
+		//System.out.println("locWorld: " + locWorld);
+		UUID locWorldUUID = locWorld.getUID();
+		//System.out.println("locWorldUUID: " + locWorldUUID);
+		if (!parentWorldUUID.equals(locWorldUUID)) {
 			return false;
 		}
 		

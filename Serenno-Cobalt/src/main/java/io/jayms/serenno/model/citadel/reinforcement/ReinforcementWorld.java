@@ -47,8 +47,14 @@ public class ReinforcementWorld {
 									
 									@Override
 									public void onRemoval(RemovalNotification<Coords, Reinforcement> notification) {
+										Reinforcement reinforcement = notification.getValue();
 										System.out.println("Removing reinforcement: " + notification.getValue());
 										System.out.println("CAUSE: " + notification.getCause());
+										if (reinforcement.isBroken()) {
+											dataSource.delete(reinforcement);
+										} else {
+											dataSource.update(reinforcement);
+										}
 									}
 								});
 					}

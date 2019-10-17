@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -165,6 +166,12 @@ public class Lobby implements Listener {
 				return;
 			}
 			normalItems.load(player.getBukkitPlayer());
+		}
+	}
+	
+	public void sendToLobby(World world) {
+		for (Player player : world.getPlayers()) {
+			sendToLobby(SerennoCrimson.get().getPlayerManager().get(player));
 		}
 	}
 	

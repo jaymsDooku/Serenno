@@ -9,6 +9,8 @@ public class GroupPermissions {
 	public static final String REINFORCEMENT_CONTAINER_BYPASS = "reinforcement-container-bypass"; // open chests, hoppers
 	public static final String REINFORCEMENT_OPENABLE_BYPASS = "reinforcement-openable-bypass"; // open doors, trapdoors
 	public static final String BASTION_PLACE = "bastion-place"; // place in a bastion field
-	public static final String BASTION_INFORMATION = "bastion-information";
+	public static final String BASTION_INFORMATION = "bastion-information"; // get bastion information of friendly bastions
+	public static final String SNITCH_NOTIFICATION_BYPASS = "snitch-notification-bypass"; // bypass snitch notifications
+	public static final String SNITCH_RENAME = "snitch-rename"; // rename snitch
 	
 }

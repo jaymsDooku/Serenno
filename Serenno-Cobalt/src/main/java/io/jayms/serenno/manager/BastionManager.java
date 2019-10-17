@@ -53,6 +53,10 @@ public class BastionManager {
 		return bastionBlueprints.get(new ItemStackKey(it));
 	}
 	
+	public boolean hasBastionBlueprint(ItemStack it) {
+		return bastionBlueprints.containsKey(new ItemStackKey(it));
+	}
+	
 	public BastionWorld newBastionWorld(World world, BastionDataSource dataSource) {
 		BastionWorld bastionWorld = new BastionWorld(world, dataSource);
 		bastionWorlds.put(world.getName(), bastionWorld);
@@ -88,24 +92,14 @@ public class BastionManager {
 	
 	// false = allow block
 	// true = dont allow block
-	public boolean placeBlock(CitadelPlayer cp, Block b) {
-		ItemStack it = cp.getBukkitPlayer().getInventory().getItemInMainHand();
-		if (it == null) {
-			return false;
-		}
-		
-		BastionBlueprint bb = getBastionBlueprint(it);
+	public boolean placeBlock(CitadelPlayer cp, Reinforcement rein, ItemStack item) {
+		BastionBlueprint bb = getBastionBlueprint(item);
 		if (bb == null) {
 			return false;
 		}
 		
 		cp.getBukkitPlayer().sendMessage(ChatColor.YELLOW + "You have placed a " + bb.getDisplayName());
-		return placeBastion(b, bb);
-	}
-	
-	public boolean placeBastion(Block b, BastionBlueprint bb) {
-		Reinforcement reinforcement = rm.getReinforcement(b);
-		return placeBastion(reinforcement, bb);
+		return placeBastion(rein, bb);
 	}
 	
 	public boolean placeBastion(Reinforcement reinforcement, BastionBlueprint bb) {

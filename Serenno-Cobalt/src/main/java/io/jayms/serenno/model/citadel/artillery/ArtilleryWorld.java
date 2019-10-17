@@ -1,6 +1,7 @@
 package io.jayms.serenno.model.citadel.artillery;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -25,7 +26,15 @@ public class ArtilleryWorld {
 	@SuppressWarnings("unchecked")
 	public Set<Artillery> getArtilleries(Location loc) {
 		Set<? extends QTBox> boxes = artilleries.find(loc.getBlockX(), loc.getBlockZ());
-		return (Set<Artillery>) boxes;
+		if (boxes.isEmpty()) {
+			return (Set<Artillery>) boxes;
+		}
+		return ((Set<Artillery>) boxes).stream().filter(b -> {
+			int y = b.getLocation().getBlockY();
+			int upperY = b.getUpperY();
+			int lowerY = b.getLowerY();
+			return loc.getBlockY() >= lowerY && loc.getBlockY() <= upperY;
+		}).collect(Collectors.toSet());
 	}
 	
 	@SuppressWarnings("unchecked")

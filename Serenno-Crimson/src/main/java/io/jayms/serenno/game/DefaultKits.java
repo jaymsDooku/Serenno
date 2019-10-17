@@ -11,8 +11,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
+import com.github.maxopoly.finale.classes.ClassType;
 import com.github.maxopoly.finale.classes.ability.item.LinkerItem;
 import com.github.maxopoly.finale.classes.ability.item.SugarRushItem;
+import com.github.maxopoly.finale.classes.engineer.item.WrenchItem;
 
 import io.jayms.serenno.item.CustomItemManager;
 import io.jayms.serenno.kit.ItemMetaBuilder;
@@ -155,6 +157,26 @@ public final class DefaultKits {
 	
 	//end archer items
 	
+	//start engineer items
+	
+	public static ItemStack ihelmet() {
+		return helmet(Material.IRON_HELMET);
+	}
+	
+	public static ItemStack ichest() {
+		return chest(Material.IRON_CHESTPLATE);
+	}
+	
+	public static ItemStack ilegs() {
+		return legs(Material.IRON_LEGGINGS);
+	}
+	
+	public static ItemStack iboots() {
+		return boots(Material.IRON_BOOTS);
+	}
+	
+	//end engineer items
+	
 	public static ItemStack helmet(Material type) {
 		ItemStackBuilder helmIt = new ItemStackBuilder(type, 1);
 		if (MaterialTools.isHelmet(type)) {
@@ -202,7 +224,7 @@ public final class DefaultKits {
 	public static ItemStack swordkb2() {
 		ItemStack swordIt = new ItemStackBuilder(Material.DIAMOND_SWORD, 1)
 		.meta(new ItemMetaBuilder()
-				.enchant(Enchantment.DAMAGE_ALL, 3, false)
+				.enchant(Enchantment.DAMAGE_ALL, 5, false)
 				.enchant(Enchantment.DURABILITY, 3, false)
 				.enchant(Enchantment.FIRE_ASPECT, 2, false)
 				.enchant(Enchantment.KNOCKBACK, 2, false))
@@ -214,7 +236,7 @@ public final class DefaultKits {
 	public static ItemStack swordkb1() {
 		ItemStack swordIt = new ItemStackBuilder(Material.DIAMOND_SWORD, 1)
 		.meta(new ItemMetaBuilder()
-				.enchant(Enchantment.DAMAGE_ALL, 3, false)
+				.enchant(Enchantment.DAMAGE_ALL, 5, false)
 				.enchant(Enchantment.DURABILITY, 3, false)
 				.enchant(Enchantment.FIRE_ASPECT, 2, false)
 				.enchant(Enchantment.KNOCKBACK, 1, false))
@@ -224,7 +246,7 @@ public final class DefaultKits {
 	}
 	
 	public static ItemStack sword() {
-		return sword(3);
+		return sword(5);
 	}
 	
 	public static ItemStack sword(int sharpness) {
@@ -264,7 +286,7 @@ public final class DefaultKits {
 	}
 	
 	public static ItemStack arrows() {
-		return new ItemStack(Material.ARROW, 1);
+		return new ItemStack(Material.ARROW, 64);
 	}
 	
 	public static ItemStack pickaxe() {
@@ -324,7 +346,11 @@ public final class DefaultKits {
 	
 	public static ItemStack linker() {
 		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(LinkerItem.class).getItemStack();
-		result.setAmount(64);
+		return result;
+	}
+	
+	public static ItemStack wrench() {
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(WrenchItem.class).getItemStack();
 		return result;
 	}
 	
@@ -343,6 +369,16 @@ public final class DefaultKits {
 				.chestplate(lchest())
 				.leggings(llegs())
 				.boots(lboots())
+				.set(0, sword())
+				.set(1, pearls())
+				.offhand(carrots());
+	}
+	
+	public static Kit prot4IronSet() {
+		return new Kit().helmet(ihelmet())
+				.chestplate(ichest())
+				.leggings(ilegs())
+				.boots(iboots())
 				.set(0, sword())
 				.set(1, pearls())
 				.offhand(carrots());
@@ -369,12 +405,6 @@ public final class DefaultKits {
 				.set(33, regen(150))
 				.set(34, strength(150))
 				.set(35, speed(150));
-		/*for (int j = 6; j < 36; j+=(24-15)) {
-			int t = 0;
-			for (int i = j; i < (j+3); i++) {
-				result.set(i, buff(t++, 150));
-			}
-		}*/
 		
 		return result;
 	}
@@ -399,14 +429,39 @@ public final class DefaultKits {
 				
 				.set(25, regen(150))
 				.set(26, strength(150))
+				.set(27, arrows())
 				
 				.set(34, regen(150))
 				.set(35, strength(150));
 		return result;
 	}
 	
-	public static Kit vaultBattle() {
-		Kit result = noDebuff();
+	public static Kit engineer() {
+		Kit result = prot4IronSet()
+			.range(4, 36, health())
+			.set(2, wrench())
+			.set(3, linker())
+			.set(6, fres(8 * 60))
+			.set(7, strength(150))
+			.set(8, speed(150))
+			
+			.set(25, strength(150))
+			.set(26, speed(150))
+			
+			.set(34, strength(150))
+			.set(35, speed(150));
+		return result;
+	}
+	
+	public static Kit vaultBattle(ClassType classType) {
+		Kit result;
+		if (classType == ClassType.ARCHER) {
+			result = archer();
+		} else if (classType == ClassType.ENGINEER) {
+			result = engineer();
+		} else {
+			result = noDebuff();
+		}
 		result.set(9, pickaxe());
 		result.set(10, spade());
 		result.set(11, axe());

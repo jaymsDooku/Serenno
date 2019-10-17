@@ -51,4 +51,8 @@ public interface Artillery extends QTBox {
 	
 	long getBlockDamageCooldown();
 	
+	int getUpperY();
+	
+	int getLowerY();
+	
 }

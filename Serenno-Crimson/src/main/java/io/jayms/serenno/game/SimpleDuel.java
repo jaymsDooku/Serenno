@@ -67,19 +67,32 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 	}
 	
 	@Override
+	public DuelTeam getTeam(ChatColor teamColor) {
+		if (team1.getTeamColor() == teamColor) {
+			return team1;
+		}
+		if (team2.getTeamColor() == teamColor) {
+			return team2;
+		}
+		return null;
+	}
+	
+	@Override
 	public DuelStatistics getStatistics() {
 		return statistics;
 	}
 	
 	@Override
 	public Location getSpawnPoint(ChatColor teamColor) {
-		return getMap().getSpawnPoints().get(team1.getTeamColor());
+		return getMap().getSpawnPoints().get(teamColor);
 	}
 	
 	@Override
 	protected void initGame() {
 		Location spawn1 = getSpawnPoint(team1.getTeamColor());
 		Location spawn2 = getSpawnPoint(team2.getTeamColor());
+		System.out.println("spawn1: " + spawn1);
+		System.out.println("spawn2: " + spawn2);
 		team1.getTeam().clean();
 		team2.getTeam().clean();
 		
@@ -220,9 +233,17 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 		this.winner = winners;
 		this.loser = losers;
 		
-		winners.getAlive().forEach(a -> {
-			getStatistics().death(a.getBukkitPlayer());
-		});
+		if (!losers.getAlive().isEmpty()) {
+			losers.getAlive().forEach(a -> {
+				getStatistics().death(a.getBukkitPlayer());
+			});
+		}
+			
+		if (!winners.getAlive().isEmpty()) {
+			winners.getAlive().forEach(a -> {
+				getStatistics().death(a.getBukkitPlayer());
+			});
+		}
 		
 		String winnerMsg = winners.getTeam().getLeader().getName() +  (winners.getTeam().size() > 1 ? "'s team" : "") + ChatColor.YELLOW + " has won the game.";  
 		winners.getTeam().sendMessage(ChatColor.DARK_GREEN + winnerMsg);

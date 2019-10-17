@@ -24,11 +24,13 @@ import io.jayms.serenno.arena.event.ArenaLoadEvent;
 import io.jayms.serenno.db.sql.SQLite;
 import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.region.Region;
+import io.jayms.serenno.region.RegionFlags;
 import net.md_5.bungee.api.ChatColor;
 
 public class VaultMapManager implements Listener {
 	
 	private Map<String, VaultMap> vaultMaps = Maps.newConcurrentMap();
+	private Map<World, VaultMap> worldToVaultMaps = Maps.newConcurrentMap();
 	
 	private File vaultMapsFolder;
 	private File vaultMapsFolderTemp;
@@ -103,6 +105,13 @@ public class VaultMapManager implements Listener {
 			return null;
 		}
 		
+		worldRegion.getFlags().add(RegionFlags.BLOCK_BREAK);
+		worldRegion.getFlags().add(RegionFlags.BLOCK_PLACE);
+		worldRegion.getFlags().add(RegionFlags.DAMAGE_LOSS);
+		worldRegion.getFlags().add(RegionFlags.HUNGER_LOSS);
+		worldRegion.getFlags().add(RegionFlags.PVP);
+		worldRegion.getFlags().add(RegionFlags.PVE);
+		
 		Arena worldArena = SerennoCrimson.get().getArenaManager().createArena(sp.getBukkitPlayer(), worldRegion.getName());
 		
 		if (worldArena == null) {
@@ -119,11 +128,7 @@ public class VaultMapManager implements Listener {
 	
 	public void deleteVaultMap(VaultMap vaultMap) {
 		vaultMaps.remove(vaultMap.getArena().getName());
-		vaultMap.getDatabase().delete();
-		vaultMap.getOriginalWorld().getWorldFolder().delete();
-		SerennoCrimson.get().getArenaManager().deleteArena(vaultMap.getArena());
-		SerennoCrimson.get().getRegionManager().deleteRegion(vaultMap.getArena().getRegion());
-		SerennoCrimson.get().getLogger().info("Deleted vault map: " + vaultMap.getArena().getName());
+		vaultMap.delete();
 	}
 	
 	public boolean isVaultMap(String name) {
@@ -133,6 +138,14 @@ public class VaultMapManager implements Listener {
 	public VaultMap getVaultMap(String name) {
 		VaultMap vm = vaultMaps.get(name);
 		return vm;
+	}
+	
+	public VaultMap getVaultMap(World world) {
+		return vaultMaps.values().stream().filter(m -> m.isActiveWorld(world)).findFirst().orElse(null);
+	}
+	
+	public Map<World, VaultMap> getWorldToVaultMaps() {
+		return worldToVaultMaps;
 	}
 	
 	public Collection<VaultMap> listVaults() {

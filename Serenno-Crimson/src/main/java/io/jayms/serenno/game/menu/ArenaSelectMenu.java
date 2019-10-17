@@ -46,6 +46,9 @@ public class ArenaSelectMenu extends SingleMenu {
 		
 		int i = 0;
 		arenas.stream().forEach(a -> {
+			if (!a.getDuelTypes().contains(duelType)) {
+				return;
+			}
 			addButton(i, getArenaButton(a, initData));
 		});
 		

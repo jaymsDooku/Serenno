@@ -31,7 +31,7 @@ public class Reinforcer implements RegionFunction {
 	public boolean apply(Vector position) throws WorldEditException {
 		World world = this.world.getWorld();
 		Block b = world.getBlockAt(position.getBlockX(), position.getBlockY(), position.getBlockZ());
-		SerennoCobalt.get().getCitadelManager().getReinforcementManager().reinforceBlock(placer, b, blueprint, group);
+		SerennoCobalt.get().getCitadelManager().getReinforcementManager().reinforceBlock(placer, b, null, blueprint, group);
 		SerennoCobalt.get().getLogger().info("Reinforced:  " + b.getLocation());
 		return true;
 	}

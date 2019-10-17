@@ -27,6 +27,7 @@ import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.util.Coords;
@@ -104,7 +105,7 @@ public class PrebuiltStructure {
 			ReinforcementBlueprint blueprint = reinforcementBlueprints.get(blueprintType);
 			Coords coords = rein.getCoords();
 			Block block = world.getBlockAt(coords.getX(), coords.getY(), coords.getZ());
-			rm.reinforceBlock(loader, block, blueprint, group);
+			rm.reinforceBlock(loader, block, null, blueprint, group);
 		}
 		
 		Collection<PrebuiltBlock> bastions = prebuiltBlocks.get(PrebuiltBlockType.BASTION.toString());
@@ -113,7 +114,10 @@ public class PrebuiltStructure {
 			BastionBlueprint blueprint = bastionBlueprints.get(blueprintType);
 			Coords coords = bastion.getCoords();
 			Block block = world.getBlockAt(coords.getX(), coords.getY(), coords.getZ());
-			bm.placeBastion(block, blueprint);
+			Reinforcement rein = rm.getReinforcement(block);
+			if (rein != null) {
+				bm.placeBastion(rein, blueprint);
+			}
 		}
 	}
 	

@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -22,6 +21,7 @@ import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.db.sql.Database;
 import io.jayms.serenno.db.sql.SQLite;
+import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import io.jayms.serenno.model.finance.company.Company;
 import io.jayms.serenno.model.finance.company.ServerCompany;
 import io.jayms.serenno.model.group.Group;
@@ -60,28 +60,6 @@ public class VaultMapDatabase {
 	private static final String SELECT_INFO = "SELECT * FROM INFO LIMIT 1";
 	
 	private static final String DELETE_INFO = "DELETE FROM INFO WHERE ReinforcementID = ?";
-	
-	private static final String CREATE_CORE = "CREATE TABLE IF NOT EXISTS CORE("
-			+ "TeamColor TEXT PRIMARY KEY,"
-			+ "CoreX INTEGER,"
-			+ "CoreY INTEGER,"
-			+ "CoreZ INTEGER"
-			+ ");";
-	
-	private static final String INSERT_CORE = "INSERT INTO CORE"
-			+ "("
-			+ "CoreX, CoreY, CoreZ, TeamColor"
-			+ ") VALUES("
-			+ "?, ?, ?, ?"
-			+ ")";
-	
-	private static final String UPDATE_CORE = "UPDATE CORE "
-			+ "SET CoreX = ?, "
-			+ "CoreY = ?, "
-			+ "CoreZ = ? "
-			+ "WHERE TeamColor = ?";
-	
-	private static final String DELETE_CORE = "DELETE FROM CORE WHERE TeamColor = ?";
 
 	private SQLite database;
 
@@ -90,37 +68,33 @@ public class VaultMapDatabase {
 	
 	private int informationID;
 	private Location gotoLocation;
-	private Map<ChatColor, Location> cores;
+	private VaultMapCoreDataSource coreSource;
 	private VaultMapReinforcementDataSource reinforcementSource;
 	private VaultMapBastionDataSource bastionSource;
 	private VaultMapReinforcementBlueprintDataSource reinforcementBlueprintSource;
 	private VaultMapBastionBlueprintDataSource bastionBlueprintSource;
+	private VaultMapSnitchDataSource snitchSource;
 	private Map<String, Group> groupSource;
 	private Map<String, Company> companySource;
 	
 	private boolean loaded;
 	
+	private VaultBattle battle;
+	
 	public VaultMapDatabase(String worldName, VaultMap vaultMap, SQLite database) {
 		this.worldName = worldName;
 		this.vaultMap = vaultMap;
 		this.database = database;
-		this.cores = new HashMap<>();
+		this.coreSource = new VaultMapCoreDataSource(this);
 		this.reinforcementSource = new VaultMapReinforcementDataSource(this);
 		this.bastionSource = new VaultMapBastionDataSource(this);
 		this.reinforcementBlueprintSource = new VaultMapReinforcementBlueprintDataSource(this);
 		this.bastionBlueprintSource = new VaultMapBastionBlueprintDataSource(this);
+		this.snitchSource = new VaultMapSnitchDataSource(this);
 		this.groupSource = new HashMap<>();
 		this.companySource = new HashMap<>();
 		
 		init();
-		new BukkitRunnable() {
-			
-			@Override
-			public void run() {
-				setGotoLocation(new Location(vaultMap.getOriginalWorld(), 0, 70, 0));
-			}
-			
-		}.runTaskLater(SerennoCrimson.get(), 2L);
 	}
 	
 	public Database getDatabase() {
@@ -145,11 +119,12 @@ public class VaultMapDatabase {
 			public void run() {
 				database.open();
 				database.modifyQuery(CREATE_INFO, true);
-				database.modifyQuery(CREATE_CORE, true);
+				coreSource.createTables();
 				reinforcementSource.createTables();
 				bastionSource.createTables();
 				reinforcementBlueprintSource.createTables();
 				bastionBlueprintSource.createTables();
+				snitchSource.createTables();
 			}
 			
 		}.runTask(SerennoCrimson.get());
@@ -214,33 +189,10 @@ public class VaultMapDatabase {
 	}
 	
 	public Location getGotoLocation() {
-		return gotoLocation;
-	}
-	
-	public void createCore(ChatColor team, Location loc) {
-		String stmt = INSERT_CORE;
-		
-		if (cores.containsKey(team)) {
-			stmt = UPDATE_CORE;
+		if (gotoLocation == null) {
+			gotoLocation = new Location(vaultMap.getOriginalWorld(), 0, 70, 0);
 		}
-		
-		try {
-			PreparedStatement ps = database.getConnection().prepareStatement(stmt);
-			ps.setInt(1, loc.getBlockX());
-			ps.setInt(2, loc.getBlockY());
-			ps.setInt(3, loc.getBlockZ());
-			ps.setString(4, team.name());
-			ps.executeUpdate();
-			ps.close();
-			
-			cores.put(team, loc);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}		
-	}
-	
-	public void deleteCore(ChatColor team) {
-		cores.remove(team);
+		return gotoLocation;
 	}
 	
 	public void delete() {
@@ -262,8 +214,8 @@ public class VaultMapDatabase {
 		}
 	}
 	
-	public Map<ChatColor, Location> getCores() {
-		return cores;
+	public VaultMapCoreDataSource getCoreSource() {
+		return coreSource;
 	}
 	
 	public VaultMapReinforcementDataSource getReinforcementSource() {
@@ -282,12 +234,24 @@ public class VaultMapDatabase {
 		return bastionBlueprintSource;
 	}
 	
+	public VaultMapSnitchDataSource getSnitchSource() {
+		return snitchSource;
+	}
+	
 	public Map<String, Group> getGroupSource() {
 		return groupSource;
 	}
 	
 	public Map<String, Company> getCompanySource() {
 		return companySource;
+	}
+	
+	public void setBattle(VaultBattle battle) {
+		this.battle = battle;
+	}
+	
+	public VaultBattle getBattle() {
+		return battle;
 	}
 	
 }

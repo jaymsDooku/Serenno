@@ -275,4 +275,14 @@ public class Trebuchet extends AbstractArtillery {
 		return config.getTrebuchetBlockDamageCD();
 	}
 	
+	@Override
+	public int getUpperY() {
+		return (getLocation().getBlockY() + 1) + config.getTrebuchetHeight();
+	}
+	
+	@Override
+	public int getLowerY() {
+		return getLocation().getBlockY() + 1;
+	}
+	
 }

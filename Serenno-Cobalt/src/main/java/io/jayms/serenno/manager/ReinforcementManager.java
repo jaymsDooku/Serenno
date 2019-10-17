@@ -21,6 +21,8 @@ import org.bukkit.material.Bed;
 import com.google.common.collect.Maps;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.reinforcement.PlayerReinforcementCreationEvent;
+import io.jayms.serenno.event.reinforcement.PlayerReinforcementDestroyEvent;
 import io.jayms.serenno.event.reinforcement.ReinforcementCreationEvent;
 import io.jayms.serenno.event.reinforcement.ReinforcementDestroyEvent;
 import io.jayms.serenno.kit.ItemStackKey;
@@ -143,16 +145,16 @@ public class ReinforcementManager {
 		return result;
 	}
 	
-	public boolean placeBlock(CitadelPlayer cp, Block block) {
+	public boolean placeBlock(CitadelPlayer cp, Block block, ItemStack item) {
 		ReinforcementMode reinMode = cp.getReinforcementMode();
 		if (reinMode == null || reinMode.getMethod() != ReinforceMethod.FORTIFY) {
 			return false;
 		}
 		
-		return reinforceBlock(cp, block);
+		return reinforceBlock(cp, block, item);
 	}
 	
-	public boolean reinforceBlock(CitadelPlayer cp, Block block) {
+	public boolean reinforceBlock(CitadelPlayer cp, Block block, ItemStack item) {
 		ReinforcementMode reinMode = cp.getReinforcementMode();
 		
 		ReinforcementBlueprint blueprint = reinMode.getReinforcementBlueprint();
@@ -161,11 +163,11 @@ public class ReinforcementManager {
 			return true;
 		}
 		
-		reinforceBlock(cp.getBukkitPlayer(), block, blueprint, group);
+		reinforceBlock(cp.getBukkitPlayer(), block, item, blueprint, group);
 		return false;
 	}
 	
-	public void reinforceBlock(Player placer, Block block, ReinforcementBlueprint blueprint, Group group) {
+	public void reinforceBlock(Player placer, Block block, ItemStack item, ReinforcementBlueprint blueprint, Group group) {
 		Reinforcement reinforcement = Reinforcement.builder()
 				.id(UUID.randomUUID())
 				.health(blueprint.getMaxHealth())
@@ -177,7 +179,8 @@ public class ReinforcementManager {
 				.group(group)
 				.build();
 		
-		ReinforcementCreationEvent event = new ReinforcementCreationEvent(reinforcement, dataSource);
+		ReinforcementCreationEvent event = placer != null ? new PlayerReinforcementCreationEvent(placer, item, reinforcement, dataSource) 
+				: new ReinforcementCreationEvent(reinforcement, dataSource);
 		Bukkit.getPluginManager().callEvent(event);
 		
 		ReinforcementWorld reinWorld = getReinforcementWorld(block.getWorld());
@@ -206,16 +209,17 @@ public class ReinforcementManager {
 		}
 		
 		ReinforcementBlueprint rb = reinforcement.getBlueprint();
-		reinforcement.damage(rb.getDefaultDamage());
+		reinforcement.damage(cp.getBukkitPlayer(), rb.getDefaultDamage());
 		return true;
 	}
 
-	public void destroyReinforcement(Reinforcement reinforcement) {
+	public void destroyReinforcement(Player player, Reinforcement reinforcement) {
 		Location loc = reinforcement.getLocation();
 		ReinforcementWorld reinWorld = getReinforcementWorld(loc.getWorld());
 		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(loc);
 		reinChunkCache.delete(new Coords(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
-		ReinforcementDestroyEvent reinDestroyEvent = new ReinforcementDestroyEvent(reinforcement, dataSource);
+		ReinforcementDestroyEvent reinDestroyEvent = player != null ? new PlayerReinforcementDestroyEvent(player, reinforcement, dataSource) 
+				: new ReinforcementDestroyEvent(reinforcement, dataSource);
 		Bukkit.getPluginManager().callEvent(reinDestroyEvent);
 	}
 	

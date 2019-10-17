@@ -11,6 +11,7 @@ import org.bukkit.util.Vector;
 
 import com.github.maxopoly.finale.Finale;
 import com.github.maxopoly.finale.combat.CPSHandler;
+import com.github.maxopoly.finale.combat.CombatUtil;
 import com.github.maxopoly.finale.combat.Hit;
 import com.google.common.collect.Maps;
 
@@ -173,7 +174,7 @@ public class Bot {
 						if (cpsHandler.getCPS(attacker.getUniqueId()) >= 9) {
 							return true;
 						}
-						Finale.getPlugin().getManager().getCombatRunnable().getHitQueue().add(new Hit(player, target));
+						CombatUtil.attack(player, target);
 						if (target.getLocation().distance(attacker.getLocation()) > 4.5) {
 							player.setSprinting(true);
 						}
