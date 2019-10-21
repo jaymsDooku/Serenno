@@ -17,6 +17,8 @@ public interface VaultMap extends Arena {
 	void delete();
 	
 	void gotoVaultMap(Player player);
+	
+	void leaveVaultMap(Player player);
 
 	void setGotoLocation(Location location);
 	
@@ -29,6 +31,8 @@ public interface VaultMap extends Arena {
 	VaultMapDatabase getDatabase();
 	
 	Arena getArena();
+	
+	boolean inOriginalWorld(Player player);
 	
 	boolean isOriginalWorldLoaded();
 	

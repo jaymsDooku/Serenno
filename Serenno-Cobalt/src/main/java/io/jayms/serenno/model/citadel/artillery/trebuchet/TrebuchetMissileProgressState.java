@@ -32,7 +32,7 @@ public class TrebuchetMissileProgressState implements ArtilleryMissileState<Treb
 			if (prevLoc != null) {
 				dir = missile.getLocation().clone().toVector().subtract(missile.getPrevLocation().toVector());
 			}
-			fallBlock.setVelocity(dir.multiply(12));
+			fallBlock.setVelocity(dir.multiply(missile.getArtillery().getFiringPower()));
 			missile.setLaunching(false);
 		}
 		

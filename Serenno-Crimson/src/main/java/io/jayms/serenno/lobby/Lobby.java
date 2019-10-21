@@ -32,6 +32,7 @@ import io.jayms.serenno.game.item.DuelMenuItem;
 import io.jayms.serenno.game.item.KitEditorItem;
 import io.jayms.serenno.item.CustomItemManager;
 import io.jayms.serenno.kit.Kit;
+import io.jayms.serenno.lobby.event.SentToLobbyEvent;
 import io.jayms.serenno.lobby.item.SetRespawnItem;
 import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.rank.Permissions;
@@ -181,6 +182,10 @@ public class Lobby implements Listener {
 			public void run() {
 				Player p = player.getBukkitPlayer();
 				if (p == null) return;
+				
+				SentToLobbyEvent event = new SentToLobbyEvent(p);
+				Bukkit.getPluginManager().callEvent(event);
+				
 				PlayerTools.clean(p);
 				p.teleport(lobbySpawn);
 				giveItems(player);

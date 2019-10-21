@@ -3,11 +3,13 @@ package io.jayms.serenno.command.citadel;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.reinforcement.PlayerFortificationModeEvent;
 import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.ReinforcementMode;
@@ -30,6 +32,13 @@ public class ReinforcementFortificationCommand extends StandaloneCommand {
 		ItemStack mainHand = player.getInventory().getItemInMainHand();
 		ReinforcementBlueprint blueprint = cm.getReinforcementManager().getReinforcementBlueprint(mainHand);
 		Group group = cp.getDefaultGroup();
+		String argGroupName = null;
+		
+		if (args.length > 0) {
+			argGroupName = args[0];
+			group = SerennoCobalt.get().getGroupManager().getGroup(player, argGroupName);
+		}
+		
 		if (group == null) {
 			player.sendMessage(ChatColor.RED + "Set a default group.");
 			return true;
@@ -49,6 +58,12 @@ public class ReinforcementFortificationCommand extends StandaloneCommand {
 				return true;
 			}
 		}
+		
+		PlayerFortificationModeEvent event = new PlayerFortificationModeEvent(player, group, argGroupName, mainHand, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		group = event.getGroup();
+		blueprint = event.getBlueprint();
 		
 		cp.setReinforcementMode(new ReinforcementMode(blueprint, group, ReinforceMethod.FORTIFY));
 		player.sendMessage(ChatColor.YELLOW + "You are " + ChatColor.GREEN + "now fortifying" 

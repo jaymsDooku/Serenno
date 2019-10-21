@@ -47,6 +47,8 @@ public interface Game {
 	
 	int getCountdown();
 	
+	void spawn(SerennoPlayer player);
+	
 	Location getSpawnPoint(ChatColor teamColor);
 	
 	Arena getMap();

@@ -14,12 +14,12 @@ import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.util.ItemUtil;
 import io.jayms.serenno.util.SerennoDataSource;
 
-public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSource<ReinforcementBlueprint, String> {
+public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSource<ReinforcementBlueprint, ItemStack> {
 
 	private static final String CREATE_REIN_BLUEPRINT = "CREATE TABLE IF NOT EXISTS REINFORCEMENT_BLUEPRINT("
 			+ "Name TEXT PRIMARY KEY,"
 			+ "DisplayName TEXT, "
-			+ "ItemStackMaterial TEXT, "
+			+ "ItemStackMaterial TEXT UNIQUE, "
 			+ "ItemStackAmount INTEGER, "
 			+ "RegenRateAmount INTEGER, "
 			+ "RegenRateInterval INTEGER, "
@@ -37,9 +37,8 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			+ ")";
 	
 	private static final String UPDATE_REIN_BLUEPRINT = "UPDATE REINFORCEMENT_BLUEPRINT SET "
+			+ "Name = ?, "
 			+ "DisplayName = ?, "
-			+ "ItemStackMaterial = ?, "
-			+ "ItemStackAmount = ?, "
 			+ "RegenRateAmount = ?, "
 			+ "RegenRateInterval = ?, "
 			+ "Health = ?, "
@@ -47,12 +46,15 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			+ "AcidTime = ?, "
 			+ "DamageCooldown = ?, "
 			+ "DefaultDamage = ? "
-			+ "WHERE Name = ?";
+			+ "WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
 	
-	private static final String SELECT_REIN_BLUEPRINT = "SELECT DisplayName, ItemStackMaterial, ItemStackAmount, RegenRateAmount, RegenRateInterval, Health, MaturationTime, AcidTime, DamageCooldown, DefaultDamage "
+	private static final String SELECT_REIN_NAME_BLUEPRINT = "SELECT DisplayName, ItemStackMaterial, ItemStackAmount, RegenRateAmount, RegenRateInterval, Health, MaturationTime, AcidTime, DamageCooldown, DefaultDamage "
 			+ "FROM REINFORCEMENT_BLUEPRINT WHERE Name = ?";
 	
-	private static final String DELETE_REIN_BLUEPRINT = "DELETE FROM REINFORCEMENT_BLUEPRINT WHERE Name = ?";
+	private static final String SELECT_REIN_BLUEPRINT = "SELECT Name, DisplayName, RegenRateAmount, RegenRateInterval, Health, MaturationTime, AcidTime, DamageCooldown, DefaultDamage "
+			+ "FROM REINFORCEMENT_BLUEPRINT WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
+	
+	private static final String DELETE_REIN_BLUEPRINT = "DELETE FROM REINFORCEMENT_BLUEPRINT WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
 	
 	private VaultMapDatabase db;
 	
@@ -90,28 +92,28 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 	public void update(ReinforcementBlueprint value) {
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(UPDATE_REIN_BLUEPRINT);
-			ps.setString(1, value.getDisplayName());
-			ps.setString(2, ItemUtil.getName(value.getItemStack()));
-			ps.setInt(3, value.getItemStack().getAmount());
-			ps.setInt(4, value.getRegenRate().getAmount());
-			ps.setLong(5, value.getRegenRate().getInterval());
-			ps.setDouble(6, value.getMaxHealth());
-			ps.setLong(7, value.getMaturationTime());
-			ps.setLong(8, value.getAcidTime());
-			ps.setLong(9, value.getDamageCooldown());
-			ps.setDouble(10, value.getDefaultDamage());
-			ps.setString(11, value.getName());
+			ps.setString(1, value.getName());
+			ps.setString(2, value.getDisplayName());
+			ps.setInt(3, value.getRegenRate().getAmount());
+			ps.setLong(4, value.getRegenRate().getInterval());
+			ps.setDouble(5, value.getMaxHealth());
+			ps.setLong(6, value.getMaturationTime());
+			ps.setLong(7, value.getAcidTime());
+			ps.setLong(8, value.getDamageCooldown());
+			ps.setDouble(9, value.getDefaultDamage());
+			ps.setString(10, ItemUtil.getName(value.getItemStack()));
+			ps.setInt(11, value.getItemStack().getAmount());
 			ps.executeUpdate();
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
-
-	@Override
-	public ReinforcementBlueprint get(String key) {
+	
+	public ReinforcementBlueprint get(String name) {
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_REIN_BLUEPRINT);
+			ps.setString(1, name);
 			ResultSet rs = ps.executeQuery();
 			
 			if (!rs.next()) {
@@ -119,7 +121,7 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			}
 			
 			ReinforcementBlueprint rb = ReinforcementBlueprint.builder()
-					.name(key)
+					.name(name)
 					.displayName(rs.getString("DisplayName"))
 					.itemStack(new ItemStack(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount")))
 					.regenRate(new RegenRate(rs.getInt("RegenRateAmount"), rs.getInt("RegenRateInterval")))
@@ -138,7 +140,38 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 	}
 
 	@Override
-	public boolean exists(String key) {
+	public ReinforcementBlueprint get(ItemStack key) {
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_REIN_BLUEPRINT);
+			ps.setString(1, key.getType().toString());
+			ps.setInt(2, key.getAmount());
+			ResultSet rs = ps.executeQuery();
+			
+			if (!rs.next()) {
+				return null;
+			}
+			
+			ReinforcementBlueprint rb = ReinforcementBlueprint.builder()
+					.name(rs.getString("Name"))
+					.displayName(rs.getString("DisplayName"))
+					.itemStack(key)
+					.regenRate(new RegenRate(rs.getInt("RegenRateAmount"), rs.getInt("RegenRateInterval")))
+					.maxHealth(rs.getDouble("MaxHealth"))
+					.maturationTime(rs.getLong("MaturationTime"))
+					.acidTime(rs.getLong("AcidTime"))
+					.damageCooldown(rs.getLong("DamageCooldown"))
+					.defaultDamage(rs.getDouble("DefaultDamage"))
+					.build();
+			ps.close();
+			return rb;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	public boolean exists(ItemStack key) {
 		return get(key) != null;
 	}
 
@@ -152,7 +185,8 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 	public void delete(ReinforcementBlueprint value) {
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(DELETE_REIN_BLUEPRINT);
-			ps.setString(1, value.getName());
+			ps.setString(1, value.getItemStack().getType().toString());
+			ps.setInt(2, value.getItemStack().getAmount());
 			ps.executeUpdate();
 			ps.close();
 		} catch (SQLException e) {

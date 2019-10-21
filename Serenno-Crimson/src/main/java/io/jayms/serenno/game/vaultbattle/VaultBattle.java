@@ -6,16 +6,23 @@ import org.bukkit.World;
 import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.game.SimpleDuel;
+import io.jayms.serenno.game.vaultbattle.pearling.SpectatorPearlManager;
+import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.vault.VaultMap;
 import io.jayms.serenno.vault.VaultMapDatabase;
 import net.md_5.bungee.api.ChatColor;
 
 public class VaultBattle extends SimpleDuel {
 
+	private SpectatorPearlManager pearlManager;
 	private World activeWorld;
 	
 	public VaultBattle(int id, VaultMap map, DuelTeam team1, DuelTeam team2) {
 		super(id, map, DuelType.VAULTBATTLE, team1, team2);
+	}
+	
+	public SpectatorPearlManager getPearlManager() {
+		return pearlManager;
 	}
 	
 	@Override
@@ -50,6 +57,13 @@ public class VaultBattle extends SimpleDuel {
 		Location spawnPoint = super.getSpawnPoint(teamColor);
 		spawnPoint.setWorld(activeWorld);
 		return spawnPoint;
+	}
+	
+	@Override
+	public void die(SerennoPlayer deadPlayer) {
+		super.die(deadPlayer);
+		
+		pearlManager.pearl(deadPlayer);
 	}
 	
 }

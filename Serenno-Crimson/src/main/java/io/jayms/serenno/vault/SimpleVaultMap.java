@@ -35,6 +35,7 @@ public class SimpleVaultMap implements VaultMap {
 
 	private Arena arena;
 	private String originalWorldName;
+	private Set<Player> inOriginalWorld;
 	private Map<String, VaultMapDatabase> vaultMapDatabases;
 	private World originalWorld;
 	private Set<World> activeWorlds = new HashSet<>();
@@ -43,6 +44,7 @@ public class SimpleVaultMap implements VaultMap {
 	public SimpleVaultMap(String originalWorldName, Arena arena, SQLite database) {
 		this.originalWorldName = originalWorldName;
 		this.arena = arena;
+		this.inOriginalWorld = new HashSet<>();
 		this.vaultMapDatabases = new HashMap<>();
 		
 		VaultMapDatabase db = new VaultMapDatabase(originalWorldName, this, database);
@@ -109,6 +111,7 @@ public class SimpleVaultMap implements VaultMap {
 	@Override
 	public void gotoVaultMap(Player player) {
 		player.sendMessage(ChatColor.YELLOW + "You are going to vault map: " + arena.getRegion().getDisplayName());
+		inOriginalWorld.add(player);
 		new BukkitRunnable() {
 			
 			@Override
@@ -117,6 +120,11 @@ public class SimpleVaultMap implements VaultMap {
 			}
 			
 		}.runTaskLater(SerennoCrimson.get(), 1L);
+	}
+	
+	@Override
+	public void leaveVaultMap(Player player) {
+		inOriginalWorld.remove(player);
 	}
 	
 	@Override
@@ -151,6 +159,11 @@ public class SimpleVaultMap implements VaultMap {
 	@Override
 	public Arena getArena() {
 		return arena;
+	}
+	
+	@Override
+	public boolean inOriginalWorld(Player player) {
+		return inOriginalWorld(player);
 	}
 	
 	@Override

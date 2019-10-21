@@ -1,10 +1,15 @@
 package io.jayms.serenno.game.statistics;
 
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -19,6 +24,7 @@ import com.google.common.collect.Sets;
 import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.player.SerennoPlayer;
+import io.jayms.serenno.util.CollectionUtil;
 import io.jayms.serenno.util.PlayerTools;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.itemHandling.ISUtils;
@@ -26,7 +32,6 @@ import vg.civcraft.mc.civmodcore.itemHandling.ISUtils;
 public class DuelStatistics {
 
 	private Set<Hit> hits = Sets.newConcurrentHashSet();
-	private Set<Crit> crits = Sets.newConcurrentHashSet();
 	private Set<PotionThrow> potionThrows = Sets.newConcurrentHashSet();
 	private Set<ArrowShot> arrowShots = Sets.newConcurrentHashSet();
 	private Set<Death> deaths = Sets.newConcurrentHashSet();
@@ -37,13 +42,13 @@ public class DuelStatistics {
 	public void hit(Player damager, Player victim, double damage) {
 		double distance = damager.getEyeLocation().distance(victim.getEyeLocation());
 		long time = System.currentTimeMillis();
-		hits.add(new Hit(damager.getUniqueId(), victim.getUniqueId(), distance, damage, time));
+		hits.add(new Hit(damager.getUniqueId(), victim.getUniqueId(), distance, damage, time, null));
 	}
 	
 	public void crit(Player damager, Player victim, double critMult) {
 		double distance = damager.getEyeLocation().distance(victim.getEyeLocation());
 		long time = System.currentTimeMillis();
-		crits.add(new Crit(damager.getUniqueId(), victim.getUniqueId(), distance, critMult, time));
+		hits.add(new Hit(damager.getUniqueId(), victim.getUniqueId(), distance, critMult, time, critMult));
 	}
 	
 	public void potionThrow(Player thrower, ThrownPotion pot, Map<LivingEntity, Double> affectedEntities) {
@@ -134,13 +139,15 @@ public class DuelStatistics {
 	}
 	
 	public int getHits(UUID uid, PlayerType type) {
-		return (int) hits.stream().filter(h -> {
-			if (type == PlayerType.DAMAGER) {
-				return uid.equals(h.getDamagerID());
-			} else {
-				return uid.equals(h.getVictimID());
-			}
-		}).count();
+		return (int) hits.stream()
+				.filter(h -> !h.isCrit())
+				.filter(h -> {
+					if (type == PlayerType.DAMAGER) {
+						return uid.equals(h.getDamagerID());
+					} else {
+						return uid.equals(h.getVictimID());
+					}
+				}).count();
 	}
 	
 	public int getHits(DuelTeam team, PlayerType type) {
@@ -154,13 +161,15 @@ public class DuelStatistics {
 	}
 	
 	public int getCrits(UUID uid, PlayerType type) {
-		return (int) crits.stream().filter(h -> {
-			if (type == PlayerType.DAMAGER) {
-				return uid.equals(h.getDamagerID());
-			} else {
-				return uid.equals(h.getVictimID());
-			}
-		}).count();
+		return (int) hits.stream()
+				.filter(h -> h.isCrit())
+				.filter(h -> {
+					if (type == PlayerType.DAMAGER) {
+						return uid.equals(h.getDamagerID());
+					} else {
+						return uid.equals(h.getVictimID());
+					}
+				}).count();
 	}
 	
 	public int getCrits(DuelTeam team, PlayerType type) {
@@ -230,15 +239,58 @@ public class DuelStatistics {
 	}
 	
 	public int getTotalHits() {
-		return hits.size();
+		long totalHits = hits.stream().filter(h -> !h.isCrit()).count();
+		return (int) totalHits;
 	}
 	
 	public int getTotalCrits() {
-		return crits.size();
+		long totalCrits = hits.stream().filter(h -> h.isCrit()).count();
+		return (int) totalCrits;
 	}
 	
 	public int getPotionsThrown() {
 		return potionThrows.size();
+	}
+	
+	public List<Hit> getHitsDealtTo(SerennoPlayer victim, long timeFrame) {
+		long elapseTime = System.currentTimeMillis() - timeFrame;
+		return hits.stream().filter(h -> {
+			return h.getTime() > elapseTime;
+		}).collect(Collectors.toList());
+	}
+	
+	public List<ArrowShot> getArrowShotsDealtTo(SerennoPlayer victim, long timeFrame) {
+		long elapseTime = System.currentTimeMillis() - timeFrame;
+		return arrowShots.stream().filter(s -> {
+			return s.getTime() > elapseTime;
+		}).collect(Collectors.toList());
+	}
+	
+	public SortedSet<Entry<UUID, Double>> getSortedDamageDealersTo(SerennoPlayer victim, long timeFrame) {
+		return getSortedDamageDealers(getHitsDealtTo(victim, timeFrame), getArrowShotsDealtTo(victim, timeFrame));
+	}
+	
+	public static SortedMap<UUID, Double> combineDamage(List<Hit> hits, List<ArrowShot> shots) {
+		SortedMap<UUID, Double> combined = new TreeMap<>();
+		for (Hit hit : hits) {
+			Double damage = combined.get(hit.getDamagerID());
+			if (damage == null) damage = 0D;
+			damage += hit.getDamage();
+			combined.put(hit.getDamagerID(), hit.getDamage());
+		}
+		for (ArrowShot shot : shots) {
+			Double damage = combined.get(shot.getShooterID());
+			if (damage == null) damage = 0D;
+			damage += shot.getDamage();
+			combined.put(shot.getShooterID(), shot.getDamage());
+		}
+		return combined;
+	}
+	
+	public static SortedSet<Entry<UUID, Double>> getSortedDamageDealers(List<Hit> hits, List<ArrowShot> shots) {
+		SortedMap<UUID, Double> combined = combineDamage(hits, shots);
+		SortedSet<Entry<UUID, Double>> sortedCombined = CollectionUtil.entriesSortedByValues(combined);
+		return sortedCombined;
 	}
 	
 	private DecimalFormat dp1 = new DecimalFormat("#.#");

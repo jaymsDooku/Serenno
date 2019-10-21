@@ -38,6 +38,10 @@ public class DuelTeam {
 		return alive;
 	}
 	
+	public boolean isAlive(SerennoPlayer player) {
+		return alive.contains(player);
+	}
+	
 	public void die(SerennoPlayer player) {
 		if (!team.inTeam(player)) {
 			return;

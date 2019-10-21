@@ -66,6 +66,14 @@ public class CustomItemManager implements Listener {
 		return customItem;
 	}
 	
+	public CustomItem getCustomItem(ItemStack itemStack) {
+		UUID id = CustomItem.getCustomItemID(itemStack);
+		if (id == null) {
+			return null;
+		}
+		return customItems.get(id);
+	}
+	
 	@EventHandler
 	public void onClick(PlayerInteractEvent e) {
 		if (e.getHand() != EquipmentSlot.HAND) {

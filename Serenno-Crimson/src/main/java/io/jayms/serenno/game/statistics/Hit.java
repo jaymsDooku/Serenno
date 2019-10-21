@@ -9,13 +9,15 @@ public class Hit {
 	private double distance;
 	private double damage;
 	private long time;
+	private Double critMultiplier;
 	
-	public Hit(UUID damagerID, UUID victimID, double distance, double damage, long time) {
+	public Hit(UUID damagerID, UUID victimID, double distance, double damage, long time, Double critMultiplier) {
 		this.damagerID = damagerID;
 		this.victimID = victimID;
 		this.distance = distance;
 		this.damage = damage;
 		this.time = time;
+		this.critMultiplier = critMultiplier;
 	}
 
 	public UUID getDamagerID() {
@@ -36,6 +38,14 @@ public class Hit {
 	
 	public long getTime() {
 		return time;
+	}
+	
+	public Double getCritMultiplier() {
+		return critMultiplier;
+	}
+	
+	public boolean isCrit() {
+		return critMultiplier != null;
 	}
 	
 }

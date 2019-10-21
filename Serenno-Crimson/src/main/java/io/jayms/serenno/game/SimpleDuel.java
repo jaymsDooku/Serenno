@@ -88,11 +88,37 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 	}
 	
 	@Override
+	public void spawn(SerennoPlayer player) {
+		DuelTeam team = getTeam(player);
+		Location spawn = getSpawnPoint(team.getTeamColor());
+		PlayerTools.clean(player.getBukkitPlayer());
+		player.teleport(spawn);
+		
+		Kit[] kits = player.getDuelingKits(getDuelType());
+		for (int i = 0; i < kits.length; i++) {
+			Kit kit = kits[i];
+			
+			if (kit != null) {
+				ItemStack kitBook = new ItemStackBuilder(Material.BOOK, 1)
+						.meta(new ItemMetaBuilder()
+								.name(duelType.getDisplayName() + ChatColor.WHITE + "#" + (i+1))
+								.enchant(Enchantment.DURABILITY, 1, true)
+								.flag(ItemFlag.HIDE_ENCHANTS)).build();
+				ItemMeta meta = kitBook.getItemMeta();
+				NBTItem nbtKitBook = new NBTItem(kitBook);
+				nbtKitBook.setInteger("index", i);
+				kitBook = nbtKitBook.getItem();
+				kitBook.setItemMeta(meta);
+				player.getBukkitPlayer().getInventory().setItem(i, kitBook);
+			}
+		}
+	}
+	
+	@Override
 	protected void initGame() {
 		Location spawn1 = getSpawnPoint(team1.getTeamColor());
 		Location spawn2 = getSpawnPoint(team2.getTeamColor());
-		System.out.println("spawn1: " + spawn1);
-		System.out.println("spawn2: " + spawn2);
+		
 		team1.getTeam().clean();
 		team2.getTeam().clean();
 		

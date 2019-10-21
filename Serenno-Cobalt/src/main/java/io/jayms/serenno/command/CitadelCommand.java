@@ -44,4 +44,9 @@ public class CitadelCommand extends BaseCommand {
 		player.getInventory().addItem(giveIt);
 	}
 	
+	@Subcommand("blueprint create")
+	public void blueprintCreate(Player player, String name) {
+		
+	}
+	
 }
