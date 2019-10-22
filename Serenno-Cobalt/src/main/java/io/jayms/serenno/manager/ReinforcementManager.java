@@ -82,6 +82,11 @@ public class ReinforcementManager {
 		return reinWorld;
 	}
 	
+	public void deleteReinforcementWorld(World world) {
+		ReinforcementWorld reinWorld = reinforcementWorlds.remove(world.getName());
+		
+	}
+	
 	public void removeReinforcementWorld(World world) {
 		reinforcementWorlds.remove(world.getName());
 	}

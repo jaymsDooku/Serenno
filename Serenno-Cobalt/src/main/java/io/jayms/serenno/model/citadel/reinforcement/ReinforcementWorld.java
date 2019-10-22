@@ -87,6 +87,10 @@ public class ReinforcementWorld {
 		reinCache.invalidate(ChunkCoord.fromChunk(chunk));
 	}
 	
+	public void unloadAll() {
+		reinCache.invalidateAll();
+	}
+	
 	public Set<Reinforcement> getAllReinforcements() {
 		Set<Reinforcement> reinforcements = new HashSet<>();
 		

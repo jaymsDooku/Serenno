@@ -21,7 +21,7 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			+ "DisplayName TEXT, "
 			+ "ItemStackMaterial TEXT UNIQUE, "
 			+ "ItemStackAmount INTEGER, "
-			+ "RegenRateAmount INTEGER, "
+			+ "RegenRateAmount REAL, "
 			+ "RegenRateInterval INTEGER, "
 			+ "Health REAL, "
 			+ "MaturationTime INTEGEER, "
@@ -74,7 +74,7 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			ps.setString(2, value.getDisplayName());
 			ps.setString(3, ItemUtil.getName(value.getItemStack()));
 			ps.setInt(4, value.getItemStack().getAmount());
-			ps.setInt(5, value.getRegenRate().getAmount());
+			ps.setDouble(5, value.getRegenRate().getAmount());
 			ps.setLong(6, value.getRegenRate().getInterval());
 			ps.setDouble(7, value.getMaxHealth());
 			ps.setLong(8, value.getMaturationTime());
@@ -94,7 +94,7 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(UPDATE_REIN_BLUEPRINT);
 			ps.setString(1, value.getName());
 			ps.setString(2, value.getDisplayName());
-			ps.setInt(3, value.getRegenRate().getAmount());
+			ps.setDouble(3, value.getRegenRate().getAmount());
 			ps.setLong(4, value.getRegenRate().getInterval());
 			ps.setDouble(5, value.getMaxHealth());
 			ps.setLong(6, value.getMaturationTime());

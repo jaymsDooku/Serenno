@@ -28,6 +28,34 @@ public class ReinforcementBlueprint {
 		this.defaultDamage = builder.getDefaultDamage();
 	}
 	
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+	
+	public void setRegenRate(RegenRate regenRate) {
+		this.regenRate = regenRate;
+	}
+	
+	public void setAcidTime(long acidTime) {
+		this.acidTime = acidTime;
+	}
+	
+	public void setMaxHealth(double maxHealth) {
+		this.maxHealth = maxHealth;
+	}
+	
+	public void setMaturationTime(long maturationTime) {
+		this.maturationTime = maturationTime;
+	}
+	
+	public void setDamageCooldown(long damageCooldown) {
+		this.damageCooldown = damageCooldown;
+	}
+	
+	public void setDefaultDamage(double defaultDamage) {
+		this.defaultDamage = defaultDamage;
+	}
+	
 	public String getName() {
 		return name;
 	}

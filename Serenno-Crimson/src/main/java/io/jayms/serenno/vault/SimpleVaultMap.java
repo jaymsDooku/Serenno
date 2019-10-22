@@ -292,6 +292,7 @@ public class SimpleVaultMap implements VaultMap {
 		SerennoCobalt.get().getCitadelManager().getReinforcementManager().newReinforcementWorld(activatedWorld, database.getReinforcementSource());
 		SerennoCobalt.get().getCitadelManager().getBastionManager().newBastionWorld(activatedWorld, database.getBastionSource());
 		SerennoCobalt.get().getCitadelManager().getSnitchManager().newSnitchWorld(activatedWorld, database.getSnitchSource());
+		SerennoCobalt.get().getCitadelManager().getArtilleryManager().newArtilleryWorld(activatedWorld);
 		
 		SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().put(activatedWorld, this);
 		
@@ -310,6 +311,8 @@ public class SimpleVaultMap implements VaultMap {
 		
 		VaultMapDatabase database = getDatabase(world);
 		database.delete();
+		
+		SerennoCobalt.get().getCitadelManager().getReinforcementManager().deleteReinforcementWorld(world);
 		
 		Bukkit.unloadWorld(world, false);
 		LocationTools.deleteWorld(world.getWorldFolder());

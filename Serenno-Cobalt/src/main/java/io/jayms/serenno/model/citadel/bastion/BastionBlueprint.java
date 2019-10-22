@@ -22,6 +22,42 @@ public class BastionBlueprint {
 		this.pearlConfig = builder.getPearlConfig();
 	}
 	
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+	
+	public void setShape(BastionShape shape) {
+		this.shape = shape;
+	}
+	
+	public void setRadius(int radius) {
+		this.radius = radius;
+	}
+	
+	public void setRequiresMaturity(boolean requiresMaturity) {
+		this.requiresMaturity = requiresMaturity;
+	}
+	
+	public void setPearlBlock(boolean set) {
+		this.pearlConfig.block = set;
+	}
+	
+	public void setPearlBlockMidAir(boolean set) {
+		this.pearlConfig.blockMidAir = set;
+	}
+	
+	public void setPearlConsumeOnBlock(boolean set) {
+		this.pearlConfig.consumeOnBlock = set;
+	}
+	
+	public void setPearlRequiresMaturity(boolean set) {
+		this.pearlConfig.requiresMaturity = set;
+	}
+	
+	public void setPearlDamage(double damage) {
+		this.pearlConfig.damage = damage;	
+	}
+	
 	public String getName() {
 		return name;
 	}

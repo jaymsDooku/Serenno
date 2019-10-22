@@ -2,15 +2,23 @@ package io.jayms.serenno.model.citadel;
 
 public class RegenRate {
 
-	private int amount;
+	private double amount;
 	private long interval;
 	
-	public RegenRate(int amount, long interval) {
+	public RegenRate(double amount, long interval) {
 		this.amount = amount;
 		this.interval = interval;
 	}
 	
-	public int getAmount() {
+	public void setAmount(double amount) {
+		this.amount = amount;
+	}
+	
+	public void setInterval(long interval) {
+		this.interval = interval;
+	}
+	
+	public double getAmount() {
 		return amount;
 	}
 	

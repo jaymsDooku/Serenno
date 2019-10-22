@@ -23,6 +23,7 @@ import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetCrateMenu;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
 import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetMissileRunner;
 import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
+import io.jayms.serenno.model.citadel.bastion.BastionWorld;
 import io.jayms.serenno.util.Coords;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.locations.QTBox;
@@ -79,13 +80,14 @@ public class ArtilleryManager {
 		return crates.get(Coords.fromLocation(loc));
 	}
 	
-	public ArtilleryWorld getArtilleryWorld(World world) {
-		ArtilleryWorld artilleryWorld = artilleryWorlds.get(world.getName());
-		if (artilleryWorld == null) {
-			artilleryWorld = new ArtilleryWorld(world);
-			artilleryWorlds.put(world.getName(), artilleryWorld);
-		}
+	public ArtilleryWorld newArtilleryWorld(World world) {
+		ArtilleryWorld artilleryWorld = new ArtilleryWorld(world);
+		artilleryWorlds.put(world.getName(), artilleryWorld);
 		return artilleryWorld;
+	}
+	
+	public ArtilleryWorld getArtilleryWorld(World world) {
+		return artilleryWorlds.get(world.getName());
 	}
 	
 	public void assemble(Artillery artillery) {
