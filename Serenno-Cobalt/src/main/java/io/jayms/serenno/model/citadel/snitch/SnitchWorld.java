@@ -1,5 +1,6 @@
 package io.jayms.serenno.model.citadel.snitch;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,7 +21,7 @@ public class SnitchWorld {
 		this.dataSource = dataSource;
 		this.snitches = new SparseQuadTree(900);
 		if (dataSource != null) {
-			Set<Snitch> loadedSnitches = dataSource.getAll();
+			Collection<Snitch> loadedSnitches = dataSource.getAll();
 			for (Snitch s : loadedSnitches) {
 				snitches.add(s);
 			}

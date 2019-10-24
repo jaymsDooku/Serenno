@@ -3,12 +3,14 @@ package io.jayms.serenno.vault;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.RegenRate;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.util.ItemUtil;
@@ -37,7 +39,6 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			+ ")";
 	
 	private static final String UPDATE_REIN_BLUEPRINT = "UPDATE REINFORCEMENT_BLUEPRINT SET "
-			+ "Name = ?, "
 			+ "DisplayName = ?, "
 			+ "RegenRateAmount = ?, "
 			+ "RegenRateInterval = ?, "
@@ -54,9 +55,13 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 	private static final String SELECT_REIN_BLUEPRINT = "SELECT Name, DisplayName, RegenRateAmount, RegenRateInterval, Health, MaturationTime, AcidTime, DamageCooldown, DefaultDamage "
 			+ "FROM REINFORCEMENT_BLUEPRINT WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
 	
+	private static final String SELECT_ALL_REIN_BLUEPRINT = "SELECT * FROM REINFORCEMENT_BLUEPRINT";
+	
 	private static final String DELETE_REIN_BLUEPRINT = "DELETE FROM REINFORCEMENT_BLUEPRINT WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
 	
 	private VaultMapDatabase db;
+	private Map<ItemStackKey, ReinforcementBlueprint> blueprints = new HashMap<>();
+	private Map<String, ReinforcementBlueprint> namedBlueprints = new HashMap<>();
 	
 	public VaultMapReinforcementBlueprintDataSource(VaultMapDatabase db) {
 		this.db = db;
@@ -64,6 +69,11 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 	
 	public void createTables() {
 		db.getDatabase().modifyQuery(CREATE_REIN_BLUEPRINT, true);
+	}
+	
+	private void cache(ReinforcementBlueprint value) {
+		blueprints.put(new ItemStackKey(value.getItemStack()), value);
+		namedBlueprints.put(value.getName(), value);
 	}
 	
 	@Override
@@ -86,33 +96,38 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		cache(value);
 	}
 
 	@Override
 	public void update(ReinforcementBlueprint value) {
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(UPDATE_REIN_BLUEPRINT);
-			ps.setString(1, value.getName());
-			ps.setString(2, value.getDisplayName());
-			ps.setDouble(3, value.getRegenRate().getAmount());
-			ps.setLong(4, value.getRegenRate().getInterval());
-			ps.setDouble(5, value.getMaxHealth());
-			ps.setLong(6, value.getMaturationTime());
-			ps.setLong(7, value.getAcidTime());
-			ps.setLong(8, value.getDamageCooldown());
-			ps.setDouble(9, value.getDefaultDamage());
-			ps.setString(10, ItemUtil.getName(value.getItemStack()));
-			ps.setInt(11, value.getItemStack().getAmount());
+			ps.setString(1, value.getDisplayName());
+			ps.setDouble(2, value.getRegenRate().getAmount());
+			ps.setLong(3, value.getRegenRate().getInterval());
+			ps.setDouble(4, value.getMaxHealth());
+			ps.setLong(5, value.getMaturationTime());
+			ps.setLong(6, value.getAcidTime());
+			ps.setLong(7, value.getDamageCooldown());
+			ps.setDouble(8, value.getDefaultDamage());
+			ps.setString(9, ItemUtil.getName(value.getItemStack()));
+			ps.setInt(10, value.getItemStack().getAmount());
 			ps.executeUpdate();
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		cache(value);
 	}
 	
 	public ReinforcementBlueprint get(String name) {
+		if (namedBlueprints.containsKey(name)) {
+			return namedBlueprints.get(name);
+		}
+		
 		try {
-			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_REIN_BLUEPRINT);
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_REIN_NAME_BLUEPRINT);
 			ps.setString(1, name);
 			ResultSet rs = ps.executeQuery();
 			
@@ -132,6 +147,9 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 					.defaultDamage(rs.getDouble("DefaultDamage"))
 					.build();
 			ps.close();
+			
+			cache(rb);
+			
 			return rb;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -141,6 +159,11 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 
 	@Override
 	public ReinforcementBlueprint get(ItemStack key) {
+		ItemStackKey itemStackKey = new ItemStackKey(key);
+		if (blueprints.containsKey(itemStackKey)) {
+			return blueprints.get(itemStackKey);
+		}
+		
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_REIN_BLUEPRINT);
 			ps.setString(1, key.getType().toString());
@@ -163,6 +186,9 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 					.defaultDamage(rs.getDouble("DefaultDamage"))
 					.build();
 			ps.close();
+			
+			cache(rb);
+			
 			return rb;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -176,9 +202,35 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 	}
 
 	@Override
-	public Set<ReinforcementBlueprint> getAll() {
-		Set<ReinforcementBlueprint> all = new HashSet<>();
-		return all;
+	public Collection<ReinforcementBlueprint> getAll() {
+		if (!blueprints.isEmpty()) {
+			return blueprints.values();
+		}
+		
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_ALL_REIN_BLUEPRINT);
+			ResultSet rs = ps.executeQuery();
+			
+			while (rs.next()) {
+				ReinforcementBlueprint rb = ReinforcementBlueprint.builder()
+						.name(rs.getString("Name"))
+						.displayName(rs.getString("DisplayName"))
+						.itemStack(new ItemStack(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount")))
+						.regenRate(new RegenRate(rs.getInt("RegenRateAmount"), rs.getInt("RegenRateInterval")))
+						.maxHealth(rs.getDouble("MaxHealth"))
+						.maturationTime(rs.getLong("MaturationTime"))
+						.acidTime(rs.getLong("AcidTime"))
+						.damageCooldown(rs.getLong("DamageCooldown"))
+						.defaultDamage(rs.getDouble("DefaultDamage"))
+						.build();
+				
+				cache(rb);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return blueprints.values();
 	}
 
 	@Override
@@ -192,7 +244,8 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+		blueprints.remove(new ItemStackKey(value.getItemStack()));
+		namedBlueprints.remove(value.getName());
 	}
 
 }

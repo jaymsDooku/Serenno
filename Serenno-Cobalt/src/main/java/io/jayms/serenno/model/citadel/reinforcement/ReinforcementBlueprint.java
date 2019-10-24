@@ -3,6 +3,7 @@ package io.jayms.serenno.model.citadel.reinforcement;
 import org.bukkit.inventory.ItemStack;
 
 import io.jayms.serenno.model.citadel.RegenRate;
+import net.md_5.bungee.api.ChatColor;
 
 public class ReinforcementBlueprint {
 	
@@ -90,6 +91,21 @@ public class ReinforcementBlueprint {
 	
 	public double getDefaultDamage() {
 		return defaultDamage;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(ChatColor.YELLOW + "Name: " + ChatColor.GOLD + name + "\n");
+		sb.append(ChatColor.YELLOW + "Display Name: " + ChatColor.GOLD + displayName + "\n");
+		sb.append(ChatColor.YELLOW + "Item Stack: " + ChatColor.GOLD + "[" + ChatColor.YELLOW + itemStack.getType().toString() + ChatColor.GOLD + "|" + ChatColor.YELLOW + itemStack.getAmount() + ChatColor.GOLD + "]\n");
+		sb.append(ChatColor.YELLOW + "Max Health: " + ChatColor.GOLD + maxHealth + "\n");
+		sb.append(ChatColor.YELLOW + "Maturation Time: " + ChatColor.GOLD + maturationTime + "\n");
+		sb.append(ChatColor.YELLOW + "Acid Time: " + ChatColor.GOLD + acidTime + "\n");
+		sb.append(ChatColor.YELLOW + "Regen Rate: " + ChatColor.GOLD + regenRate + "\n");
+		sb.append(ChatColor.YELLOW + "Damage Cooldown: " + ChatColor.GOLD + damageCooldown + "\n");
+		sb.append(ChatColor.YELLOW + "Default Damage: " + ChatColor.GOLD + defaultDamage + "\n");
+		return sb.toString();
 	}
 	
 	public static Builder builder() {

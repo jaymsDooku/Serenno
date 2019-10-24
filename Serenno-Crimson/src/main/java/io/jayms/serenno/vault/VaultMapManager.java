@@ -15,6 +15,7 @@ import org.bukkit.WorldType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.Maps;
 
@@ -22,6 +23,13 @@ import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.arena.event.ArenaLoadEvent;
 import io.jayms.serenno.db.sql.SQLite;
+import io.jayms.serenno.kit.ItemMetaBuilder;
+import io.jayms.serenno.kit.ItemStackBuilder;
+import io.jayms.serenno.model.citadel.RegenRate;
+import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
+import io.jayms.serenno.model.citadel.bastion.BastionShape;
+import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.region.Region;
 import io.jayms.serenno.region.RegionFlags;
@@ -121,6 +129,39 @@ public class VaultMapManager implements Listener {
 		
 		VaultMap vaultMap = new SimpleVaultMap(createdWorld.getName(), worldArena,
 				new SQLite(SerennoCrimson.get(), SerennoCrimson.get().getLogger(), "[VaultMap - " + name + "]", name + ".db", vaultMapsFolder.getAbsolutePath()));
+		
+		VaultMapDatabase database = vaultMap.getDatabase();
+		
+		ReinforcementBlueprint reinBlueprint = ReinforcementBlueprint.builder()
+				.name("stone")
+				.displayName(ChatColor.GRAY + "Stone")
+				.defaultDamage(1)
+				.acidTime(20000)
+				.damageCooldown(0)
+				.itemStack(new ItemStack(Material.STONE, 1))
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(50)
+				.build();
+		database.getReinforcementBlueprintSource().create(reinBlueprint);
+		
+		BastionBlueprint bastionBlueprint = BastionBlueprint.builder()
+				.name("vault")
+				.displayName(ChatColor.DARK_RED + "Vault Bastion")
+				.itemStack(new ItemStackBuilder(Material.SPONGE, 1)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.DARK_RED + "Vault Bastion"))
+						.build())
+				.pearlConfig(PearlConfig.builder()
+						.consumeOnBlock(false)
+						.block(true)
+						.blockMidAir(false)
+						.damage(2)
+						.build())
+				.requiresMaturity(false)
+				.shape(BastionShape.SQUARE)
+				.radius(10)
+				.build();
+		database.getBastionBlueprintSource().create(bastionBlueprint);
 		
 		vaultMaps.put(worldRegion.getName(), vaultMap);
 		return vaultMap;

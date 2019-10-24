@@ -3,8 +3,10 @@ package io.jayms.serenno.command;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
@@ -27,13 +29,18 @@ import co.aikar.commands.annotation.Subcommand;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.manager.ReinforcementManager;
+import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.util.MaterialTools;
 import io.jayms.serenno.util.MaterialTools.MaterialNumbers;
 import io.jayms.serenno.util.PlayerTools;
 import io.jayms.serenno.util.PlayerTools.Clipboard;
 import io.jayms.serenno.util.worldedit.Reinforcer;
 import io.jayms.serenno.vault.VaultMap;
+import io.jayms.serenno.vault.VaultMapDatabase;
 import io.jayms.serenno.vault.VaultMapManager;
+import io.jayms.serenno.vault.VaultMapPlayerList;
+import io.jayms.serenno.vault.VaultMapPlayerListType;
 import net.md_5.bungee.api.ChatColor;
 
 @CommandAlias("vault")
@@ -72,6 +79,70 @@ public class VaultCommand extends BaseCommand {
 		
 		VaultMap vaultMap = vm.getVaultMap(vaultName);
 		vaultMap.setGotoLocation(player.getLocation());
+		player.sendMessage(ChatColor.YELLOW + "You have set go to location to: " + ChatColor.GOLD + player.getLocation());
+	}
+	
+	@Subcommand("playerlist add")
+	public void playerlistAdd(Player player, String vaultName, String toAdd) {
+		if (!vm.isVaultMap(vaultName)) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		UUID toAddID = Bukkit.getPlayerUniqueId(toAdd);
+		if (toAddID == null) {
+			player.sendMessage(ChatColor.RED + "That player doesn't exist.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		VaultMapPlayerList playerList = vaultMap.getDatabase().getPlayerList();
+		if (playerList.inPlayerList(toAddID)) {
+			player.sendMessage(ChatColor.RED + "That player is already in the player list.");
+			return;
+		}
+		playerList.add(toAddID);
+	}
+	
+	@Subcommand("playerlist remove")
+	public void playerlistRemove(Player player, String vaultName, String toRemove) {
+		if (!vm.isVaultMap(vaultName)) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		UUID toRemoveID = Bukkit.getPlayerUniqueId(toRemove);
+		if (toRemoveID == null) {
+			player.sendMessage(ChatColor.RED + "That player doesn't exist.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		VaultMapPlayerList playerList = vaultMap.getDatabase().getPlayerList();
+		if (playerList.inPlayerList(toRemoveID)) {
+			player.sendMessage(ChatColor.RED + "That player is already in the player list.");
+			return;
+		}
+		playerList.remove(toRemoveID);
+	}
+	
+	@Subcommand("playerlist type")
+	public void playerlistType(Player player, String vaultName, String type) {
+		if (!vm.isVaultMap(vaultName)) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		VaultMapPlayerListType playerListType = VaultMapPlayerListType.valueOf(type);
+		if (playerListType == null) {
+			player.sendMessage(ChatColor.RED + "That isn't a valid player list type.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		VaultMapDatabase database = vaultMap.getDatabase();
+		database.setPlayerListType(playerListType);
+		player.sendMessage(ChatColor.YELLOW + "You have set vault map's player list type to: " + ChatColor.GOLD + playerListType);
 	}
 	
 	@Subcommand("list")
@@ -101,12 +172,6 @@ public class VaultCommand extends BaseCommand {
 		
 		vm.deleteVaultMap(vaultMap);
 		player.sendMessage(ChatColor.YELLOW + "You have deleted vault map: " + vaultMap.getArena().getRegion().getDisplayName());
-	}
-	
-	@Subcommand("ctf")
-	public void fortify(Player player, String vaultName, String groupName) {
-		VaultMap vaultMap = vm.getVaultMap(vaultName);
-		
 	}
 	
 	@Subcommand("rr")

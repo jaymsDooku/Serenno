@@ -29,6 +29,10 @@ public class Bastion implements QTBox, Comparable<Bastion> {
 		return fieldLogic.inField(loc);
 	}
 	
+	public void setBlueprint(BastionBlueprint blueprint) {
+		this.blueprint = blueprint;
+	}
+	
 	public BastionBlueprint getBlueprint() {
 		return blueprint;
 	}

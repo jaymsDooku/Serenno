@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.google.common.io.Files;
@@ -25,6 +26,7 @@ import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import io.jayms.serenno.model.finance.company.Company;
 import io.jayms.serenno.model.finance.company.ServerCompany;
 import io.jayms.serenno.model.group.Group;
+import io.jayms.serenno.util.LocationTools;
 
 public class VaultMapDatabase {
 	
@@ -33,28 +35,28 @@ public class VaultMapDatabase {
 	
 	private static final String CREATE_INFO = "CREATE TABLE IF NOT EXISTS INFO("
 			+ "InformationID INTEGER PRIMARY KEY AUTOINCREMENT,"
-			+ "GotoWorld TEXT,"
 			+ "GotoX REAL,"
 			+ "GotoY REAL,"
 			+ "GotoZ REAL, "
 			+ "GotoPitch REAL, "
-			+ "GotoYaw REAL"
+			+ "GotoYaw REAL, "
+			+ "PlayerListType TEXT"
 			+ ");";
 	
 	private static final String INSERT_INFO = "INSERT INTO INFO"
 			+ "("
-			+ "GotoWorld, GotoX, GotoY, GotoZ, GotoPitch, GotoYaw"
+			+ "GotoX, GotoY, GotoZ, GotoPitch, GotoYaw, PlayerListType"
 			+ ") VALUES("
 			+ "?, ?, ?, ?, ?, ?"
 			+ ")";
 	
 	private static final String UPDATE_INFO = "UPDATE INFO "
-			+ "SET GotoWorld = ?, "
-			+ "GotoX = ?, "
+			+ "SET GotoX = ?, "
 			+ "GotoY = ?, "
 			+ "GotoZ = ?, "
 			+ "GotoPitch = ?, "
-			+ "GotoYaw = ? "
+			+ "GotoYaw = ?,"
+			+ "PlayerListType = ?"
 			+ "WHERE InformationID = ?";
 	
 	private static final String SELECT_INFO = "SELECT * FROM INFO LIMIT 1";
@@ -67,7 +69,14 @@ public class VaultMapDatabase {
 	private VaultMap vaultMap;
 	
 	private int informationID;
-	private Location gotoLocation;
+	private double gotoX;
+	private double gotoY;
+	private double gotoZ;
+	private float gotoYaw;
+	private float gotoPitch;
+	
+	private VaultMapPlayerListType playerListType = VaultMapPlayerListType.NONE;
+	private VaultMapPlayerList playerList;
 	private VaultMapCoreDataSource coreSource;
 	private VaultMapReinforcementDataSource reinforcementSource;
 	private VaultMapBastionDataSource bastionSource;
@@ -85,6 +94,7 @@ public class VaultMapDatabase {
 		this.worldName = worldName;
 		this.vaultMap = vaultMap;
 		this.database = database;
+		this.playerList = new VaultMapPlayerList(this);
 		this.coreSource = new VaultMapCoreDataSource(this);
 		this.reinforcementSource = new VaultMapReinforcementDataSource(this);
 		this.bastionSource = new VaultMapBastionDataSource(this);
@@ -105,29 +115,22 @@ public class VaultMapDatabase {
 		UUID serverID = SerennoCobalt.get().getFinanceManager().getServerID();
 		Company attackerCompany = new ServerCompany(ATTACKERS, serverID);
 		Company defenderCompany = new ServerCompany(DEFENDERS, serverID);
-		companySource.put(attackerCompany.getName(), attackerCompany);
-		companySource.put(defenderCompany.getName(), defenderCompany);
+		companySource.put(attackerCompany.getName().toLowerCase(), attackerCompany);
+		companySource.put(defenderCompany.getName().toLowerCase(), defenderCompany);
 		
 		Group attackerGroup = new Group(ATTACKERS, attackerCompany);
 		Group defenderGroup = new Group(DEFENDERS, defenderCompany);
-		groupSource.put(attackerGroup.getName(), attackerGroup);
-		groupSource.put(defenderGroup.getName(), defenderGroup);
+		groupSource.put(attackerGroup.getName().toLowerCase(), attackerGroup);
+		groupSource.put(defenderGroup.getName().toLowerCase(), defenderGroup);
 		
-		new BukkitRunnable() {
-			
-			@Override
-			public void run() {
-				database.open();
-				database.modifyQuery(CREATE_INFO, true);
-				coreSource.createTables();
-				reinforcementSource.createTables();
-				bastionSource.createTables();
-				reinforcementBlueprintSource.createTables();
-				bastionBlueprintSource.createTables();
-				snitchSource.createTables();
-			}
-			
-		}.runTask(SerennoCrimson.get());
+		database.open();
+		database.modifyQuery(CREATE_INFO, true);
+		coreSource.createTables();
+		reinforcementSource.createTables();
+		bastionSource.createTables();
+		reinforcementBlueprintSource.createTables();
+		bastionBlueprintSource.createTables();
+		snitchSource.createTables();
 	}
 	
 	public void load() {
@@ -141,18 +144,12 @@ public class VaultMapDatabase {
 			
 			informationID = rs.getInt("InformationID");
 			
-			String gotoWorldName = rs.getString("GotoWorld");
-			World gotoWorld = Bukkit.getWorld(gotoWorldName);
-			if (gotoWorld == null) {
-				throw new IllegalStateException("The world to go to doesn't exist anymore.");
-			}
-			
-			double x = rs.getDouble("GotoX");
-			double y = rs.getDouble("GotoY");
-			double z = rs.getDouble("GotoZ");
-			float yaw = rs.getFloat("GotoYaw");
-			float pitch = rs.getFloat("GotoPitch");
-			gotoLocation = new Location(gotoWorld, x, y, z, yaw, pitch);
+			gotoX = rs.getDouble("GotoX");
+			gotoY = rs.getDouble("GotoY");
+			gotoZ = rs.getDouble("GotoZ");
+			gotoYaw = rs.getFloat("GotoYaw");
+			gotoPitch = rs.getFloat("GotoPitch");
+			playerListType = VaultMapPlayerListType.valueOf(rs.getString("PlayerListType"));
 			SerennoCrimson.get().getLogger().info("Loaded information for vault map: " + vaultMap.getArena().getName());
 			ps.close();
 			
@@ -162,16 +159,16 @@ public class VaultMapDatabase {
 		}
 	}
 	
-	public void setGotoLocation(Location gotoLocation) {
+	public void updateInfo() {
 		try {
-			PreparedStatement ps = loaded ? ps = database.getConnection().prepareStatement(UPDATE_INFO) :
+			PreparedStatement ps = loaded ? database.getConnection().prepareStatement(UPDATE_INFO) :
 				database.getConnection().prepareStatement(INSERT_INFO, Statement.RETURN_GENERATED_KEYS);
-			ps.setString(1, gotoLocation.getWorld().getName());
-			ps.setDouble(2, gotoLocation.getX());
-			ps.setDouble(3, gotoLocation.getY());
-			ps.setDouble(4, gotoLocation.getZ());
-			ps.setDouble(5, gotoLocation.getPitch());
-			ps.setDouble(6, gotoLocation.getYaw());
+			ps.setDouble(1, gotoX);
+			ps.setDouble(2, gotoY);
+			ps.setDouble(3, gotoZ);
+			ps.setDouble(4, gotoPitch);
+			ps.setDouble(5, gotoYaw);
+			ps.setString(6, playerListType.toString());
 			if (loaded) {
 				ps.setInt(7, informationID);
 			}
@@ -184,15 +181,36 @@ public class VaultMapDatabase {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
-		this.gotoLocation = gotoLocation;
+	}
+	
+	public void setGotoLocation(Location gotoLocation) {
+		this.gotoX = gotoLocation.getX();
+		this.gotoY = gotoLocation.getY();
+		this.gotoZ = gotoLocation.getZ();
+		this.gotoPitch = gotoLocation.getPitch();
+		this.gotoYaw = gotoLocation.getYaw();
+		updateInfo();
+	}
+	
+	public void setPlayerListType(VaultMapPlayerListType playerListType) {
+		this.playerListType = playerListType;
+		updateInfo();
+	}
+	
+	public boolean isAllowed(Player player) {
+		switch (playerListType) {
+			case BLACK:
+				return !playerList.inPlayerList(player);
+			case WHITE:
+				return playerList.inPlayerList(player);
+			default:
+				break;
+		}
+		return playerListType == VaultMapPlayerListType.NONE;
 	}
 	
 	public Location getGotoLocation() {
-		if (gotoLocation == null) {
-			gotoLocation = new Location(vaultMap.getOriginalWorld(), 0, 70, 0);
-		}
-		return gotoLocation;
+		return new Location(vaultMap.getOriginalWorld(), gotoX, gotoY, gotoZ, gotoYaw, gotoPitch);
 	}
 	
 	public void delete() {
@@ -212,6 +230,10 @@ public class VaultMapDatabase {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	public VaultMapPlayerList getPlayerList() {
+		return playerList;
 	}
 	
 	public VaultMapCoreDataSource getCoreSource() {

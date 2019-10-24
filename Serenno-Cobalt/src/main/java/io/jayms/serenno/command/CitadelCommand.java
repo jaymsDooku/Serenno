@@ -1,5 +1,9 @@
 package io.jayms.serenno.command;
 
+import java.util.Collection;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -7,6 +11,15 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Subcommand;
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.BastionBlueprintCreationEvent;
+import io.jayms.serenno.event.BastionBlueprintModifyEvent;
+import io.jayms.serenno.event.ListBlueprintsEvent;
+import io.jayms.serenno.event.ReinforcementBlueprintCreationEvent;
+import io.jayms.serenno.event.ReinforcementBlueprintModifyEvent;
+import io.jayms.serenno.event.ViewBastionBlueprintEvent;
+import io.jayms.serenno.event.ViewReinforcementBlueprintEvent;
+import io.jayms.serenno.kit.ItemMetaBuilder;
+import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.RegenRate;
@@ -45,40 +58,112 @@ public class CitadelCommand extends BaseCommand {
 		player.getInventory().addItem(giveIt);
 	}
 	
+	@Subcommand("blueprint")
+	public void blueprint(Player player, String blueprintType, String blueprintName) {
+		if (blueprintType.equalsIgnoreCase("reinforcement")) {
+			ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(blueprintName);
+			
+			ViewReinforcementBlueprintEvent event = new ViewReinforcementBlueprintEvent(player, blueprintName, blueprint);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			if (blueprint == null) {
+				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
+				return;
+			}
+			player.sendMessage(blueprint.toString());
+		} else if (blueprintType.equalsIgnoreCase("bastion")) {
+			BastionBlueprint blueprint = bm.getBastionBlueprint(blueprintName);
+			
+			ViewBastionBlueprintEvent event = new ViewBastionBlueprintEvent(player, blueprintName, blueprint);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			if (blueprint == null) {
+				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
+				return;
+			}
+			player.sendMessage(blueprint.toString());
+		} else {
+			player.sendMessage(ChatColor.RED + "That is an invalid blueprint type.");
+		}
+	}
+	
 	@Subcommand("blueprint create")
-	public void blueprintCreate(Player player, String name, String type) {
+	public void createBlueprint(Player player, String blueprintName, String blueprintType) {
 		ItemStack item = player.getInventory().getItemInMainHand();
-		
-		if (type.equalsIgnoreCase("reinforcement")) {
-			ReinforcementBlueprint blueprint = ReinforcementBlueprint.builder()
-					.name(name)
-					.displayName(name)
+		if (blueprintType.equalsIgnoreCase("reinforcement")) {
+			ReinforcementBlueprint rb = ReinforcementBlueprint.builder()
+					.name(blueprintName)
+					.displayName(ChatColor.GRAY + "Stone")
 					.defaultDamage(1)
-					.acidTime(1000 * 20)
+					.acidTime(20000)
 					.damageCooldown(0)
 					.itemStack(item)
-					.regenRate(new RegenRate(1, 1000 * 60 * 5))
+					.regenRate(new RegenRate(1, 60000))
 					.maxHealth(50)
 					.build();
-			rm.registerReinforcementBlueprint(blueprint);
-			player.sendMessage(ChatColor.YELLOW + "You have created a reinforcement blueprint: " + ChatColor.GOLD + name);
-		} else if (type.equalsIgnoreCase("bastion")) {
-			BastionBlueprint blueprint = BastionBlueprint.builder()
-					.name(name)
-					.displayName(name)
-					.shape(BastionShape.SQUARE)
-					.radius(10)
-					.itemStack(item)
-					.requiresMaturity(true)
+			
+			ReinforcementBlueprintCreationEvent event = new ReinforcementBlueprintCreationEvent(player, rb);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			rb = event.getReinforcementBlueprint();
+			
+			if (event.isCancelled()) {
+				rm.registerReinforcementBlueprint(rb);
+			}
+			player.sendMessage(ChatColor.YELLOW + "You have created a new reinforcement blueprint:");
+			player.sendMessage(rb.toString());
+		} else if (blueprintType.equalsIgnoreCase("bastion")) {
+			BastionBlueprint bb = BastionBlueprint.builder()
+					.name(blueprintName)
+					.displayName(ChatColor.DARK_RED + "Vault Bastion")
+					.itemStack(new ItemStackBuilder(Material.SPONGE, 1)
+							.meta(new ItemMetaBuilder()
+									.name(ChatColor.DARK_RED + "Vault Bastion"))
+							.build())
 					.pearlConfig(PearlConfig.builder()
+							.consumeOnBlock(false)
 							.block(true)
 							.blockMidAir(false)
-							.consumeOnBlock(false)
-							.damage(1)
+							.damage(2)
 							.build())
+					.requiresMaturity(false)
+					.shape(BastionShape.SQUARE)
+					.radius(10)
 					.build();
-			bm.registerBastionBlueprint(blueprint);
-			player.sendMessage(ChatColor.YELLOW + "You have created a bastion blueprint: " + ChatColor.GOLD + name);
+			
+			BastionBlueprintCreationEvent event = new BastionBlueprintCreationEvent(player, bb);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			bb = event.getBastionBlueprint();
+			
+			if (event.isCancelled()) {
+				bm.registerBastionBlueprint(bb);
+			}
+			player.sendMessage(ChatColor.YELLOW + "You have created a new bastion blueprint:");
+			player.sendMessage(bb.toString());
+		}
+	}
+	
+	@Subcommand("blueprints")
+	public void listBlueprints(Player player) {
+		Collection<ReinforcementBlueprint> reinforcementBlueprints = rm.getReinforcementBlueprints();
+		Collection<BastionBlueprint> bastionBlueprints = bm.getBastionBlueprints();
+		
+		ListBlueprintsEvent event = new ListBlueprintsEvent(player, reinforcementBlueprints, bastionBlueprints);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		reinforcementBlueprints = event.getReinforcementBlueprints();
+		bastionBlueprints = event.getBastionBlueprints();
+		
+		player.sendMessage(ChatColor.GOLD + "Reinforcement Blueprints");
+		player.sendMessage(ChatColor.WHITE + "" + ChatColor.STRIKETHROUGH + "-----------------");
+		for (ReinforcementBlueprint blueprint : reinforcementBlueprints) {
+			player.sendMessage(ChatColor.GOLD + "- " + ChatColor.YELLOW + blueprint.getName());
+		}
+		player.sendMessage(ChatColor.GOLD + "Bastion Blueprints");
+		player.sendMessage(ChatColor.WHITE + "" + ChatColor.STRIKETHROUGH + "-----------------");
+		for (BastionBlueprint blueprint : bastionBlueprints) {
+			player.sendMessage(ChatColor.GOLD + "- " + ChatColor.YELLOW + blueprint.getName());
 		}
 	}
 	
@@ -86,6 +171,12 @@ public class CitadelCommand extends BaseCommand {
 	public void blueprintDisplayName(Player player, String name, String type, String displayName) {
 		if (type.equalsIgnoreCase("reinforcement")) {
 			ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+			
+			ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			blueprint = event.getReinforcementBlueprint();
+			
 			if (blueprint == null) {
 				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 				return;
@@ -94,6 +185,12 @@ public class CitadelCommand extends BaseCommand {
 			player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " display name to " + ChatColor.RESET + displayName);
 		} else if (type.equalsIgnoreCase("bastion")) {
 			BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+			
+			BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			blueprint = event.getBastionBlueprint();
+			
 			if (blueprint == null) {
 				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 				return;
@@ -106,6 +203,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint defaultDamage")
 	public void blueprintDefaultDamage(Player player, String name, double defDamage) {
 		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -117,6 +220,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint regenRate amount")
 	public void blueprintRegenRateAmount(Player player, String name, double regenRateAmount) {
 		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -130,6 +239,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint regenRate interval")
 	public void blueprintRegenRateInterval(Player player, String name, long regenRateInterval) {
 		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -143,6 +258,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint acidTime")
 	public void blueprintAcidTime(Player player, String name, long acidTime) {
 		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -154,6 +275,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint damageCooldown")
 	public void blueprintDamageCooldown(Player player, String name, long damageCooldown) {
 		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -165,6 +292,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint maturationTime")
 	public void blueprintMaturationTime(Player player, String name, long maturationTime) {
 		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -176,6 +309,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint radius")
 	public void blueprintRadius(Player player, String name, int radius) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -187,6 +326,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint shape")
 	public void blueprintShape(Player player, String name, String shape) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -203,6 +348,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint requiresMaturity")
 	public void blueprintRequiresMaturity(Player player, String name) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -214,6 +365,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint pearlConfig block")
 	public void blueprintPearlBlock(Player player, String name) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -225,6 +382,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint pearlConfig blockMidAir")
 	public void blueprintPearlBlockMidAir(Player player, String name) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -236,6 +399,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint pearlConfig consumeOnBlock")
 	public void blueprintPearlConsumeOnBlock(Player player, String name) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -247,6 +416,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint pearlConfig requiresMaturity")
 	public void blueprintPearlRequiresMaturity(Player player, String name) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
@@ -258,6 +433,12 @@ public class CitadelCommand extends BaseCommand {
 	@Subcommand("blueprint pearlConfig damage")
 	public void blueprintPearlDamage(Player player, String name, double damage) {
 		BastionBlueprint blueprint = bm.getBastionBlueprint(name);
+		
+		BastionBlueprintModifyEvent event = new BastionBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getBastionBlueprint();
+		
 		if (blueprint == null) {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;

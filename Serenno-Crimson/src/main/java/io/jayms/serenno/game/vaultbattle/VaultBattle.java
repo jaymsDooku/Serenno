@@ -1,5 +1,7 @@
 package io.jayms.serenno.game.vaultbattle;
 
+import java.util.List;
+
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -28,6 +30,15 @@ public class VaultBattle extends SimpleDuel {
 	@Override
 	protected void initGame() {
 		VaultMap vaultMap = getVaultMap();
+		VaultMapDatabase database = vaultMap.getDatabase();
+		List<SerennoPlayer> playing = getPlaying();
+		for (SerennoPlayer player : playing) {
+			if (!database.isAllowed(player.getBukkitPlayer())) {
+				broadcast(ChatColor.DARK_RED + player.getName() + ChatColor.RED + " isn't allowed to play on this vault map - game cancelled.");
+				return;
+			}
+		}
+		
 		activeWorld = vaultMap.activateWorld();
 		
 		super.initGame();

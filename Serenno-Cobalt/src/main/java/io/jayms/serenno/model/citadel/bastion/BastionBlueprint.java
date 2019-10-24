@@ -2,6 +2,8 @@ package io.jayms.serenno.model.citadel.bastion;
 
 import org.bukkit.inventory.ItemStack;
 
+import net.md_5.bungee.api.ChatColor;
+
 public class BastionBlueprint {
 	
 	private String name;
@@ -84,6 +86,23 @@ public class BastionBlueprint {
 	
 	public PearlConfig getPearlConfig() {
 		return pearlConfig;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(ChatColor.YELLOW + "Name: " + ChatColor.GOLD + name + "\n");
+		sb.append(ChatColor.YELLOW + "Display Name: " + ChatColor.GOLD + displayName + "\n");
+		sb.append(ChatColor.YELLOW + "Item Stack: " + ChatColor.GOLD + "[" + ChatColor.YELLOW + itemStack.getType().toString() + ChatColor.GOLD + "|" + ChatColor.YELLOW + itemStack.getAmount() + ChatColor.GOLD + "]\n");
+		sb.append(ChatColor.YELLOW + "Radius: " + ChatColor.GOLD + radius + "\n");
+		sb.append(ChatColor.YELLOW + "Requires Maturity: " + ChatColor.GOLD + requiresMaturity + "\n");
+		sb.append(ChatColor.YELLOW + "Shape: " + ChatColor.GOLD + shape + "\n");
+		sb.append(ChatColor.YELLOW + "Pearl Block: " + pearlConfig.block() + "\n");
+		sb.append(ChatColor.YELLOW + "Pearl Block Mid Air: " + pearlConfig.block() + "\n");
+		sb.append(ChatColor.YELLOW + "Pearl Consume On Block: " + pearlConfig.blockMidAir() + "\n");
+		sb.append(ChatColor.YELLOW + "Pearl Requires Maturity: " + pearlConfig.consumeOnBlock() + "\n");
+		sb.append(ChatColor.YELLOW + "Pearl Damage: " + pearlConfig.getDamage() + "\n");
+		return sb.toString();
 	}
 	
 	public static class PearlConfig {

@@ -15,7 +15,7 @@ commands:
     usage: /ctf
     description: Toggle reinforcement fortification mode.
     min-args: 0
-    max-args: 0
+    max-args: 1
     player-only: true
   ctb:
     usage: /ctb

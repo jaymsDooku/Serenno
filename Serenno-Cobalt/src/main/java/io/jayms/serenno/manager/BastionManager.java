@@ -1,5 +1,6 @@
 package io.jayms.serenno.manager;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -7,12 +8,12 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.Maps;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.bastion.BastionPlacementEvent;
 import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
@@ -53,6 +54,10 @@ public class BastionManager {
 		return bastionBlueprints.get(new ItemStackKey(it));
 	}
 	
+	public Collection<BastionBlueprint> getBastionBlueprints() {
+		return bastionBlueprints.values();
+	}
+	
 	public boolean hasBastionBlueprint(ItemStack it) {
 		return bastionBlueprints.containsKey(new ItemStackKey(it));
 	}
@@ -65,6 +70,10 @@ public class BastionManager {
 	
 	public BastionWorld getBastionWorld(World world) {
 		return bastionWorlds.get(world.getName());
+	}
+	
+	public void deleteBastionWorld(World world) {
+		bastionWorlds.remove(world.getName());
 	}
 	
 	public Set<Bastion> getBastions(Location l) {
@@ -94,6 +103,12 @@ public class BastionManager {
 	// true = dont allow block
 	public boolean placeBlock(CitadelPlayer cp, Reinforcement rein, ItemStack item) {
 		BastionBlueprint bb = getBastionBlueprint(item);
+		
+		BastionPlacementEvent event = new BastionPlacementEvent(cp, rein, item, bb);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		bb = event.getBlueprint();
+		
 		if (bb == null) {
 			return false;
 		}

@@ -1,5 +1,6 @@
 package io.jayms.serenno.model.citadel.bastion;
 
+import java.util.Collection;
 import java.util.Set;
 
 import org.bukkit.Location;
@@ -19,7 +20,7 @@ public class BastionWorld {
 		this.dataSource = dataSource;
 		this.bastions = new SparseQuadTree(900);
 		if (dataSource != null) {
-			Set<Bastion> loadedBastions = dataSource.getAll();
+			Collection<Bastion> loadedBastions = dataSource.getAll();
 			for (Bastion b : loadedBastions) {
 				bastions.add(b);
 			}

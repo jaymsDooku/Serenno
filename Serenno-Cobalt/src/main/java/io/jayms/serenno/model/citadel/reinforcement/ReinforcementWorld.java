@@ -30,6 +30,14 @@ public class ReinforcementWorld {
 		this.world = world;
 		this.dataSource = source;
 		reinCache = CacheBuilder.newBuilder()
+				.removalListener(new RemovalListener<ChunkCoord, ChunkCache<Reinforcement>>() {
+					
+					@Override
+					public void onRemoval(RemovalNotification<ChunkCoord, ChunkCache<Reinforcement>> notification) {
+						notification.getValue().unload();
+					}
+					
+				})
 				.build(new CacheLoader<ChunkCoord, ChunkCache<Reinforcement>>() {
 				
 					@Override

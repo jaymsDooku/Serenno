@@ -1,5 +1,6 @@
 package io.jayms.serenno.manager;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +73,10 @@ public class ReinforcementManager {
 		return reinforcementBlueprints.get(new ItemStackKey(it));
 	}
 	
+	public Collection<ReinforcementBlueprint> getReinforcementBlueprints() {
+		return reinforcementBlueprints.values();
+	}
+	
 	public ReinforcementWorld newReinforcementWorld(World world, ReinforcementDataSource dataSource) {
 		ReinforcementWorld reinWorld = new ReinforcementWorld(world, dataSource);
 		reinforcementWorlds.put(world.getName(), reinWorld);
@@ -84,7 +89,7 @@ public class ReinforcementManager {
 	
 	public void deleteReinforcementWorld(World world) {
 		ReinforcementWorld reinWorld = reinforcementWorlds.remove(world.getName());
-		
+		reinWorld.unloadAll();
 	}
 	
 	public void removeReinforcementWorld(World world) {

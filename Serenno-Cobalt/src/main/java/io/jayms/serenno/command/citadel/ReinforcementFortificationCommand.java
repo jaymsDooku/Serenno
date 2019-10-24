@@ -35,9 +35,15 @@ public class ReinforcementFortificationCommand extends StandaloneCommand {
 		String argGroupName = null;
 		
 		if (args.length > 0) {
-			argGroupName = args[0];
+			argGroupName = args[0].toLowerCase();
 			group = SerennoCobalt.get().getGroupManager().getGroup(player, argGroupName);
 		}
+		
+		PlayerFortificationModeEvent event = new PlayerFortificationModeEvent(player, group, argGroupName, mainHand, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		group = event.getGroup();
+		blueprint = event.getBlueprint();
 		
 		if (group == null) {
 			player.sendMessage(ChatColor.RED + "Set a default group.");
@@ -58,9 +64,6 @@ public class ReinforcementFortificationCommand extends StandaloneCommand {
 				return true;
 			}
 		}
-		
-		PlayerFortificationModeEvent event = new PlayerFortificationModeEvent(player, group, argGroupName, mainHand, blueprint);
-		Bukkit.getPluginManager().callEvent(event);
 		
 		group = event.getGroup();
 		blueprint = event.getBlueprint();

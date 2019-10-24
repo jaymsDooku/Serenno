@@ -1,6 +1,6 @@
 package io.jayms.serenno.util;
 
-import java.util.Set;
+import java.util.Collection;
 
 public interface SerennoDataSource<T, K> {
 
@@ -12,7 +12,7 @@ public interface SerennoDataSource<T, K> {
 	
 	public boolean exists(K key);
 	
-	public Set<T> getAll();
+	public Collection<T> getAll();
 	
 	public void delete(T value);
 	

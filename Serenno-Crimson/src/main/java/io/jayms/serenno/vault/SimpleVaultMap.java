@@ -34,10 +34,12 @@ import net.md_5.bungee.api.ChatColor;
 public class SimpleVaultMap implements VaultMap {
 
 	private Arena arena;
+	
 	private String originalWorldName;
+	private World originalWorld;
+	
 	private Set<Player> inOriginalWorld;
 	private Map<String, VaultMapDatabase> vaultMapDatabases;
-	private World originalWorld;
 	private Set<World> activeWorlds = new HashSet<>();
 	private int activeWorldID;
 	
@@ -48,6 +50,7 @@ public class SimpleVaultMap implements VaultMap {
 		this.vaultMapDatabases = new HashMap<>();
 		
 		VaultMapDatabase db = new VaultMapDatabase(originalWorldName, this, database);
+		db.load();
 		vaultMapDatabases.put(originalWorldName, db);
 	}
 	
@@ -85,6 +88,9 @@ public class SimpleVaultMap implements VaultMap {
 		for (Snitch snitch : snitches) {
 			snitchSource.create(snitch);
 		}
+		
+		SerennoCrimson.get().getArenaManager().saveArena(getArena());
+		SerennoCrimson.get().getRegionManager().saveRegion(getRegion());
 		SerennoCrimson.get().getLogger().info("Saved vault map: " + arena.getName());
 	}
 	
@@ -94,10 +100,17 @@ public class SimpleVaultMap implements VaultMap {
 		if (isOriginalWorldLoaded()) {
 			World originalWorld = getOriginalWorld();
 			SerennoCrimson.get().getLobby().sendToLobby(originalWorld);
+			
+			SerennoCobalt.get().getCitadelManager().getReinforcementManager().deleteReinforcementWorld(originalWorld);
+			SerennoCobalt.get().getCitadelManager().getBastionManager().deleteBastionWorld(originalWorld);
+			SerennoCobalt.get().getCitadelManager().getSnitchManager().deleteSnitchWorld(originalWorld);
+			SerennoCobalt.get().getCitadelManager().getArtilleryManager().deleteArtilleryWorld(originalWorld);
+			
 			Bukkit.unloadWorld(originalWorldName, false);
-			LocationTools.deleteWorld(originalWorld.getWorldFolder());
 			SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().remove(originalWorld);
 		}
+		File worldFolder = originalWorld != null ? originalWorld.getWorldFolder() : new File(SerennoCrimson.get().getDataFolder().getParentFile(), originalWorldName);
+		LocationTools.deleteWorld(worldFolder);
 		if (!activeWorlds.isEmpty()) {
 			for (World activeWorld : new HashSet<>(activeWorlds)) {
 				deactivateWorld(activeWorld);
@@ -110,6 +123,11 @@ public class SimpleVaultMap implements VaultMap {
 	
 	@Override
 	public void gotoVaultMap(Player player) {
+		if (!getDatabase().isAllowed(player)) {
+			player.sendMessage(ChatColor.RED + "You are not allowed to go this vault map.");
+			return;
+		}
+		
 		player.sendMessage(ChatColor.YELLOW + "You are going to vault map: " + arena.getRegion().getDisplayName());
 		inOriginalWorld.add(player);
 		new BukkitRunnable() {
@@ -182,6 +200,7 @@ public class SimpleVaultMap implements VaultMap {
 			SerennoCobalt.get().getCitadelManager().getReinforcementManager().newReinforcementWorld(originalWorld, getDatabase().getReinforcementSource());
 			SerennoCobalt.get().getCitadelManager().getBastionManager().newBastionWorld(originalWorld, getDatabase().getBastionSource());
 			SerennoCobalt.get().getCitadelManager().getSnitchManager().newSnitchWorld(originalWorld, getDatabase().getSnitchSource());
+			SerennoCobalt.get().getCitadelManager().getArtilleryManager().newArtilleryWorld(originalWorld);
 			SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().put(originalWorld, this);
 		}
 		return originalWorld;
@@ -313,6 +332,9 @@ public class SimpleVaultMap implements VaultMap {
 		database.delete();
 		
 		SerennoCobalt.get().getCitadelManager().getReinforcementManager().deleteReinforcementWorld(world);
+		SerennoCobalt.get().getCitadelManager().getBastionManager().deleteBastionWorld(world);
+		SerennoCobalt.get().getCitadelManager().getSnitchManager().deleteSnitchWorld(world);
+		SerennoCobalt.get().getCitadelManager().getArtilleryManager().deleteArtilleryWorld(world);
 		
 		Bukkit.unloadWorld(world, false);
 		LocationTools.deleteWorld(world.getWorldFolder());

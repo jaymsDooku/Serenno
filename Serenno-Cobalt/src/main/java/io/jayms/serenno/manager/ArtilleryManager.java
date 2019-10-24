@@ -90,6 +90,10 @@ public class ArtilleryManager {
 		return artilleryWorlds.get(world.getName());
 	}
 	
+	public void deleteArtilleryWorld(World world) {
+		artilleryWorlds.remove(world.getName());
+	}
+	
 	public void assemble(Artillery artillery) {
 		ArtilleryWorld artilleryWorld = getArtilleryWorld(artillery.getLocation().getWorld());
 		artilleryWorld.addArtillery(artillery);
