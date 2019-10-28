@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import com.github.maxopoly.finale.classes.engineer.EngineerPlayer;
 import com.github.maxopoly.finale.classes.engineer.EngineerTools;
 
+import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.menu.ClickHandler;
@@ -53,19 +54,20 @@ public class TrebuchetCrateMenu extends SingleMenu {
 		
 		int size = 45;
 		setSize(size);
+		Inventory inventory = Bukkit.createInventory(null, this.getSize(), this.getName());
 		
-		addButton(11, getDirectionButton(crate, BlockFace.NORTH));
-		addButton(19, getDirectionButton(crate, BlockFace.WEST));
-		addButton(21, getDirectionButton(crate, BlockFace.EAST));
-		addButton(29, getDirectionButton(crate, BlockFace.SOUTH));
+		addButton(11, getDirectionButton(inventory, crate, BlockFace.NORTH));
+		addButton(19, getDirectionButton(inventory, crate, BlockFace.WEST));
+		addButton(21, getDirectionButton(inventory, crate, BlockFace.EAST));
+		addButton(29, getDirectionButton(inventory, crate, BlockFace.SOUTH));
 		
 		addButton(20, getDirectionDisplayButton((Trebuchet) crate.getArtillery()));
 		
+		addButton(14, getStartItemTitle());
 		addButton(23, getStarterItemButton());
 		
-		addButton(25, getBuildButton(crate));
+		addButton(25, getBuildButton(inventory, crate));
 		
-		Inventory inventory = Bukkit.createInventory(null, this.getSize(), this.getName());
 		refresh(inventory);
 		return inventory;
 	}
@@ -99,7 +101,7 @@ public class TrebuchetCrateMenu extends SingleMenu {
 				}).build();
 	}
 	
-	private SimpleButton getDirectionButton(TrebuchetCrate crate, BlockFace face) {
+	private SimpleButton getDirectionButton(Inventory inventory, TrebuchetCrate crate, BlockFace face) {
 		return new SimpleButton.Builder(this)
 				.setItemStack(new ItemStackBuilder(Material.ARROW, 1)
 						.meta(new ItemMetaBuilder()
@@ -113,6 +115,23 @@ public class TrebuchetCrateMenu extends SingleMenu {
 						Artillery artillery = crate.getArtillery();
 						artillery.setDirection(face);
 						player.sendMessage(ChatColor.YELLOW + "You have set " + crate.getDisplayName() + " #" + artillery.getID() + ChatColor.YELLOW + " direction to " + ChatColor.GOLD + WordUtils.capitalize(face.name()));
+						inventory.setItem(20, getDirectionDisplayButton((Trebuchet) artillery).getItemStack());
+					}
+					
+				}).build();
+	}
+	
+	private SimpleButton getStartItemTitle() {
+		return new SimpleButton.Builder(this)
+				.setItemStack(new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
+						.durability((short) 14)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.RED + "Place starter item below.")).build())
+				.setPickUpAble(false)
+				.setClickHandler(new ClickHandler() {
+					
+					@Override
+					public void handleClick(InventoryClickEvent e) {
 					}
 					
 				}).build();
@@ -120,22 +139,18 @@ public class TrebuchetCrateMenu extends SingleMenu {
 	
 	private SimpleButton getStarterItemButton() {
 		return new SimpleButton.Builder(this)
-				.setItemStack(new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1)
-						.durability((short) 14)
-						.meta(new ItemMetaBuilder()
-								.name(ChatColor.RED + "Place starter item here.")).build())
-				.setPickUpAble(false)
+				.setItemStack(null)
+				.setPickUpAble(true)
 				.setClickHandler(new ClickHandler() {
 					
 					@Override
 					public void handleClick(InventoryClickEvent e) {
-						e.setCurrentItem(e.getCursor());
 					}
 					
 				}).build();
 	}
 	
-	private SimpleButton getBuildButton(TrebuchetCrate crate) {
+	private SimpleButton getBuildButton(Inventory inventory, TrebuchetCrate crate) {
 		return new SimpleButton.Builder(this)
 				.setItemStack(new ItemStackBuilder(Material.EMERALD_BLOCK, 1)
 						.meta(new ItemMetaBuilder()
@@ -147,6 +162,13 @@ public class TrebuchetCrateMenu extends SingleMenu {
 					public void handleClick(InventoryClickEvent e) {
 						Player player = (Player) e.getWhoClicked();
 						EngineerPlayer engineer = EngineerTools.getEngineer(player);
+						
+						ItemStack starterItem = inventory.getItem(23);
+						if (starterItem.getType() != crate.getStarterItemType() || starterItem.getAmount() != crate.getStarterItemAmount()) {
+							player.sendMessage(ChatColor.RED + "Trebuchet requires a starter item in order to assemble.");
+							return;
+						}
+					
 						Artillery artillery = crate.getArtillery();
 						artillery.assemble(engineer);
 					}

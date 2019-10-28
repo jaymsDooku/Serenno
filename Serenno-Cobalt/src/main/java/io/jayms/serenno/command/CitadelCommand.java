@@ -1,5 +1,6 @@
 package io.jayms.serenno.command;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.bukkit.Bukkit;
@@ -12,10 +13,14 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Subcommand;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.event.BastionBlueprintCreationEvent;
+import io.jayms.serenno.event.BastionBlueprintDeletionEvent;
 import io.jayms.serenno.event.BastionBlueprintModifyEvent;
+import io.jayms.serenno.event.BastionBlueprintUpdateEvent;
 import io.jayms.serenno.event.ListBlueprintsEvent;
 import io.jayms.serenno.event.ReinforcementBlueprintCreationEvent;
+import io.jayms.serenno.event.ReinforcementBlueprintDeletionEvent;
 import io.jayms.serenno.event.ReinforcementBlueprintModifyEvent;
+import io.jayms.serenno.event.ReinforcementBlueprintUpdateEvent;
 import io.jayms.serenno.event.ViewBastionBlueprintEvent;
 import io.jayms.serenno.event.ViewReinforcementBlueprintEvent;
 import io.jayms.serenno.kit.ItemMetaBuilder;
@@ -23,7 +28,7 @@ import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.RegenRate;
-import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryCrateItem;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryType;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
@@ -42,15 +47,32 @@ public class CitadelCommand extends BaseCommand {
 		ItemStack giveIt;
 		if (thingType.equalsIgnoreCase("reinforcement")) {
 			ReinforcementBlueprint rb = rm.getReinforcementBlueprint(thingName);
+			
+			ViewReinforcementBlueprintEvent event = new ViewReinforcementBlueprintEvent(player, thingName, rb);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			rb = event.getReinforcementBlueprint();
+			
 			giveIt = rb.getItemStack();
 			giveIt.setAmount(amount);
 		} else if (thingType.equalsIgnoreCase("bastion")) {
 			BastionBlueprint bb = bm.getBastionBlueprint(thingName);
+			
+			ViewBastionBlueprintEvent event = new ViewBastionBlueprintEvent(player, thingName, bb);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			bb = event.getBastionBlueprint();
+			
 			giveIt = bb.getItemStack();
 			giveIt.setAmount(amount);
 		} else if (thingType.equalsIgnoreCase("artillery")) {
-			ArtilleryCrate crate = ArtilleryType.TREBUCHET.getArtilleryCrate();
-			giveIt = crate.getItemStack();
+			thingName = thingName.toUpperCase();
+			ArtilleryType artilleryType = ArtilleryType.valueOf(thingName);
+			if (artilleryType == null) {
+				player.sendMessage(ChatColor.RED + "That is not a valid artillery type.");
+				return;
+			}
+			giveIt = artilleryType.getNewItem();
 		} else {
 			player.sendMessage(ChatColor.RED + "Citadel doesn't have that thing to give you.");
 			return;
@@ -66,6 +88,8 @@ public class CitadelCommand extends BaseCommand {
 			ViewReinforcementBlueprintEvent event = new ViewReinforcementBlueprintEvent(player, blueprintName, blueprint);
 			Bukkit.getPluginManager().callEvent(event);
 			
+			blueprint = event.getReinforcementBlueprint();
+			
 			if (blueprint == null) {
 				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 				return;
@@ -76,6 +100,8 @@ public class CitadelCommand extends BaseCommand {
 			
 			ViewBastionBlueprintEvent event = new ViewBastionBlueprintEvent(player, blueprintName, blueprint);
 			Bukkit.getPluginManager().callEvent(event);
+			
+			blueprint = event.getBastionBlueprint();
 			
 			if (blueprint == null) {
 				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
@@ -95,11 +121,13 @@ public class CitadelCommand extends BaseCommand {
 					.name(blueprintName)
 					.displayName(ChatColor.GRAY + "Stone")
 					.defaultDamage(1)
-					.acidTime(20000)
+					.acidTime(1000 * 60 * 5)
+					.maturationTime(1000 * 60 * 1)
 					.damageCooldown(0)
 					.itemStack(item)
 					.regenRate(new RegenRate(1, 60000))
 					.maxHealth(50)
+					.unreinforceableMaterials(Arrays.asList(Material.WEB))
 					.build();
 			
 			ReinforcementBlueprintCreationEvent event = new ReinforcementBlueprintCreationEvent(player, rb);
@@ -141,6 +169,47 @@ public class CitadelCommand extends BaseCommand {
 			}
 			player.sendMessage(ChatColor.YELLOW + "You have created a new bastion blueprint:");
 			player.sendMessage(bb.toString());
+		} else {
+			player.sendMessage(ChatColor.RED + "That is not a valid type of blueprint.");
+		}
+	}
+	
+	@Subcommand("blueprint delete")
+	public void deleteBlueprint(Player player, String blueprintName, String blueprintType) {
+		if (blueprintType.equalsIgnoreCase("reinforcement")) {
+			ReinforcementBlueprint rb = rm.getReinforcementBlueprint(blueprintName);
+			
+			ReinforcementBlueprintDeletionEvent event = new ReinforcementBlueprintDeletionEvent(player, blueprintName, rb);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			rb = event.getReinforcementBlueprint();
+			
+			if (rb == null) {
+				return;
+			}
+			
+			if (!event.isCancelled()) {
+				rm.unregisterReinforcementBlueprint(rb);
+			}
+			player.sendMessage(ChatColor.YELLOW + "You have deleted a reinforcement blueprint:" + rb.getName());
+		} else if (blueprintType.equalsIgnoreCase("bastion")) {
+			BastionBlueprint bb = bm.getBastionBlueprint(blueprintName);
+			
+			BastionBlueprintDeletionEvent event = new BastionBlueprintDeletionEvent(player, blueprintName, bb);
+			Bukkit.getPluginManager().callEvent(event);
+			
+			bb = event.getBastionBlueprint();
+			
+			if (bb == null) {
+				return;
+			}
+			
+			if (!event.isCancelled()) {
+				bm.unregisterBastionBlueprint(bb);
+			}
+			player.sendMessage(ChatColor.YELLOW + "You have deleted a bastion blueprint: " + bb.getName());
+		} else {
+			player.sendMessage(ChatColor.RED + "That is not a valid type of blueprint.");
 		}
 	}
 	
@@ -181,7 +250,12 @@ public class CitadelCommand extends BaseCommand {
 				player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 				return;
 			}
-			blueprint.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
+			displayName = ChatColor.translateAlternateColorCodes('&', displayName);
+			blueprint.setDisplayName(displayName);
+			
+			ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+			Bukkit.getPluginManager().callEvent(updateEvent);
+			
 			player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " display name to " + ChatColor.RESET + displayName);
 		} else if (type.equalsIgnoreCase("bastion")) {
 			BastionBlueprint blueprint = bm.getBastionBlueprint(name);
@@ -196,7 +270,11 @@ public class CitadelCommand extends BaseCommand {
 				return;
 			}
 			blueprint.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
-			player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " display name to " + ChatColor.RESET + displayName);
+			
+			BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+			Bukkit.getPluginManager().callEvent(updateEvent);
+			
+			player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " display name to " + displayName);
 		}
 	}
 	
@@ -214,6 +292,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setDefaultDamage(defDamage);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " default damage to " + ChatColor.GOLD + defDamage);
 	}
 	
@@ -233,6 +315,10 @@ public class CitadelCommand extends BaseCommand {
 		RegenRate regen = blueprint.getRegenRate();
 		regen.setAmount(regenRateAmount);
 		blueprint.setRegenRate(regen);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " regen rate amount to " + ChatColor.GOLD + regenRateAmount);
 	}
 	
@@ -252,6 +338,10 @@ public class CitadelCommand extends BaseCommand {
 		RegenRate regen = blueprint.getRegenRate();
 		regen.setInterval(regenRateInterval);
 		blueprint.setRegenRate(regen);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " regen rate interval to " + ChatColor.GOLD + regenRateInterval);
 	}
 	
@@ -269,6 +359,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setAcidTime(acidTime);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " acid time to " + ChatColor.GOLD + acidTime);
 	}
 	
@@ -286,6 +380,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setAcidTime(damageCooldown);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " damage cooldown to " + ChatColor.GOLD + damageCooldown);
 	}
 	
@@ -303,7 +401,32 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setMaturationTime(maturationTime);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " maturation time to " + ChatColor.GOLD + maturationTime);
+	}
+	
+	@Subcommand("blueprint maxHealth")
+	public void blueprintMaxHealth(Player player, String name, double maxHealth) {
+		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
+		if (blueprint == null) {
+			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
+			return;
+		}
+		blueprint.setMaxHealth(maxHealth);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
+		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " max health to " + ChatColor.GOLD + maxHealth);
 	}
 	
 	@Subcommand("blueprint radius")
@@ -320,6 +443,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setRadius(radius);
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " radius to " + ChatColor.GOLD + radius);
 	}
 	
@@ -342,6 +469,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setShape(bastionShape);
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " shape to " + ChatColor.GOLD + bastionShape);
 	}
 	
@@ -359,6 +490,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setRequiresMaturity(!blueprint.requiresMaturity());
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " requires maturity to " + ChatColor.GOLD + blueprint.requiresMaturity());
 	}
 	
@@ -376,6 +511,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setPearlBlock(!blueprint.getPearlConfig().block());
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " pearl block to " + ChatColor.GOLD + blueprint.getPearlConfig().block());
 	}
 	
@@ -393,6 +532,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setPearlBlockMidAir(!blueprint.getPearlConfig().blockMidAir());
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " pearl block mid air to " + ChatColor.GOLD + blueprint.getPearlConfig().blockMidAir());
 	}
 	
@@ -410,6 +553,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setPearlConsumeOnBlock(!blueprint.getPearlConfig().consumeOnBlock());
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " pearl consume on block to " + ChatColor.GOLD + blueprint.getPearlConfig().consumeOnBlock());
 	}
 	
@@ -427,6 +574,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setPearlRequiresMaturity(!blueprint.getPearlConfig().requiresMaturity());
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " pearl consume on block to " + ChatColor.GOLD + blueprint.getPearlConfig().consumeOnBlock());
 	}
 	
@@ -444,6 +595,10 @@ public class CitadelCommand extends BaseCommand {
 			return;
 		}
 		blueprint.setPearlDamage(damage);
+		
+		BastionBlueprintUpdateEvent updateEvent = new BastionBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " pearl damage to " + ChatColor.GOLD + blueprint.getPearlConfig().getDamage());
 	}
 	

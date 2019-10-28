@@ -1,6 +1,7 @@
 package io.jayms.serenno.listener.citadel;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -18,11 +19,9 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Comparator;
 import org.bukkit.material.Openable;
 
-import io.jayms.serenno.event.reinforcement.PlayerReinforcementCreationEvent;
 import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.manager.ReinforcementManager;
@@ -32,10 +31,12 @@ import io.jayms.serenno.model.citadel.ReinforcementMode.ReinforceMethod;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementDataSource;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.model.group.GroupPermissions;
 import io.jayms.serenno.util.Cooldown;
 import io.jayms.serenno.util.LocationTools;
+import io.jayms.serenno.util.MathTools;
 import io.jayms.serenno.util.NumberUtils;
 import io.jayms.serenno.util.PlayerTools;
 import net.md_5.bungee.api.ChatColor;
@@ -54,6 +55,22 @@ public class CitadelBlockListener extends CitadelListener {
 		double maxHealth = rb.getMaxHealth();
 		String healthStr = df.format(rein.getHealthAsPercentage() * 100) + "%";
 		return healthPC + healthStr + healthSC + " (" + healthPC + health + healthSC + "/" + healthPC + maxHealth + healthSC + ")";
+	}
+	
+	private String getReinforcementMaturity(Player player, Reinforcement rein) {
+		ChatColor progressPC = NumberUtils.getPrimaryColor(rein.getProgress());
+		ChatColor progressSC = NumberUtils.getSecondaryColor(rein.getProgress());
+		double damage = rein.getDamage();
+		String progressStr = df.format(rein.getProgress() * 100) + "%";
+		return progressPC + progressStr + " Maturity " + progressSC + "(" + progressPC + damage + progressSC + ")";
+	}
+	
+	private String getAcidMaturity(Player player, Reinforcement rein) {
+		ChatColor progressPC = NumberUtils.getPrimaryColor(rein.getAcidProgress());
+		ChatColor progressSC = NumberUtils.getSecondaryColor(rein.getAcidProgress());
+		long timeRemaining = rein.getAcidTimeRemaining();
+		String progressStr = df.format(rein.getAcidProgress() * 100) + "%";
+		return progressPC + progressStr + " Acid " + progressSC + (timeRemaining > 1000 ? "(" + progressPC + MathTools.formatDuration(timeRemaining, TimeUnit.MILLISECONDS) + progressSC + ")" : "");
 	}
 	
 	@EventHandler
@@ -82,17 +99,6 @@ public class CitadelBlockListener extends CitadelListener {
 	}
 	
 	@EventHandler
-	public void onReinforce(PlayerReinforcementCreationEvent e) {
-		ItemStack item = e.getItemPlaced();
-		if (item == null) {
-			return;
-		}
-		if (bm.hasBastionBlueprint(item)) {
-			bm.placeBlock(cm.getCitadelPlayer(e.getPlacer()), e.getReinforcement(), item);
-		}
-	}
-	
-	@EventHandler
 	public void onBreak(BlockBreakEvent e) {
 		Player player = e.getPlayer();
 		CitadelPlayer cp = cm.getCitadelPlayer(player);
@@ -100,7 +106,8 @@ public class CitadelBlockListener extends CitadelListener {
 		e.setCancelled(rm.breakBlock(cp, b));
 	}
 	
-	private Cooldown<Player> lastInfo = new Cooldown<>();
+	private Cooldown<Player> lastReinforceInfo = new Cooldown<>();
+	private Cooldown<Player> lastBastionInfo = new Cooldown<>();
 	
 	@EventHandler
 	public void reinforceInfo(PlayerInteractEvent e) {
@@ -109,7 +116,7 @@ public class CitadelBlockListener extends CitadelListener {
 		}
 		Player player = e.getPlayer();
 		
-		if (lastInfo.isOnCooldown(player)) {
+		if (lastReinforceInfo.isOnCooldown(player)) {
 			return;
 		}
 		
@@ -133,12 +140,19 @@ public class CitadelBlockListener extends CitadelListener {
 		boolean apartOf = group.isMember(player);
 		ChatColor grpColor = apartOf ? ChatColor.GREEN : ChatColor.RED;
 		String grpName = apartOf ? group.getName() : "Unknown";
-		
-		player.sendMessage(rb.getDisplayName() + ChatColor.YELLOW + " | "
+		String message = rb.getDisplayName() + ChatColor.YELLOW + " | "
 				+ getReinforcementHealth(player, reinforcement) + ChatColor.YELLOW + " | "
-				+ ChatColor.GOLD + "Group: " + grpColor + grpName 
-				);
-		lastInfo.putOnCooldown(player, 1000L);
+				+ getReinforcementMaturity(player, reinforcement) + ChatColor.YELLOW + " | ";
+		ReinforcementDataSource dataSource = rm.getReinforcementWorld(player.getWorld()).getDataSource(); 
+		if (dataSource != null && dataSource.isAcidBlock(clickedBlock.getType())) {
+			message += getAcidMaturity(player, reinforcement) + ChatColor.YELLOW + " | ";
+		} else if (clickedBlock.getType() == Material.GOLD_BLOCK) {
+			message += getAcidMaturity(player, reinforcement) + ChatColor.YELLOW + " | ";
+		}
+		message += ChatColor.GOLD + "Group: " + grpColor + grpName;
+		
+		player.sendMessage(message);
+		lastReinforceInfo.putOnCooldown(player, 1000L);
 	}
 	
 	@EventHandler
@@ -179,6 +193,11 @@ public class CitadelBlockListener extends CitadelListener {
 		}
 		
 		Player player = e.getPlayer();
+		
+		if (lastBastionInfo.isOnCooldown(player)) {
+			return;
+		}
+		
 		CitadelPlayer cp = cm.getCitadelPlayer(player);
 		Block clickedBlock = e.getClickedBlock();
 		if (clickedBlock == null) {
@@ -204,6 +223,7 @@ public class CitadelBlockListener extends CitadelListener {
 		} else {
 			player.sendMessage(ChatColor.RED + "Unfriendly bastion.");
 		}
+		lastBastionInfo.putOnCooldown(player, 1000L);
 	}
 	
 	@EventHandler

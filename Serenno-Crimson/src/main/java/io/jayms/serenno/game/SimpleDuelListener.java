@@ -16,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -260,5 +261,22 @@ public class SimpleDuelListener implements Listener {
 		}
 		
 		archer.getBukkitPlayer().sendMessage(ChatColor.RED + "Are you really sure you want to link with the enemy?");
+	}
+	
+	@EventHandler
+	public void onPickUpItem(EntityPickupItemEvent e) {
+		if (!(e.getEntity() instanceof Player)) {
+			return;
+		}
+		Player player = (Player) e.getEntity();
+		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(player);
+		Duel duel = sp.getDuel();
+		if (duel == null) {
+			return;
+		}
+		
+		if (!duel.isRunning() || duel.isSpectating(sp)) {
+			e.setCancelled(true);
+		}
 	}
 }

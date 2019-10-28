@@ -453,15 +453,24 @@ public final class DefaultKits {
 		return result;
 	}
 	
-	public static Kit vaultBattle(ClassType classType) {
-		Kit result;
-		if (classType == ClassType.ARCHER) {
-			result = archer();
-		} else if (classType == ClassType.ENGINEER) {
-			result = engineer();
-		} else {
-			result = noDebuff();
-		}
+	public static Kit vaultBattle() {
+		Kit result = noDebuff();
+		result.set(9, pickaxe());
+		result.set(10, spade());
+		result.set(11, axe());
+		return result;
+	}
+	
+	public static Kit vaultBattleArcher() {
+		Kit result = archer();
+		result.set(9, pickaxe());
+		result.set(10, spade());
+		result.set(11, axe());
+		return result;
+	}
+	
+	public static Kit vaultBattleEngineer() {
+		Kit result = engineer();
 		result.set(9, pickaxe());
 		result.set(10, spade());
 		result.set(11, axe());

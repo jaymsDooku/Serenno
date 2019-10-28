@@ -9,7 +9,7 @@ public class CitadelPlayer {
 	private final Player bukkitPlayer;
 	private Group defaultGroup;
 	private ReinforcementMode reinforcementMode;
-	private Group reinforcementBypass;
+	private boolean reinforcementBypass = true;
 	private boolean	reinforcementInfo;
 	private boolean bastionInfo;
 	
@@ -45,16 +45,12 @@ public class CitadelPlayer {
 		return reinforcementMode != null;
 	}
 	
-	public void setReinforcementBypass(Group reinforcementBypass) {
+	public void setReinforcementBypass(boolean reinforcementBypass) {
 		this.reinforcementBypass = reinforcementBypass;
 	}
 	
-	public Group getReinforcementBypass() {
-		return reinforcementBypass;
-	}
-	
 	public boolean isReinforcementBypass() {
-		return reinforcementBypass != null;
+		return reinforcementBypass;
 	}
 	
 	public void setDefaultGroup(Group defaultGroup) {

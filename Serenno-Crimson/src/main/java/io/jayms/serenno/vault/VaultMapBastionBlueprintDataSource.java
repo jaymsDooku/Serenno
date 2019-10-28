@@ -5,17 +5,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import io.jayms.serenno.kit.ItemMetaBuilder;
+import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
+import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
-import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.util.ItemUtil;
 import io.jayms.serenno.util.SerennoDataSource;
 
@@ -23,7 +23,7 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 
 	private static final String CREATE_BASTION_BLUEPRINT = "CREATE TABLE IF NOT EXISTS BASTION_BLUEPRINT("
 			+ "Name TEXT PRIMARY KEY,"
-			+ "DisplayName TEXT, "
+			+ "DisplayName TEXT UNIQUE, "
 			+ "ItemStackMaterial TEXT UNIQUE, "
 			+ "ItemStackAmount INTEGER, "
 			+ "BastionShape TEXT, "
@@ -52,11 +52,11 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 			+ "PearlDamage = ? "
 			+ "WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
 	
-	private static final String SELECT_BASTION_NAME_BLUEPRINT = "SELECT DisplayName, ItemStackMaterial, ItemStackAmount, RegenRateAmount, RegenRateInterval, Health, MaturationTime, AcidTime, DamageCooldown, DefaultDamage "
+	private static final String SELECT_BASTION_NAME_BLUEPRINT = "SELECT DisplayName, ItemStackMaterial, ItemStackAmount, BastionShape, Radius, RequiresMaturity, PearlBlock, PearlBlockMidAir, PearlConsumeOnBlock, PearlDamage "
 			+ "FROM BASTION_BLUEPRINT WHERE Name = ?";
 	
-	private static final String SELECT_BASTION_BLUEPRINT = "SELECT Name, DisplayName, RegenRateAmount, RegenRateInterval, Health, MaturationTime, AcidTime, DamageCooldown, DefaultDamage "
-			+ "FROM BASTION_BLUEPRINT WHERE ItemStackMaterial = ? AND ItemStackAmount = ?";
+	private static final String SELECT_BASTION_BLUEPRINT = "SELECT Name, ItemStackMaterial, ItemStackAmount, BastionShape, Radius, RequiresMaturity, PearlBlock, PearlBlockMidAir, PearlConsumeOnBlock, PearlDamage "
+			+ "FROM BASTION_BLUEPRINT WHERE ItemStackMaterial = ? AND ItemStackAmount = ? AND DisplayName = ?";
 	
 	private static final String SELECT_ALL_BASTION_BLUEPRINT = "SELECT * FROM BASTION_BLUEPRINT";
 	
@@ -71,7 +71,13 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 	}
 	
 	public void createTables() {
-		db.getDatabase().modifyQuery(CREATE_BASTION_BLUEPRINT, true);
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(CREATE_BASTION_BLUEPRINT);
+			ps.execute();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private void cache(BastionBlueprint value) {
@@ -85,7 +91,7 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(INSERT_BASTION_BLUEPRINT);
 			ps.setString(1, value.getName());
 			ps.setString(2, value.getDisplayName());
-			ps.setString(3, ItemUtil.getName(value.getItemStack()));
+			ps.setString(3, value.getItemStack().getType().toString());
 			ps.setInt(4, value.getItemStack().getAmount());
 			ps.setString(5, value.getShape().toString());
 			ps.setInt(6, value.getRadius());
@@ -107,7 +113,7 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(UPDATE_BASTION_BLUEPRINT);
 			ps.setString(1, value.getDisplayName());
-			ps.setString(2, ItemUtil.getName(value.getItemStack()));
+			ps.setString(2, value.getItemStack().getType().toString());
 			ps.setInt(3, value.getItemStack().getAmount());
 			ps.setString(4, value.getShape().toString());
 			ps.setInt(5, value.getRadius());
@@ -139,10 +145,16 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 				return null;
 			}
 			
+			String displayName = rs.getString("DisplayName");
+			
 			BastionBlueprint bb = BastionBlueprint.builder()
 					.name(name)
-					.displayName(rs.getString("DisplayName"))
-					.itemStack(new ItemStack(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount")))
+					.displayName(displayName)
+					.itemStack(new ItemStackBuilder(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount"))
+							.meta(new ItemMetaBuilder()
+									.name(displayName))
+							.build())
+					.shape(BastionShape.valueOf(rs.getString("BastionShape")))
 					.radius(rs.getInt("Radius"))
 					.requiresMaturity(rs.getBoolean("RequiresMaturity"))
 					.pearlConfig(PearlConfig.builder()
@@ -171,9 +183,12 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 		}
 		
 		try {
+			String displayName = ItemUtil.getName(key);
+			
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_BASTION_BLUEPRINT);
 			ps.setString(1, key.getType().toString());
 			ps.setInt(2, key.getAmount());
+			ps.setString(3, displayName);
 			ResultSet rs = ps.executeQuery();
 			
 			if (!rs.next()) {
@@ -182,8 +197,9 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 			
 			BastionBlueprint bb = BastionBlueprint.builder()
 					.name(rs.getString("Name"))
-					.displayName(rs.getString("DisplayName"))
+					.displayName(displayName)
 					.itemStack(key)
+					.shape(BastionShape.valueOf(rs.getString("BastionShape")))
 					.radius(rs.getInt("Radius"))
 					.requiresMaturity(rs.getBoolean("RequiresMaturity"))
 					.pearlConfig(PearlConfig.builder()
@@ -212,19 +228,21 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 
 	@Override
 	public Collection<BastionBlueprint> getAll() {
-		if (!blueprints.isEmpty()) {
-			return blueprints.values();
-		}
-		
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_ALL_BASTION_BLUEPRINT);
 			ResultSet rs = ps.executeQuery();
 			
 			while (rs.next()) {
+				String displayName = rs.getString("DisplayName");
+				
 				BastionBlueprint bb = BastionBlueprint.builder()
 						.name(rs.getString("Name"))
-						.displayName(rs.getString("DisplayName"))
-						.itemStack(new ItemStack(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount")))
+						.displayName(displayName)
+						.itemStack(new ItemStackBuilder(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount"))
+								.meta(new ItemMetaBuilder()
+										.name(displayName))
+								.build())
+						.shape(BastionShape.valueOf(rs.getString("BastionShape")))
 						.radius(rs.getInt("Radius"))
 						.requiresMaturity(rs.getBoolean("RequiresMaturity"))
 						.pearlConfig(PearlConfig.builder()
@@ -232,8 +250,7 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 									.blockMidAir(rs.getBoolean("PearlBlockMidAir"))
 									.consumeOnBlock(rs.getBoolean("PearlConsumeOnBlock"))
 									.damage(rs.getDouble("PearlDamage"))
-									.build()
-								)
+									.build())
 						.build();
 				cache(bb);
 			}

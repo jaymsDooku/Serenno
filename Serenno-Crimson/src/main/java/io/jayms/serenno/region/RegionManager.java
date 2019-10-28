@@ -1,6 +1,5 @@
 package io.jayms.serenno.region;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -18,6 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -35,7 +35,7 @@ import net.md_5.bungee.api.ChatColor;
 public class RegionManager implements Listener {
 
 	private RegionListener listener;
-	private Map<String, Region> regions = new HashMap<>();
+	private Map<String, Region> regions = Maps.newConcurrentMap();
 	
 	public RegionManager() {
 		this.listener = new RegionListener(this);
@@ -146,7 +146,7 @@ public class RegionManager implements Listener {
 		Bukkit.broadcast(ChatColor.YELLOW + "Region: " + ChatColor.GOLD + region.getName() + ChatColor.YELLOW + " has been saved.", "arena.engineer");
 	}
 	
-	public void saveRegion(Region region) {		
+	public void saveRegion(Region region) {
 		if (!region.isDirty()) {
 			return;
 		}
@@ -211,12 +211,7 @@ public class RegionManager implements Listener {
 	}
 
 	public Region getRegion(Location loc) {
-		World world = loc.getWorld();
 		for (Region r : regions.values()) {
-			if (!world.getUID().equals(r.getParentWorld().getUID()) 
-					&& !r.hasChildWorld(world)) {
-				continue;
-			}
 			if (r.isInside(loc)) {
 				return r;
 			}

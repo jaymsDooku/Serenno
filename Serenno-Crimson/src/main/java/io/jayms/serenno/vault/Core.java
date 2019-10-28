@@ -27,4 +27,9 @@ public class Core {
 		return teamColor;
 	}
 	
+	@Override
+	public String toString() {
+		return "Core[teamColor=" + teamColor.name() + ", reinforcement=" + reinforcement + "]";
+	}
+	
 }

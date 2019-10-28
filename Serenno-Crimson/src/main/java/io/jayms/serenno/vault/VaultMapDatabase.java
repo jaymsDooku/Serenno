@@ -14,8 +14,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.io.Files;
 
 import io.jayms.serenno.SerennoCobalt;
@@ -26,7 +27,7 @@ import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import io.jayms.serenno.model.finance.company.Company;
 import io.jayms.serenno.model.finance.company.ServerCompany;
 import io.jayms.serenno.model.group.Group;
-import io.jayms.serenno.util.LocationTools;
+import net.md_5.bungee.api.ChatColor;
 
 public class VaultMapDatabase {
 	
@@ -40,14 +41,16 @@ public class VaultMapDatabase {
 			+ "GotoZ REAL, "
 			+ "GotoPitch REAL, "
 			+ "GotoYaw REAL, "
-			+ "PlayerListType TEXT"
+			+ "PlayerListType TEXT, "
+			+ "AttackersColour TEXT, "
+			+ "DefendersColour TEXT"
 			+ ");";
 	
 	private static final String INSERT_INFO = "INSERT INTO INFO"
 			+ "("
-			+ "GotoX, GotoY, GotoZ, GotoPitch, GotoYaw, PlayerListType"
+			+ "GotoX, GotoY, GotoZ, GotoPitch, GotoYaw, PlayerListType, AttackersColour, DefendersColour"
 			+ ") VALUES("
-			+ "?, ?, ?, ?, ?, ?"
+			+ "?, ?, ?, ?, ?, ?, ?, ?"
 			+ ")";
 	
 	private static final String UPDATE_INFO = "UPDATE INFO "
@@ -55,8 +58,10 @@ public class VaultMapDatabase {
 			+ "GotoY = ?, "
 			+ "GotoZ = ?, "
 			+ "GotoPitch = ?, "
-			+ "GotoYaw = ?,"
-			+ "PlayerListType = ?"
+			+ "GotoYaw = ?, "
+			+ "PlayerListType = ?, "
+			+ "AttackersColour = ?, "
+			+ "DefendersColour = ? "
 			+ "WHERE InformationID = ?";
 	
 	private static final String SELECT_INFO = "SELECT * FROM INFO LIMIT 1";
@@ -66,6 +71,7 @@ public class VaultMapDatabase {
 	private SQLite database;
 
 	private String worldName;
+	private World world;
 	private VaultMap vaultMap;
 	
 	private int informationID;
@@ -84,6 +90,7 @@ public class VaultMapDatabase {
 	private VaultMapBastionBlueprintDataSource bastionBlueprintSource;
 	private VaultMapSnitchDataSource snitchSource;
 	private Map<String, Group> groupSource;
+	private BiMap<ChatColor, String> groupColours;
 	private Map<String, Company> companySource;
 	
 	private boolean loaded;
@@ -102,6 +109,7 @@ public class VaultMapDatabase {
 		this.bastionBlueprintSource = new VaultMapBastionBlueprintDataSource(this);
 		this.snitchSource = new VaultMapSnitchDataSource(this);
 		this.groupSource = new HashMap<>();
+		this.groupColours = HashBiMap.create();
 		this.companySource = new HashMap<>();
 		
 		init();
@@ -109,6 +117,13 @@ public class VaultMapDatabase {
 	
 	public Database getDatabase() {
 		return database;
+	}
+	
+	public World getWorld() {
+		if (world == null) {
+			world = Bukkit.getWorld(worldName);
+		}
+		return world;
 	}
 	
 	public void init() {
@@ -124,7 +139,15 @@ public class VaultMapDatabase {
 		groupSource.put(defenderGroup.getName().toLowerCase(), defenderGroup);
 		
 		database.open();
-		database.modifyQuery(CREATE_INFO, true);
+		
+		try {
+			PreparedStatement ps = getDatabase().getConnection().prepareStatement(CREATE_INFO);
+			ps.execute();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 		coreSource.createTables();
 		reinforcementSource.createTables();
 		bastionSource.createTables();
@@ -150,6 +173,14 @@ public class VaultMapDatabase {
 			gotoYaw = rs.getFloat("GotoYaw");
 			gotoPitch = rs.getFloat("GotoPitch");
 			playerListType = VaultMapPlayerListType.valueOf(rs.getString("PlayerListType"));
+			String attackerColour = rs.getString("AttackersColour");
+			if (attackerColour != null) {
+				groupColours.put(ChatColor.valueOf(attackerColour), ATTACKERS.toLowerCase());
+			}
+			String defenderColour = rs.getString("DefendersColour");
+			if (defenderColour != null) {
+				groupColours.put(ChatColor.valueOf(defenderColour), DEFENDERS.toLowerCase());
+			}
 			SerennoCrimson.get().getLogger().info("Loaded information for vault map: " + vaultMap.getArena().getName());
 			ps.close();
 			
@@ -169,13 +200,19 @@ public class VaultMapDatabase {
 			ps.setDouble(4, gotoPitch);
 			ps.setDouble(5, gotoYaw);
 			ps.setString(6, playerListType.toString());
+			ChatColor attackerGroupColour = groupColours.inverse().get(ATTACKERS.toLowerCase());
+			ChatColor defenderGroupColour = groupColours.inverse().get(DEFENDERS.toLowerCase());
+			
+			ps.setString(7, attackerGroupColour != null ? attackerGroupColour.name() : null);
+			ps.setString(8, defenderGroupColour != null ? defenderGroupColour.name() : null);
 			if (loaded) {
-				ps.setInt(7, informationID);
+				ps.setInt(9, informationID);
 			}
 			ps.executeUpdate();
 			if (!loaded) {
 				ResultSet rs = ps.getGeneratedKeys();
 				informationID = rs.getInt(1);
+				loaded = true;
 			}
 			ps.close();
 		} catch (SQLException e) {
@@ -225,6 +262,7 @@ public class VaultMapDatabase {
 			Files.copy(database.getSQLfile(), file);
 			SQLite sqlite = new SQLite(SerennoCrimson.get(), SerennoCrimson.get().getLogger(), "[VaultMap - " + worldName + "]", file.getName(), file.getParentFile().getAbsolutePath());
 			VaultMapDatabase db = new VaultMapDatabase(worldName, vaultMap, sqlite);
+			db.load();
 			return db;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -262,6 +300,37 @@ public class VaultMapDatabase {
 	
 	public Map<String, Group> getGroupSource() {
 		return groupSource;
+	}
+	
+	public BiMap<ChatColor, String> getGroupColours() {
+		return groupColours;
+	}
+	
+	public void setGroupColour(ChatColor colour, String groupName) {
+		groupName = groupName.toLowerCase();
+		if (!groupSource.containsKey(groupName)) {
+			return;
+		}
+		
+		groupColours.put(colour, groupName);
+		updateInfo();
+	}
+	
+	public String getGroupNameFromColour(ChatColor colour) {
+		return groupColours.get(colour);
+	}
+	
+	public ChatColor getTeamColourFromGroupName(String groupName) {
+		return groupColours.inverse().get(groupName.toLowerCase());
+	}
+	
+	public void removeGroupColour(ChatColor colour) {
+		if (!groupColours.containsKey(colour)) {
+			return;
+		}
+		
+		groupColours.remove(colour);
+		updateInfo();
 	}
 	
 	public Map<String, Company> getCompanySource() {

@@ -17,7 +17,7 @@ public class TrebuchetMissileLaunchState implements ArtilleryMissileState<Trebuc
 		Trebuchet trebuchet = missile.getArtillery();
 		BlockFace dir = trebuchet.getDirection();
 		RotAxis axis = getAxis(dir);
-		boolean negative = dir == BlockFace.NORTH;
+		boolean negative = dir == BlockFace.NORTH || dir == BlockFace.EAST;
 		
 		ArtilleryMissileState<TrebuchetMissile> result = this;
 		Location rotPoint = trebuchet.getRotationPoint();

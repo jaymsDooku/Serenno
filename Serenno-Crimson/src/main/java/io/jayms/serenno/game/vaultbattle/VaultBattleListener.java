@@ -20,6 +20,7 @@ import com.github.maxopoly.finale.classes.archer.arrows.SiegeArrow;
 import com.github.maxopoly.finale.classes.archer.event.SiegeArrowHitEvent;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
@@ -27,16 +28,37 @@ import io.jayms.serenno.team.Team;
 import io.jayms.serenno.util.LocationTools;
 import io.jayms.serenno.util.ParticleEffect;
 import io.jayms.serenno.vault.Core;
+import io.jayms.serenno.vault.event.CoreDamageEvent;
 import io.jayms.serenno.vault.event.CoreDestroyEvent;
 import net.md_5.bungee.api.ChatColor;
 
 public class VaultBattleListener implements Listener {
 
 	@EventHandler
+	public void onCoreDamage(CoreDamageEvent e) {
+		Player damager = e.getDamager();
+		Core core = e.getCore();
+		VaultBattle battle = core.getVaultMapDatabase().getBattle();
+		if (battle == null) {
+			return;
+		}
+		DuelTeam damagerTeam = battle.getTeam(SerennoCrimson.get().getPlayerManager().get(damager));
+		DuelTeam coreTeam = battle.getTeam(core.getTeamColor());
+		
+		if (damagerTeam.getTeam().getID().equals(coreTeam.getTeam().getID())) {
+			e.setCancelled(true);
+			damager.sendMessage(ChatColor.RED + "You aren't allowed to break your own core.");
+		}
+	}
+	
+	@EventHandler
 	public void onCoreDestroy(CoreDestroyEvent e) {
 		Player destroyer = e.getDestroyer();
 		Core core = e.getCore();
 		VaultBattle battle = core.getVaultMapDatabase().getBattle();
+		if (battle == null) {
+			return;
+		}
 		DuelTeam losers = battle.getTeam(core.getTeamColor());
 		DuelTeam winners = battle.getOtherTeam(losers);
 		

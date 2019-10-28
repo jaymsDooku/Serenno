@@ -1,6 +1,7 @@
 package io.jayms.serenno.manager;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,7 @@ import io.jayms.serenno.util.ChunkCache;
 import io.jayms.serenno.util.ChunkCoord;
 import io.jayms.serenno.util.Coords;
 import io.jayms.serenno.util.LocationTools;
+import net.md_5.bungee.api.ChatColor;
 
 public class ReinforcementManager {
 	
@@ -60,6 +62,10 @@ public class ReinforcementManager {
 	
 	public void registerReinforcementBlueprint(ReinforcementBlueprint blueprint) {
 		reinforcementBlueprints.put(new ItemStackKey(blueprint.getItemStack()), blueprint);
+	}
+	
+	public void unregisterReinforcementBlueprint(ReinforcementBlueprint blueprint) {
+		reinforcementBlueprints.remove(new ItemStackKey(blueprint.getItemStack()));
 	}
 	
 	public ReinforcementBlueprint getReinforcementBlueprint(String name) {
@@ -87,9 +93,9 @@ public class ReinforcementManager {
 		return reinWorld;
 	}
 	
-	public void deleteReinforcementWorld(World world) {
+	public void deleteReinforcementWorld(World world, boolean save) {
 		ReinforcementWorld reinWorld = reinforcementWorlds.remove(world.getName());
-		reinWorld.unloadAll();
+		reinWorld.unloadAll(save);
 	}
 	
 	public void removeReinforcementWorld(World world) {
@@ -110,14 +116,18 @@ public class ReinforcementManager {
 	
 	public Reinforcement getReinforcement(Block block) {
 		Reinforcement directReinforcement = getDirectReinforcement(block);
+		System.out.println("direct: " + directReinforcement);
 		if (directReinforcement != null) {
 			return directReinforcement;
 		}
 		Block responsible = getResponsibleBlock(block);
+		System.out.println("responsible: " + responsible);
 		if (responsible == null) {
 			return null;
 		}
-		return getDirectReinforcement(responsible);
+		Reinforcement responsibleDirect = getDirectReinforcement(responsible);
+		System.out.println("responsibleDirect: " + responsibleDirect);
+		return responsibleDirect;
 	}
 	
 	public Set<Reinforcement> getReinforcementsInArea(Location l1, Location l2) {
@@ -167,17 +177,30 @@ public class ReinforcementManager {
 	public boolean reinforceBlock(CitadelPlayer cp, Block block, ItemStack item) {
 		ReinforcementMode reinMode = cp.getReinforcementMode();
 		
+		Player player = cp.getBukkitPlayer();
 		ReinforcementBlueprint blueprint = reinMode.getReinforcementBlueprint();
 		Group group = reinMode.getGroupToReinforce();
-		if (!group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_FORTIFICATION)) {
+		if (!group.isAuthorized(player, GroupPermissions.REINFORCEMENT_FORTIFICATION)) {
+			player.sendMessage(ChatColor.RED + "You do not have permission to reinforce to that group.");
 			return true;
 		}
 		
-		reinforceBlock(cp.getBukkitPlayer(), block, item, blueprint, group);
+		if (!player.getInventory().contains(item)) {
+			player.sendMessage(blueprint.getDisplayName() + ChatColor.RED + " has run out.");
+			return true;
+		}
+		
+		reinforceBlock(player, block, item, blueprint, group);
 		return false;
 	}
 	
-	public void reinforceBlock(Player placer, Block block, ItemStack item, ReinforcementBlueprint blueprint, Group group) {
+	public Reinforcement reinforceBlock(Player placer, Block block, ItemStack item, ReinforcementBlueprint blueprint, Group group) {
+		if ((!blueprint.getReinforceableMaterials().isEmpty() && !blueprint.getReinforceableMaterials().contains(block.getType()))
+				|| (blueprint.getUnreinforceableMaterials().contains(block.getType()))) {
+			if (placer != null) placer.sendMessage(ChatColor.RED + "That is not a reinforceable material.");
+			return null;
+		}
+		
 		Reinforcement reinforcement = Reinforcement.builder()
 				.id(UUID.randomUUID())
 				.health(blueprint.getMaxHealth())
@@ -198,6 +221,10 @@ public class ReinforcementManager {
 		reinChunkCache.put(block.getX(), block.getY(), block.getZ(), reinforcement);
 		
 		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
+		if (placer != null) {
+			placer.getInventory().remove(blueprint.getItemStack());
+		}
+		return reinforcement;
 	}
 	
 	// false = allow break
@@ -210,17 +237,19 @@ public class ReinforcementManager {
 		}
 		
 		Group group = reinforcement.getGroup();
-		Group bypassGroup = cp.getReinforcementBypass();
-		System.out.println("group: " + group);
-		System.out.println("bypassGroup: " + bypassGroup);
-		if (group.equals(bypassGroup) && group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_BYPASS)) {
+		if (cp.isReinforcementBypass() && group.isAuthorized(cp.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_BYPASS)) {
+			ReinforcementBlueprint blueprint = reinforcement.getBlueprint();
+			HashMap<Integer, ItemStack> itemStacks = cp.getBukkitPlayer().getInventory().addItem(blueprint.getItemStack());
+			if (!itemStacks.isEmpty()) {
+				for (ItemStack it : itemStacks.values()) {
+					block.getWorld().dropItemNaturally(block.getLocation(), it);
+				}
+			}
 			reinforcement.destroy();
 			return false;
 		}
 		
-		ReinforcementBlueprint rb = reinforcement.getBlueprint();
-		reinforcement.damage(cp.getBukkitPlayer(), rb.getDefaultDamage());
-		return true;
+		return reinforcement.damage(cp.getBukkitPlayer(), reinforcement.getDamage());
 	}
 
 	public void destroyReinforcement(Player player, Reinforcement reinforcement) {
@@ -234,44 +263,48 @@ public class ReinforcementManager {
 	}
 	
 	public static Block getResponsibleBlock(Block block) {
-		switch (block.getType()) {
-		case YELLOW_FLOWER:
-		case RED_ROSE:
-		case SAPLING:
-		case WHEAT:
-		case CARROT:
-		case POTATO:
-		case BEETROOT:
-		case MELON_STEM:
-		case PUMPKIN_STEM:
-		case NETHER_WART_BLOCK:
-			return block.getRelative(BlockFace.DOWN);
-		case SUGAR_CANE:
-		case CACTUS:
-			// scan downwards for first different block
-			Block below = block.getRelative(BlockFace.DOWN);
-			while (below.getType() == block.getType()) {
-				below = below.getRelative(BlockFace.DOWN);
-			}
-			return below;
-		case ACACIA_DOOR:
-		case BIRCH_DOOR:
-		case DARK_OAK_DOOR:
-		case IRON_DOOR:
-		case SPRUCE_DOOR:
-		case JUNGLE_DOOR:
-		case WOOD_DOOR:
-			if (block.getRelative(BlockFace.UP).getType() != block.getType()) {
-				// block is upper half of a door
+		Material type = block.getType();
+		System.out.println("type: " + type);
+		switch (type) {
+			case YELLOW_FLOWER:
+			case RED_ROSE:
+			case SAPLING:
+			case WHEAT:
+			case CARROT:
+			case POTATO:
+			case BEETROOT:
+			case MELON_STEM:
+			case PUMPKIN_STEM:
+			case NETHER_WART_BLOCK:
 				return block.getRelative(BlockFace.DOWN);
-			}
-		case BED:
-			Bed bed = (Bed) block.getState();
-			if (bed.isHeadOfBed()) {
-				return block.getRelative(((Bed) block.getState()).getFacing().getOppositeFace());
-			}
-		default:
-			return null;
+			case SUGAR_CANE:
+			case CACTUS:
+				// scan downwards for first different block
+				Block below = block.getRelative(BlockFace.DOWN);
+				while (below.getType() == block.getType()) {
+					below = below.getRelative(BlockFace.DOWN);
+				}
+				return below;
+			case ACACIA_DOOR:
+			case BIRCH_DOOR:
+			case DARK_OAK_DOOR:
+			case IRON_DOOR_BLOCK:
+			case SPRUCE_DOOR:
+			case JUNGLE_DOOR:
+			case WOOD_DOOR:
+				System.out.println("up: " + block.getRelative(BlockFace.UP).getType());
+				System.out.println("down: " + block.getRelative(BlockFace.DOWN).getType());
+				if (block.getRelative(BlockFace.UP).getType() != block.getType()) {
+					// block is upper half of a door
+					return block.getRelative(BlockFace.DOWN);
+				}
+			case BED:
+				Bed bed = (Bed) block.getState();
+				if (bed.isHeadOfBed()) {
+					return block.getRelative(((Bed) block.getState()).getFacing().getOppositeFace());
+				}
+			default:
+				return null;
 		}
 	}
 	

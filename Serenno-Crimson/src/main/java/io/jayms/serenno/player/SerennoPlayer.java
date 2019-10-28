@@ -18,6 +18,7 @@ import io.jayms.serenno.game.DuelRequest;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.game.Duelable;
 import io.jayms.serenno.game.Game;
+import io.jayms.serenno.game.vaultbattle.VaultBattleRequest;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.team.Team;
 import mkremins.fanciful.FancyMessage;
@@ -127,6 +128,10 @@ public class SerennoPlayer implements Duelable {
 		kits[slot] = kit;
 	}
 	
+	public void setKits(DuelType duelType, Kit[] kits) {
+		this.kits.put(duelType, kits);
+	}
+	
 	public void setKits(Map<DuelType, Kit[]> set) {
 		kits = set;
 	}
@@ -183,6 +188,11 @@ public class SerennoPlayer implements Duelable {
 		
 		bukkitPlayer.sendMessage(ChatColor.YELLOW + "Duel accepted. Starting...");
 		request.getSender().sendMessage(ChatColor.YELLOW + "Duel accepted. Starting...");
+		
+		if (request instanceof VaultBattleRequest) {
+			SerennoCrimson.get().getGameManager().vaultBattle(this, (VaultBattleRequest) request);
+			return;
+		}
 		
 		SerennoCrimson.get().getGameManager().duel(this, request);
 	}

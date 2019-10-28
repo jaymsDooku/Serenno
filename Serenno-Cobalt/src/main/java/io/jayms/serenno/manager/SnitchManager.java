@@ -17,6 +17,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.snitch.SnitchDestroyEvent;
 import io.jayms.serenno.event.snitch.SnitchPlacementEvent;
 import io.jayms.serenno.listener.citadel.SnitchListener;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
@@ -128,7 +129,30 @@ public class SnitchManager {
 		snitchWorld.addSnitch(snitch);
 	}
 	
-	public void destroyBastion(Snitch snitch) {
+	public void destroySnitch(Reinforcement reinforcement) {
+		Location loc = reinforcement.getLocation();
+		SnitchWorld snitchWorld = getSnitchWorld(loc.getWorld());
+		if (snitchWorld == null) {
+			return;
+		}
+		
+		Set<Snitch> snitches = snitchWorld.getSnitches(loc);
+		if (snitches.isEmpty()) {
+			return;
+		}
+		
+		for (Snitch snitch : snitches) {
+			if (snitch.getReinforcement().equals(reinforcement)) {
+				destroySnitch(snitch);
+				break;
+			}
+		}
+	}
+	
+	public void destroySnitch(Snitch snitch) {
+		SnitchDestroyEvent event = new SnitchDestroyEvent(snitch);
+		Bukkit.getPluginManager().callEvent(event);
+		
 		World world = snitch.getLocation().getWorld();
 		SnitchWorld snitchWorld = getSnitchWorld(world);
 		snitchWorld.deleteSnitch(snitch);

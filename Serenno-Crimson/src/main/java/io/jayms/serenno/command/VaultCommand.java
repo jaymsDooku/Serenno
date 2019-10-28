@@ -9,11 +9,13 @@ import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.boydti.fawe.FaweCache;
 import com.boydti.fawe.example.MappedFaweQueue;
 import com.boydti.fawe.object.FawePlayer;
 import com.boydti.fawe.util.EditSessionBuilder;
+import com.google.common.collect.Sets;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -28,13 +30,18 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Subcommand;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
+import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.ReinforcementManager;
+import io.jayms.serenno.model.citadel.CitadelPlayer;
+import io.jayms.serenno.model.citadel.ReinforcementMode;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
+import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.util.MaterialTools;
 import io.jayms.serenno.util.MaterialTools.MaterialNumbers;
 import io.jayms.serenno.util.PlayerTools;
 import io.jayms.serenno.util.PlayerTools.Clipboard;
+import io.jayms.serenno.util.worldedit.Bastionizer;
 import io.jayms.serenno.util.worldedit.Reinforcer;
 import io.jayms.serenno.vault.VaultMap;
 import io.jayms.serenno.vault.VaultMapDatabase;
@@ -55,8 +62,30 @@ public class VaultCommand extends BaseCommand {
 			return;
 		}
 		
-		VaultMap vaultMap = vm.createVault(SerennoCrimson.get().getPlayerManager().get(player), vaultName, radius);
-		player.sendMessage(ChatColor.YELLOW + "You have created a new vault map: " + vaultMap.getArena().getRegion().getDisplayName());
+		new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+				VaultMap vaultMap = vm.createVault(SerennoCrimson.get().getPlayerManager().get(player), vaultName, radius);
+				player.sendMessage(ChatColor.YELLOW + "You have created a new vault map: " + vaultMap.getArena().getRegion().getDisplayName());
+			}
+			
+		}.runTask(SerennoCrimson.get());
+	}
+	
+	@Subcommand("info")
+	public void info(Player player, String vaultName) {
+		if (!vm.isVaultMap(vaultName)) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		VaultMapDatabase database = vaultMap.getDatabase();
+		player.sendMessage(ChatColor.GOLD + vaultMap.getArena().getRegion().getName() + ChatColor.YELLOW + "'s region information");
+		player.sendMessage(ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "--------------");
+		player.sendMessage(ChatColor.GOLD + "Cores: " + ChatColor.YELLOW + database.getCoreSource().getAll());
+		player.sendMessage(ChatColor.GOLD + "Group Colours: " + ChatColor.YELLOW + database.getGroupColours());
 	}
 	
 	@Subcommand("goto")
@@ -145,6 +174,30 @@ public class VaultCommand extends BaseCommand {
 		player.sendMessage(ChatColor.YELLOW + "You have set vault map's player list type to: " + ChatColor.GOLD + playerListType);
 	}
 	
+	@Subcommand("groupcolour")
+	public void groupColour(Player player, String vaultName, String groupName, String teamColour) {
+		if (!vm.isVaultMap(vaultName)) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		ChatColor colour = ChatColor.valueOf(teamColour.toUpperCase());
+		if (colour == null) {
+			player.sendMessage(ChatColor.RED + "That isn't a valid colour.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		VaultMapDatabase database = vaultMap.getDatabase();
+		Group group = database.getGroupSource().get(groupName.toLowerCase());
+		if (group == null) {
+			player.sendMessage(ChatColor.RED + "That isn't a valid group.");
+			return;
+		}
+		database.setGroupColour(colour, groupName.toLowerCase());
+		player.sendMessage(ChatColor.YELLOW + "You have set vault map's " + colour + group.getName() + ChatColor.YELLOW + " group colour to: " + colour + teamColour);
+	}
+	
 	@Subcommand("list")
 	public void list(Player player) {
 		Collection<VaultMap> vaults = vm.listVaults();
@@ -174,8 +227,8 @@ public class VaultCommand extends BaseCommand {
 		player.sendMessage(ChatColor.YELLOW + "You have deleted vault map: " + vaultMap.getArena().getRegion().getDisplayName());
 	}
 	
-	@Subcommand("rr")
-	public void replace(Player player, String vaultName, String reinBlueprint, String oldMaterials, String newMaterial) {
+	@Subcommand("r")
+	public void reinforce(Player player, String vaultName, String material) {
 		Clipboard cb = PlayerTools.getClipboard(player);
 		if (cb == null) {
 			player.sendMessage(ChatColor.RED + "Select some points with world edit.");
@@ -187,6 +240,135 @@ public class VaultCommand extends BaseCommand {
 			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
 			return;
 		}
+		
+		CitadelPlayer cp = SerennoCobalt.get().getCitadelManager().getCitadelPlayer(player);
+		ReinforcementMode reinMode = cp.getReinforcementMode();
+		if (reinMode == null) {
+			player.sendMessage(ChatColor.RED + "You need to have a reinforcement selected.");
+			return;
+		}
+		ReinforcementBlueprint blueprint = reinMode.getReinforcementBlueprint();
+		Group group = reinMode.getGroupToReinforce();
+		
+		Location p1 = cb.getP1();
+		Location p2 = cb.getP2();
+		if ((p1 == null || !vaultMap.getArena().getRegion().isInside(p1))
+				|| (p2 == null || !vaultMap.getArena().getRegion().isInside(p2))) {
+			player.sendMessage(ChatColor.RED + "Your selection must be within the bounds of the vault map.");
+			return;
+		}
+		
+		MaterialNumbers materialNumbers;
+		try {
+			materialNumbers = MaterialTools.getMaterialNumbers(material);
+		} catch (IllegalArgumentException e) {
+			player.sendMessage(ChatColor.RED + "Invalid new material data.");
+			return;
+		}
+		Set<BaseBlock> replaceFilter = Sets.newHashSet(FaweCache.getBlock(materialNumbers.getId(), materialNumbers.getData()));
+		
+		FawePlayer<Player> fawePlayer = FawePlayer.wrap(player);
+		Region region = fawePlayer.getSelection();
+		
+		EditSession editSession = new EditSessionBuilder(new BukkitWorld(p1.getWorld()))
+				.player(FawePlayer.wrap(player))
+				.build();
+		
+		ReinforcementManager rm = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
+		Reinforcer reinforcer = new Reinforcer(player, rm.getReinforcementWorld(player.getWorld()), blueprint, group);
+		FuzzyBlockMask mask = new FuzzyBlockMask(editSession, replaceFilter);
+		RegionMaskingFilter filter = new RegionMaskingFilter(mask, reinforcer);
+		RegionVisitor visitor = new RegionVisitor(region, filter,
+				editSession.getQueue() instanceof MappedFaweQueue ? (MappedFaweQueue) editSession.getQueue() : null);
+		Operations.completeBlindly(visitor);
+		player.sendMessage(ChatColor.YELLOW + "You have reinforced: " + ChatColor.GOLD + visitor.getAffected() + ChatColor.YELLOW + " blocks");
+	}
+	
+	@Subcommand("b")
+	public void bastionize(Player player, String vaultName, String material, String bastionBlueprint) {
+		Clipboard cb = PlayerTools.getClipboard(player);
+		if (cb == null) {
+			player.sendMessage(ChatColor.RED + "Select some points with world edit.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		if (vaultMap == null) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		BastionBlueprint bb = vaultMap.getDatabase().getBastionBlueprintSource().get(bastionBlueprint);
+		if (bb == null) {
+			player.sendMessage(ChatColor.RED + "That bastion blueprint doesn't exist.");
+			return;
+		}
+		
+		CitadelPlayer cp = SerennoCobalt.get().getCitadelManager().getCitadelPlayer(player);
+		ReinforcementMode reinMode = cp.getReinforcementMode();
+		if (reinMode == null) {
+			player.sendMessage(ChatColor.RED + "You need to have a reinforcement selected.");
+			return;
+		}
+		ReinforcementBlueprint blueprint = reinMode.getReinforcementBlueprint();
+		Group group = reinMode.getGroupToReinforce();
+		
+		Location p1 = cb.getP1();
+		Location p2 = cb.getP2();
+		if ((p1 == null || !vaultMap.getArena().getRegion().isInside(p1))
+				|| (p2 == null || !vaultMap.getArena().getRegion().isInside(p2))) {
+			player.sendMessage(ChatColor.RED + "Your selection must be within the bounds of the vault map.");
+			return;
+		}
+		
+		MaterialNumbers materialNumbers;
+		try {
+			materialNumbers = MaterialTools.getMaterialNumbers(material);
+		} catch (IllegalArgumentException e) {
+			player.sendMessage(ChatColor.RED + "Invalid new material data.");
+			return;
+		}
+		Set<BaseBlock> replaceFilter = Sets.newHashSet(FaweCache.getBlock(materialNumbers.getId(), materialNumbers.getData()));
+		
+		FawePlayer<Player> fawePlayer = FawePlayer.wrap(player);
+		Region region = fawePlayer.getSelection();
+		
+		EditSession editSession = new EditSessionBuilder(new BukkitWorld(p1.getWorld()))
+				.player(FawePlayer.wrap(player))
+				.build();
+		
+		BastionManager bm = SerennoCobalt.get().getCitadelManager().getBastionManager();
+		Bastionizer bastionizer = new Bastionizer(player, bm.getBastionWorld(player.getWorld()), blueprint, bb, group);
+		FuzzyBlockMask mask = new FuzzyBlockMask(editSession, replaceFilter);
+		RegionMaskingFilter filter = new RegionMaskingFilter(mask, bastionizer);
+		RegionVisitor visitor = new RegionVisitor(region, filter,
+				editSession.getQueue() instanceof MappedFaweQueue ? (MappedFaweQueue) editSession.getQueue() : null);
+		Operations.completeBlindly(visitor);
+		player.sendMessage(ChatColor.YELLOW + "You have bastionized: " + ChatColor.GOLD + visitor.getAffected() + ChatColor.YELLOW + " blocks");
+	}
+	
+	@Subcommand("rr")
+	public void replace(Player player, String vaultName, String oldMaterials, String newMaterial) {
+		Clipboard cb = PlayerTools.getClipboard(player);
+		if (cb == null) {
+			player.sendMessage(ChatColor.RED + "Select some points with world edit.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		if (vaultMap == null) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		CitadelPlayer cp = SerennoCobalt.get().getCitadelManager().getCitadelPlayer(player);
+		ReinforcementMode reinMode = cp.getReinforcementMode();
+		if (reinMode == null) {
+			player.sendMessage(ChatColor.RED + "You need to have a reinforcement selected.");
+			return;
+		}
+		ReinforcementBlueprint blueprint = reinMode.getReinforcementBlueprint();
+		Group group = reinMode.getGroupToReinforce();
 		
 		Location p1 = cb.getP1();
 		Location p2 = cb.getP2();
@@ -217,8 +399,7 @@ public class VaultCommand extends BaseCommand {
 				.build();
 		
 		ReinforcementManager rm = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
-		Reinforcer reinforcer = new Reinforcer(player, rm.getReinforcementWorld(player.getWorld()),
-				rm.getReinforcementBlueprint(reinBlueprint), SerennoCobalt.get().getCitadelManager().getCitadelPlayer(player).getDefaultGroup());
+		Reinforcer reinforcer = new Reinforcer(player, rm.getReinforcementWorld(player.getWorld()), blueprint, group);
 		FuzzyBlockMask mask = new FuzzyBlockMask(editSession, replaceFilter);
 		RegionMaskingFilter filter = new RegionMaskingFilter(mask, reinforcer);
 		RegionVisitor visitor = new RegionVisitor(region, filter,

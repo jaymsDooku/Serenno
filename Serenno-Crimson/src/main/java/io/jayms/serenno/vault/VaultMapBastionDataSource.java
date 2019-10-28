@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
@@ -37,7 +38,13 @@ public class VaultMapBastionDataSource implements BastionDataSource {
 	}
 	
 	public void createTables() {
-		db.getDatabase().modifyQuery(CREATE_BASTION, true);
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(CREATE_BASTION);
+			ps.execute();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -68,11 +75,10 @@ public class VaultMapBastionDataSource implements BastionDataSource {
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_BASTION);
 			ps.setString(1, rein.getID().toString());
-			
 			ResultSet rs = ps.executeQuery();
-			ps.close();
-			
+
 			Bastion bastion = new Bastion(rein, db.getBastionBlueprintSource().get(rs.getString("Blueprint")));
+			ps.close();
 			return bastion;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -83,17 +89,17 @@ public class VaultMapBastionDataSource implements BastionDataSource {
 	@Override
 	public Set<Bastion> getAll() {
 		Set<Bastion> all = new HashSet<>();
-		/*try {
+		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_ALL_BASTION);
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
-				
-				VaultMapBastion bastion = new VaultMapBastion();
+				Bastion bastion = new Bastion(db.getReinforcementSource().get(UUID.fromString(rs.getString("ReinforcementID"))), db.getBastionBlueprintSource().get(rs.getString("Blueprint")));
 				all.add(bastion);
 			}
+			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}*/
+		}
 		return all;
 	}
 

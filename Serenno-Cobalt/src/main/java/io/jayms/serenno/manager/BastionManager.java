@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.event.bastion.BastionPlacementEvent;
 import io.jayms.serenno.kit.ItemStackKey;
+import io.jayms.serenno.listener.citadel.BastionListener;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
@@ -31,9 +32,14 @@ public class BastionManager {
 	private Map<String, BastionWorld> bastionWorlds = Maps.newConcurrentMap();
 	private Map<ItemStackKey, BastionBlueprint> bastionBlueprints = Maps.newConcurrentMap();
 	
-	public BastionManager(ReinforcementManager rm, BastionDataSource dataSource) {
+	private BastionListener bastionListener;
+	
+	public BastionManager(CitadelManager cm, ReinforcementManager rm, BastionDataSource dataSource) {
 		this.rm = rm;
 		this.dataSource = dataSource;
+		
+		bastionListener = new BastionListener(cm, this);
+		Bukkit.getPluginManager().registerEvents(bastionListener, SerennoCobalt.get());
 		
 		World world = Bukkit.getWorld(SerennoCobalt.get().getConfigManager().getDefaultReinforcementWorld());
 		newBastionWorld(world, dataSource);
@@ -41,6 +47,10 @@ public class BastionManager {
 	
 	public void registerBastionBlueprint(BastionBlueprint blueprint) {
 		bastionBlueprints.put(new ItemStackKey(blueprint.getItemStack()), blueprint);
+	}
+	
+	public void unregisterBastionBlueprint(BastionBlueprint blueprint) {
+		bastionBlueprints.remove(new ItemStackKey(blueprint.getItemStack()));
 	}
 	
 	public BastionBlueprint getBastionBlueprint(String name) {
@@ -124,6 +134,26 @@ public class BastionManager {
 		BastionWorld bastionWorld = getBastionWorld(world);
 		bastionWorld.addBastion(bastion);
 		return false;
+	}
+	
+	public void destroyBastion(Reinforcement reinforcement) {
+		Location loc = reinforcement.getLocation();
+		BastionWorld bastionWorld = getBastionWorld(loc.getWorld());
+		if (bastionWorld == null) {
+			return;
+		}
+		
+		Set<Bastion> bastions = bastionWorld.getBastions(loc);
+		if (bastions.isEmpty()) {
+			return;
+		}
+		
+		for (Bastion bastion : bastions) {
+			if (bastion.getReinforcement().equals(reinforcement)) {
+				destroyBastion(bastion);
+				break;
+			}
+		}
 	}
 	
 	public void destroyBastion(Bastion bastion) {

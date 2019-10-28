@@ -1,5 +1,9 @@
 package io.jayms.serenno.model.citadel.reinforcement;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import io.jayms.serenno.model.citadel.RegenRate;
@@ -12,10 +16,13 @@ public class ReinforcementBlueprint {
 	private ItemStack itemStack;
 	private RegenRate regenRate;
 	private double maxHealth;
+	private double maturationScale;
 	private long maturationTime;
 	private long acidTime;
 	private long damageCooldown;
 	private double defaultDamage;
+	private List<Material> reinforceableMaterials;
+	private List<Material> unreinforceableMaterials;
 	
 	private ReinforcementBlueprint(Builder builder) {
 		this.name = builder.getName();
@@ -23,10 +30,13 @@ public class ReinforcementBlueprint {
 		this.itemStack = builder.getItemStack();
 		this.regenRate = builder.getRegenRate();
 		this.maxHealth = builder.getMaxHealth();
+		this.maturationScale = builder.getMaturationScale();
 		this.maturationTime = builder.getMaturationTime();
 		this.acidTime = builder.getAcidTime();
 		this.damageCooldown = builder.getDamageCooldown();
 		this.defaultDamage = builder.getDefaultDamage();
+		this.reinforceableMaterials = builder.getReinforceableMaterials() == null ? new ArrayList<>() : builder.getReinforceableMaterials();
+		this.unreinforceableMaterials = builder.getUnreinforceableMaterials() == null ? new ArrayList<>() : builder.getUnreinforceableMaterials();
 	}
 	
 	public void setDisplayName(String displayName) {
@@ -55,6 +65,18 @@ public class ReinforcementBlueprint {
 	
 	public void setDefaultDamage(double defaultDamage) {
 		this.defaultDamage = defaultDamage;
+	}
+	
+	public void setMaturationScale(double maturationScale) {
+		this.maturationScale = maturationScale;
+	}
+	
+	public double getMaturationScale() {
+		return maturationScale;
+	}
+	
+	public List<Material> getUnreinforceableMaterials() {
+		return unreinforceableMaterials;
 	}
 	
 	public String getName() {
@@ -93,6 +115,20 @@ public class ReinforcementBlueprint {
 		return defaultDamage;
 	}
 	
+	public List<Material> getReinforceableMaterials() {
+		return reinforceableMaterials;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof ReinforcementBlueprint)) {
+			return false;
+		}
+		
+		ReinforcementBlueprint blueprint = (ReinforcementBlueprint) obj;
+		return getName().equals(blueprint.getName());
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -101,10 +137,13 @@ public class ReinforcementBlueprint {
 		sb.append(ChatColor.YELLOW + "Item Stack: " + ChatColor.GOLD + "[" + ChatColor.YELLOW + itemStack.getType().toString() + ChatColor.GOLD + "|" + ChatColor.YELLOW + itemStack.getAmount() + ChatColor.GOLD + "]\n");
 		sb.append(ChatColor.YELLOW + "Max Health: " + ChatColor.GOLD + maxHealth + "\n");
 		sb.append(ChatColor.YELLOW + "Maturation Time: " + ChatColor.GOLD + maturationTime + "\n");
+		sb.append(ChatColor.YELLOW + "Maturation Scale: " + ChatColor.GOLD + maturationScale + "\n");
 		sb.append(ChatColor.YELLOW + "Acid Time: " + ChatColor.GOLD + acidTime + "\n");
 		sb.append(ChatColor.YELLOW + "Regen Rate: " + ChatColor.GOLD + regenRate + "\n");
 		sb.append(ChatColor.YELLOW + "Damage Cooldown: " + ChatColor.GOLD + damageCooldown + "\n");
 		sb.append(ChatColor.YELLOW + "Default Damage: " + ChatColor.GOLD + defaultDamage + "\n");
+		sb.append(ChatColor.YELLOW + "Reinforceable Materials: " + ChatColor.GOLD + reinforceableMaterials + "\n");
+		sb.append(ChatColor.YELLOW + "Unreinforceable Materials: " + ChatColor.GOLD + unreinforceableMaterials + "\n");
 		return sb.toString();
 	}
 	
@@ -119,10 +158,13 @@ public class ReinforcementBlueprint {
 		private ItemStack itemStack;
 		private RegenRate regenRate;
 		private double maxHealth;
+		private double maturationScale;
 		private long maturationTime;
 		private long acidTime;
 		private long damageCooldown;
 		private double defaultDamage;
+		private List<Material> reinforceableMaterials;
+		private List<Material> unreinforceableMaterials;
 		
 		private Builder() {
 		}
@@ -152,6 +194,15 @@ public class ReinforcementBlueprint {
 		
 		public ItemStack getItemStack() {
 			return itemStack;
+		}
+		
+		public Builder maturationScale(double set) {
+			this.maturationScale = set;
+			return this;
+		}
+		
+		public double getMaturationScale() {
+			return maturationScale;
 		}
 		
 		public Builder regenRate(RegenRate regenRate) {
@@ -206,6 +257,24 @@ public class ReinforcementBlueprint {
 		
 		public double getDefaultDamage() {
 			return defaultDamage;
+		}
+		
+		public Builder reinforceableMaterials(List<Material> reinforceableMaterials) {
+			this.reinforceableMaterials = reinforceableMaterials;
+			return this;
+		}
+		
+		public List<Material> getReinforceableMaterials() {
+			return reinforceableMaterials;
+		}
+		
+		public Builder unreinforceableMaterials(List<Material> unreinforceableMaterials) {
+			this.unreinforceableMaterials = unreinforceableMaterials;
+			return this;
+		}
+		
+		public List<Material> getUnreinforceableMaterials() {
+			return unreinforceableMaterials;
 		}
 		
 		public ReinforcementBlueprint build() {

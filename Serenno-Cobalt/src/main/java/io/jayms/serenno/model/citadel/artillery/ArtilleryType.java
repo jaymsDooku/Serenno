@@ -2,30 +2,31 @@ package io.jayms.serenno.model.citadel.artillery;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.function.Supplier;
 
+import org.bukkit.inventory.ItemStack;
+
+import io.jayms.serenno.item.CustomItemManager;
 import io.jayms.serenno.model.citadel.artillery.trebuchet.Trebuchet;
-import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetCrate;
+import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetCrateItem;
 
 public enum ArtilleryType {
 
-	TREBUCHET(Trebuchet.class, TrebuchetCrate.class),
+	TREBUCHET(Trebuchet.class, () -> {
+		return (ArtilleryCrateItem) CustomItemManager.getCustomItemManager().createCustomItem(TrebuchetCrateItem.class);
+	}),
 	CANNON(null, null);
 	
 	private Class<? extends Artillery> artilleryClazz;
-	private Class<? extends ArtilleryCrate> artilleryCrateClazz;
+	private Supplier<? extends ArtilleryCrateItem> artilleryCrateItemSupplier;
 	
-	private ArtilleryType(Class<? extends Artillery> artilleryClazz, Class<? extends ArtilleryCrate> artilleryCrateClazz) {
+	private ArtilleryType(Class<? extends Artillery> artilleryClazz, Supplier<? extends ArtilleryCrateItem> artilleryCrateItemSupplier) {
 		this.artilleryClazz = artilleryClazz;
-		this.artilleryCrateClazz = artilleryCrateClazz;
+		this.artilleryCrateItemSupplier = artilleryCrateItemSupplier;
 	}
 	
-	public ArtilleryCrate getArtilleryCrate() {
-		try {
-			return artilleryCrateClazz.newInstance();
-		} catch (InstantiationException | IllegalAccessException e) {
-			e.printStackTrace();
-			return null;
-		}
+	public ItemStack getNewItem() {
+		return artilleryCrateItemSupplier.get().getItemStack();
 	}
 	
 	public Artillery getArtillery(ArtilleryCrate crate) {

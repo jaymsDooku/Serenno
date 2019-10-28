@@ -75,6 +75,12 @@ public class ArenaSelectMenu extends SingleMenu {
 						SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(player);
 						
 						DuelType duelType = (DuelType) initData.get("duelType");
+						if (duelType == DuelType.VAULTBATTLE) {
+							initData.put("arena", arena);
+							SerennoCrimson.get().getGameManager().getVaultSideMenu().open(player, initData);
+							return;
+						}
+						
 						SerennoPlayer toDuel = (SerennoPlayer) initData.get("toDuel");
 						
 						DuelRequest request = new DuelRequest(sp, duelType, arena);

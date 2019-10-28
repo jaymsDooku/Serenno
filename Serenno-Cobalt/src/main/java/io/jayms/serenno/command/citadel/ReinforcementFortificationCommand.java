@@ -45,6 +45,11 @@ public class ReinforcementFortificationCommand extends StandaloneCommand {
 		group = event.getGroup();
 		blueprint = event.getBlueprint();
 		
+		if (blueprint == null) {
+			player.sendMessage(ChatColor.RED + "You must be holding a reinforceable material.");
+			return true;
+		}
+		
 		if (group == null) {
 			player.sendMessage(ChatColor.RED + "Set a default group.");
 			return true;

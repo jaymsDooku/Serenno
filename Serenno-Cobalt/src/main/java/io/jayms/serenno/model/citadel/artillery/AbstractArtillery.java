@@ -62,7 +62,7 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 	
 	@Override
 	public Reinforcement getReinforcement() {
-		return reinforcement;
+		return crate.getReinforcement();
 	}
 	
 	@Override
@@ -104,7 +104,7 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		AffineTransform transform = new AffineTransform();
 		switch (getDirection()) {
 			case EAST:
-				//position = position.add(-config.getTrebuchetRightWidth(), 0, -config.getTrebuchetBackwardLength());
+				position = position.add(-config.getTrebuchetRightWidth(), 0, config.getTrebuchetBackwardLength());
 				transform = transform.rotateY(90);
 				break;
 			case NORTH:
@@ -112,7 +112,7 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 				transform = transform.rotateY(180);
 				break;
 			case WEST:
-				//position = position.add(-config.getTrebuchetRightWidth(), 0, config.getTrebuchetBackwardLength());
+				position = position.add(config.getTrebuchetRightWidth(), 0, -config.getTrebuchetBackwardLength());
 				transform = transform.rotateY(270);
 				break;
 			case SOUTH:
@@ -137,6 +137,16 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		int minY = crate.getLocation().getBlockY();
 		int maxY = minY + config.getTrebuchetHeight();
 		
+		for (int x = minX; x <= maxX; x++) {
+			for (int y = minY; y <= maxY; y++) {
+				for (int z = minZ; z <= maxZ; z++) {
+					Block b = loc.getWorld().getBlockAt(x, y, z);
+					if (b.getType() == Material.WOOD_BUTTON) {
+						b.setType(Material.AIR);
+					}
+				}
+			}
+		}
 		for (int x = minX; x <= maxX; x++) {
 			for (int y = minY; y <= maxY; y++) {
 				for (int z = minZ; z <= maxZ; z++) {

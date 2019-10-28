@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.snitch.Snitch;
@@ -39,7 +40,13 @@ public class VaultMapSnitchDataSource implements SnitchDataSource {
 	}
 	
 	public void createTables() {
-		db.getDatabase().modifyQuery(CREATE_SNITCH, true);
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(CREATE_SNITCH);
+			ps.execute();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -71,12 +78,11 @@ public class VaultMapSnitchDataSource implements SnitchDataSource {
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_SNITCH);
 			ps.setString(1, rein.getID().toString());
-			
 			ResultSet rs = ps.executeQuery();
-			ps.close();
 			
-			Snitch bastion = new Snitch(rein, rs.getString("Name"), rs.getInt("Radius"));
-			return bastion;
+			Snitch snitch = new Snitch(rein, rs.getString("Name"), rs.getInt("Radius"));
+			ps.close();
+			return snitch;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
@@ -86,17 +92,17 @@ public class VaultMapSnitchDataSource implements SnitchDataSource {
 	@Override
 	public Collection<Snitch> getAll() {
 		Set<Snitch> all = new HashSet<>();
-		/*try {
-			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_ALL_BASTION);
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_ALL_SNITCH);
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
-				
-				VaultMapBastion bastion = new VaultMapBastion();
+				Snitch bastion = new Snitch(db.getReinforcementSource().get(UUID.fromString(rs.getString("ReinforcementID"))), rs.getString("Name"), rs.getInt("Radius"));
 				all.add(bastion);
 			}
+			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}*/
+		}
 		return all;
 	}
 

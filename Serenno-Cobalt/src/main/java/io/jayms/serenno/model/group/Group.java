@@ -21,7 +21,8 @@ public class Group {
 	private static final GroupRank.Builder DEFAULT_RANK = GroupRank.builder()
 			.name("member")
 			.displayName("Member")
-			.order(5);
+			.order(5)
+			.addPermission(GroupPermissions.ALL);
 	
 	private static final GroupRank.Builder OWNER_RANK = GroupRank.builder()
 			.name("owner")

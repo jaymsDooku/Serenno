@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
-import io.jayms.serenno.model.group.Group;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.command.CivCommand;
 import vg.civcraft.mc.civmodcore.command.StandaloneCommand;
@@ -22,11 +21,9 @@ public class ReinforcementBypassCommand extends StandaloneCommand {
 		Player player = (Player) sender;
 		CitadelManager cm = SerennoCobalt.get().getCitadelManager();
 		CitadelPlayer cp = cm.getCitadelPlayer(player);
-		Group group = cp.getDefaultGroup();
-		boolean bypassing = cp.isReinforcementBypass();
-		cp.setReinforcementBypass(bypassing ? null : group);
+		cp.setReinforcementBypass(!cp.isReinforcementBypass());
 		player.sendMessage(ChatColor.YELLOW + "Reinforcement Bypass: " 
-				+ (bypassing ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
+				+ (cp.isReinforcementBypass() ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
 		return true;
 	}
 

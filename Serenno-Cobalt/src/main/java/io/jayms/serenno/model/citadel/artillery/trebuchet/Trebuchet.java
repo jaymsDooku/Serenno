@@ -12,6 +12,7 @@ import io.jayms.serenno.menu.Menu;
 import io.jayms.serenno.model.citadel.artillery.AbstractArtillery;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileRunner;
+import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
 import net.md_5.bungee.api.ChatColor;
 
 public class Trebuchet extends AbstractArtillery {
@@ -22,17 +23,10 @@ public class Trebuchet extends AbstractArtillery {
 	private double firingAngleThreshold = 150;
 	private double firingPower;
 	private int firingAmmoAmount = 0;
-	private Material firingAmmoMaterial;
+	private Material firingAmmoMaterial = Material.COAL;
 	
 	public Trebuchet(ArtilleryCrate crate) {
 		super(crate);
-		System.out.println("qtXMin: " + qtXMin());
-		System.out.println("qtZMin: " + qtZMin());
-		System.out.println("qtXMid: " + qtXMid());
-		System.out.println("qtZMid: " + qtZMid());
-		System.out.println("qtXMax: " + qtXMax());
-		System.out.println("qtZMax: " + qtZMax());
-		System.out.println("loc: " + getLocation());
 	}
 	
 	private Location rotPoint;
@@ -224,16 +218,16 @@ public class Trebuchet extends AbstractArtillery {
 		
 		switch (getDirection()) {
 			case NORTH:
-				sub = config.getTrebuchetForwardLength();
-				break;
-			case EAST:
-				sub = config.getTrebuchetLeftWidth();
-				break;
-			case SOUTH:
 				sub = config.getTrebuchetBackwardLength();
 				break;
-			case WEST:
+			case EAST:
 				sub = config.getTrebuchetRightWidth();
+				break;
+			case SOUTH:
+				sub = config.getTrebuchetForwardLength();
+				break;
+			case WEST:
+				sub = config.getTrebuchetLeftWidth();
 				break;
 			default:
 				throw new IllegalStateException("Direction must be a primary cardinal.");
@@ -244,6 +238,11 @@ public class Trebuchet extends AbstractArtillery {
 
 	@Override
 	public void fire(EngineerPlayer player) {
+		if (firingAmmoAmount <= 0) {
+			player.sendMessage(ChatColor.RED + "Trebuchet is out of ammo.");
+			return;
+		}
+		
 		ArtilleryManager am = SerennoCobalt.get().getCitadelManager().getArtilleryManager();
 		ArtilleryMissileRunner missileRunner = am.getMissileRunner(Trebuchet.class);
 		missileRunner.fireMissile(player, this);

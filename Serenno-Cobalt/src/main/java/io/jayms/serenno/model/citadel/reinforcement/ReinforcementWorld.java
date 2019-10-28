@@ -1,6 +1,7 @@
 package io.jayms.serenno.model.citadel.reinforcement;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -8,6 +9,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -34,7 +36,15 @@ public class ReinforcementWorld {
 					
 					@Override
 					public void onRemoval(RemovalNotification<ChunkCoord, ChunkCache<Reinforcement>> notification) {
-						notification.getValue().unload();
+						new BukkitRunnable() {
+							@Override
+							public void run() {
+								if (dataSource != null) {
+									dataSource.persistAll(notification.getValue().getAll());
+								}
+								notification.getValue().unload();
+							}
+						}.runTaskLater(SerennoCobalt.get(), 1L);
 					}
 					
 				})
@@ -42,29 +52,8 @@ public class ReinforcementWorld {
 				
 					@Override
 					public ChunkCache<Reinforcement> load(ChunkCoord key) throws Exception {
-						return new ChunkCache<Reinforcement>(key, 
-								new CacheLoader<Coords, Reinforcement>() {
-									
-									@Override
-									public Reinforcement load(Coords coords) {
-										return dataSource != null ? dataSource.get(new ReinforcementKey(key, coords)) : null;
-									}
-							
-								},
-								new RemovalListener<Coords, Reinforcement>() {
-									
-									@Override
-									public void onRemoval(RemovalNotification<Coords, Reinforcement> notification) {
-										Reinforcement reinforcement = notification.getValue();
-										System.out.println("Removing reinforcement: " + notification.getValue());
-										System.out.println("CAUSE: " + notification.getCause());
-										if (reinforcement.isBroken()) {
-											dataSource.delete(reinforcement);
-										} else {
-											dataSource.update(reinforcement);
-										}
-									}
-								});
+						Map<Coords, Reinforcement> reins = dataSource != null ? dataSource.getAll(key) : null;
+						return new ChunkCache<Reinforcement>(key, reins, null);
 					}
 				
 				});
@@ -95,7 +84,7 @@ public class ReinforcementWorld {
 		reinCache.invalidate(ChunkCoord.fromChunk(chunk));
 	}
 	
-	public void unloadAll() {
+	public void unloadAll(boolean save) {
 		reinCache.invalidateAll();
 	}
 	

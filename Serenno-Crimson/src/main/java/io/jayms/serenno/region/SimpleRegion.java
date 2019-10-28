@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
@@ -67,6 +68,11 @@ public class SimpleRegion implements Region {
 	
 	@Override
 	public boolean isWorldLoaded() {
+		if (world != null) {
+			return true;
+		}
+		
+		world = Bukkit.getWorld(parentWorld);
 		return world != null;
 	}
 	
@@ -97,13 +103,12 @@ public class SimpleRegion implements Region {
 	
 	@Override
 	public Location getParentLocation1() {
-		return new Location(world, p1.getX(), p1.getY(), p1.getZ());
+		return new Location(getParentWorld(), p1.getX(), p1.getY(), p1.getZ());
 	}
 
 	@Override
 	public Location getParentLocation2() {
-		
-		return new Location(world, p2.getX(), p2.getY(), p2.getZ());
+		return new Location(getParentWorld(), p2.getX(), p2.getY(), p2.getZ());
 	}
 
 	@Override
@@ -133,6 +138,11 @@ public class SimpleRegion implements Region {
 	public void newChildWorld(World world) {
 		childWorlds.add(world);
 	}
+	
+	@Override
+	public void removeChildWorld(World world) {
+		childWorlds.remove(world);
+	}
 
 	@Override
 	public Set<String> getFlags() {
@@ -155,15 +165,8 @@ public class SimpleRegion implements Region {
 			return false;
 		}
 		
-		World parentWorld = getParentWorld();
-		//System.out.println("parentWorld: " + parentWorld);
-		UUID parentWorldUUID = parentWorld.getUID();
-		//System.out.println("parentWorldUUID: " + parentWorldUUID);
 		World locWorld = loc.getWorld();
-		//System.out.println("locWorld: " + locWorld);
-		UUID locWorldUUID = locWorld.getUID();
-		//System.out.println("locWorldUUID: " + locWorldUUID);
-		if (!parentWorldUUID.equals(locWorldUUID)) {
+		if (!getParentWorld().getUID().equals(locWorld.getUID()) && !hasChildWorld(locWorld)) {
 			return false;
 		}
 		
@@ -220,4 +223,9 @@ public class SimpleRegion implements Region {
 		return dirty;
 	}
 
+	@Override
+	public String toString() {
+		return "Region[name=" + name + "]";
+	}
+	
 }

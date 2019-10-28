@@ -71,7 +71,9 @@ public class RegionListener implements Listener {
 		Player player = (Player) e.getEntity();
 		
 		Region region = regionManager.getRegion(player.getLocation());
-		
+		if (region == null) {
+			return;
+		}
 		if (region.isFlagEnabled(RegionFlags.HUNGER_LOSS)) {
 			return;
 		}

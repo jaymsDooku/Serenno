@@ -12,10 +12,10 @@ import io.jayms.serenno.bot.Bot;
 import io.jayms.serenno.bot.BotTrait;
 import io.jayms.serenno.command.ArenaCommand;
 import io.jayms.serenno.command.GameCommand;
+import io.jayms.serenno.command.KitCommand;
 import io.jayms.serenno.command.RegionCommand;
 import io.jayms.serenno.command.TeamCommand;
 import io.jayms.serenno.command.VaultCommand;
-import io.jayms.serenno.db.MongoAPI;
 import io.jayms.serenno.game.GameManager;
 import io.jayms.serenno.game.kiteditor.KitEditor;
 import io.jayms.serenno.lobby.Lobby;
@@ -145,6 +145,7 @@ public class SerennoCrimson extends ACivMod {
 		commandManager.registerCommand(new RegionCommand());
 		commandManager.registerCommand(new TeamCommand());
 		commandManager.registerCommand(new VaultCommand());
+		commandManager.registerCommand(new KitCommand());
 	}
 	
 	@Override
@@ -156,6 +157,8 @@ public class SerennoCrimson extends ACivMod {
 		super.onDisable();
 		
 		Bot.clearAndKillAllNPCs();
+		
+		gameManager.shutdown();
 		
 		regionManager.saveAll();
 		arenaManager.saveAll();

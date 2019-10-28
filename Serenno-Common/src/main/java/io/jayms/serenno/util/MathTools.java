@@ -1,6 +1,7 @@
 package io.jayms.serenno.util;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.util.Vector;
 
@@ -50,6 +51,28 @@ public class MathTools {
 	
 	public static int ceil(double i, int v){
 	    return (int) (Math.ceil(i/v) * v);
+	}
+	
+	public static String formatDuration(long time, TimeUnit unit) {
+		long totalSeconds = TimeUnit.SECONDS.convert(time, unit);
+		long seconds = totalSeconds % 60;
+		long totalMinutes = totalSeconds / 60;
+		long minutes = totalMinutes % 60;
+		long totalHours = totalMinutes / 60;
+		StringBuilder sb = new StringBuilder();
+		if (totalHours > 0) {
+			sb.append(totalHours);
+			sb.append(" h ");
+		}
+		if (minutes > 0) {
+			sb.append(minutes);
+			sb.append(" min ");
+		}
+		if (seconds > 0) {
+			sb.append(seconds);
+			sb.append(" sec");
+		}
+		return sb.toString().trim();
 	}
 	
 }

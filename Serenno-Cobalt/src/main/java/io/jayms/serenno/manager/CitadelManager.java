@@ -1,5 +1,6 @@
 package io.jayms.serenno.manager;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,7 +39,7 @@ public class CitadelManager {
 	
 	public CitadelManager() {
 		reinforcementManager = new ReinforcementManager(this, null);
-		bastionManager = new BastionManager(reinforcementManager, null);
+		bastionManager = new BastionManager(this, reinforcementManager, null);
 		snitchManager = new SnitchManager(reinforcementManager, null);
 		artilleryManager = new ArtilleryManager(this);
 		
@@ -46,12 +47,31 @@ public class CitadelManager {
 				.name("stone")
 				.displayName(ChatColor.GRAY + "Stone")
 				.defaultDamage(1)
-				.acidTime(20000)
+				.acidTime(1000 * 60 * 5)
 				.damageCooldown(0)
+				.maturationTime(1000 * 60 * 1)
+				.maturationScale(10)
 				.itemStack(new ItemStack(Material.STONE, 1))
 				.regenRate(new RegenRate(1, 60000))
 				.maxHealth(50)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
 				.build());
+		reinforcementManager.registerReinforcementBlueprint(ReinforcementBlueprint.builder()
+				.name("stone-bastion")
+				.displayName(ChatColor.GRAY + "Stone Bastion")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 5)
+				.damageCooldown(2500)
+				.maturationTime(1000 * 60 * 1)
+				.maturationScale(10)
+				.itemStack(new ItemStackBuilder(Material.STONE, 1)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.GRAY + "Stone Bastion")).build())
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(50)
+				.reinforceableMaterials(Arrays.asList(Material.SPONGE))
+				.build());
+		
 		bastionManager.registerBastionBlueprint(BastionBlueprint.builder()
 				.name("vault")
 				.displayName(ChatColor.DARK_RED + "Vault Bastion")

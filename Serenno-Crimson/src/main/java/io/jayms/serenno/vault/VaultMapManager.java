@@ -1,9 +1,11 @@
 package io.jayms.serenno.vault;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -27,8 +29,8 @@ import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.model.citadel.RegenRate;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
-import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
+import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.region.Region;
@@ -38,10 +40,12 @@ import net.md_5.bungee.api.ChatColor;
 public class VaultMapManager implements Listener {
 	
 	private Map<String, VaultMap> vaultMaps = Maps.newConcurrentMap();
-	private Map<World, VaultMap> worldToVaultMaps = Maps.newConcurrentMap();
+	private Map<UUID, VaultMap> worldToVaultMaps = Maps.newConcurrentMap();
 	
 	private File vaultMapsFolder;
 	private File vaultMapsFolderTemp;
+	
+	private VaultMapListener vaultMapListener;
 	
 	public VaultMapManager() {
 		vaultMapsFolder = new File(SerennoCrimson.get().getDataFolder(), "vaultMapsFolder");
@@ -53,6 +57,9 @@ public class VaultMapManager implements Listener {
 			vaultMapsFolderTemp.mkdirs();
 		}
 		
+		vaultMapListener = new VaultMapListener(this);
+		
+		Bukkit.getPluginManager().registerEvents(vaultMapListener, SerennoCrimson.get());
 		Bukkit.getPluginManager().registerEvents(this, SerennoCrimson.get());
 	}
 	
@@ -129,6 +136,7 @@ public class VaultMapManager implements Listener {
 		
 		VaultMap vaultMap = new SimpleVaultMap(createdWorld.getName(), worldArena,
 				new SQLite(SerennoCrimson.get(), SerennoCrimson.get().getLogger(), "[VaultMap - " + name + "]", name + ".db", vaultMapsFolder.getAbsolutePath()));
+		SerennoCrimson.get().getArenaManager().replaceArena(vaultMap);
 		
 		VaultMapDatabase database = vaultMap.getDatabase();
 		
@@ -136,13 +144,57 @@ public class VaultMapManager implements Listener {
 				.name("stone")
 				.displayName(ChatColor.GRAY + "Stone")
 				.defaultDamage(1)
-				.acidTime(20000)
+				.acidTime(1000 * 60 * 3)
 				.damageCooldown(0)
 				.itemStack(new ItemStack(Material.STONE, 1))
+				.maturationTime(1000 * 60 * 1)
 				.regenRate(new RegenRate(1, 60000))
 				.maxHealth(50)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
 				.build();
 		database.getReinforcementBlueprintSource().create(reinBlueprint);
+		ReinforcementBlueprint ironBlueprint = ReinforcementBlueprint.builder()
+				.name("iron")
+				.displayName(ChatColor.DARK_GRAY + "Iron")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 9)
+				.damageCooldown(0)
+				.itemStack(new ItemStack(Material.IRON_INGOT, 1))
+				.maturationTime(1000 * 60 * 3)
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(200)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
+				.build();
+		database.getReinforcementBlueprintSource().create(ironBlueprint);
+		ReinforcementBlueprint diamondBlueprint = ReinforcementBlueprint.builder()
+				.name("diamond")
+				.displayName(ChatColor.AQUA + "Diamond")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 27)
+				.damageCooldown(0)
+				.itemStack(new ItemStack(Material.DIAMOND, 1))
+				.maturationTime(1000 * 60 * 9)
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(400)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
+				.build();
+		database.getReinforcementBlueprintSource().create(diamondBlueprint);
+		ReinforcementBlueprint bastionReinBlueprint = ReinforcementBlueprint.builder()
+				.name("diamond-bastion")
+				.displayName(ChatColor.AQUA + "Diamond Bastion")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 30)
+				.damageCooldown(2500)
+				.maturationTime(1000 * 60 * 30)
+				.maturationScale(10)
+				.itemStack(new ItemStackBuilder(Material.DIAMOND, 1)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.AQUA + "Diamond Bastion")).build())
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(400)
+				.reinforceableMaterials(Arrays.asList(Material.SPONGE))
+				.build();
+		database.getReinforcementBlueprintSource().create(bastionReinBlueprint);
 		
 		BastionBlueprint bastionBlueprint = BastionBlueprint.builder()
 				.name("vault")
@@ -185,7 +237,7 @@ public class VaultMapManager implements Listener {
 		return vaultMaps.values().stream().filter(m -> m.isActiveWorld(world)).findFirst().orElse(null);
 	}
 	
-	public Map<World, VaultMap> getWorldToVaultMaps() {
+	public Map<UUID, VaultMap> getWorldToVaultMaps() {
 		return worldToVaultMaps;
 	}
 	

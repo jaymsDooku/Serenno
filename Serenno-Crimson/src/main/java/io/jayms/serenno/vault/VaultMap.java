@@ -36,6 +36,8 @@ public interface VaultMap extends Arena {
 	
 	boolean isOriginalWorldLoaded();
 	
+	String getOriginalWorldName();
+	
 	World getOriginalWorld();
 	
 	World activateWorld();

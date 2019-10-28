@@ -2,13 +2,17 @@ package io.jayms.serenno.model.citadel.reinforcement;
 
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.event.reinforcement.PlayerReinforcementDamageEvent;
 import io.jayms.serenno.model.group.Group;
+import io.jayms.serenno.util.Cooldown;
+import net.md_5.bungee.api.ChatColor;
 
 public class Reinforcement {
 	
@@ -17,10 +21,14 @@ public class Reinforcement {
 	private ReinforcementBlueprint blueprint;
 	private double health;
 	private Location loc;
+	
+	private Cooldown<Player> lastReinforcementDamage;
 	private long creationTime;
+	
 	private Group group;
 	private boolean inMemory;
 	private boolean broken;
+	private boolean dirty;
 	
 	public Reinforcement(Builder builder) {
 		this.id = builder.getId();
@@ -31,6 +39,7 @@ public class Reinforcement {
 		this.creationTime = builder.getCreationTime();
 		this.group = builder.getGroup();
 		this.inMemory = builder.isInMemory();
+		this.dirty = inMemory;
 	}
 	
 	public UUID getID() {
@@ -61,8 +70,48 @@ public class Reinforcement {
 		return creationTime;
 	}
 	
+	public double getProgress() {
+		long maturationTime = blueprint.getMaturationTime();
+		if (maturationTime <= 0) {
+			return 1;
+		}
+		long curTime = System.currentTimeMillis();
+		long elapsedTime = curTime - getCreationTime();
+		double maturation = (double) elapsedTime / maturationTime;
+		return maturation > 1 ? 1 : maturation;
+	}
+	
+	public double getDamage() {
+		double progress = getProgress();
+		double damage = blueprint.getDefaultDamage();
+		if (progress < 1.0) {
+			damage /= (1.0 - progress);
+			damage *= blueprint.getMaturationScale();
+		}
+		return damage;
+	}
+	
+	public double getAcidProgress() {
+		long acidTime = blueprint.getAcidTime();
+		if (acidTime <= 0) {
+			return 1;
+		}
+		long curTime = System.currentTimeMillis();
+		long elapsedTime = curTime - getCreationTime();
+		double acid = (double) elapsedTime / acidTime;
+		return acid > 1 ? 1 : acid;
+	}
+	
+	public long getAcidTimeRemaining() {
+		return (getCreationTime() + blueprint.getAcidTime()) - System.currentTimeMillis(); 
+	}
+	
 	public Group getGroup() {
 		return group;
+	}
+	
+	public void setInMemory(boolean inMemory) {
+		this.inMemory = inMemory;
 	}
 	
 	public boolean isInMemory() {
@@ -71,6 +120,14 @@ public class Reinforcement {
 	
 	public boolean isBroken() {
 		return broken;
+	}
+	
+	public boolean isDirty() {
+		return dirty;
+	}
+	
+	public void setDirty(boolean dirty) {
+		this.dirty = dirty;
 	}
 	
 	public boolean hasPermission(Player player, String permission) {
@@ -83,14 +140,33 @@ public class Reinforcement {
 	
 	// alive = true, dead = false
 	public boolean damage(Player player, double dmg) {
+		PlayerReinforcementDamageEvent event = new PlayerReinforcementDamageEvent(player, this, dmg);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		if (event.isCancelled()) {
+			return true;
+		}
+		
+		dmg = event.getDamage();
+		
+		if (lastReinforcementDamage == null) {
+			lastReinforcementDamage = new Cooldown<>();
+		}
+		if (lastReinforcementDamage.isOnCooldown(player)) {
+			player.sendMessage(ChatColor.RED + "Reinforcement is still on cooldown for " + lastReinforcementDamage.getReadableTimeLeft(player));
+			return true;
+		}
+		
 		Block block = loc.getBlock();
 		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
 		
 		health -= dmg;
+		lastReinforcementDamage.putOnCooldown(player, blueprint.getDamageCooldown());
 		if (health < 0 ) {
 			destroy();
 			return false;
 		}
+		setDirty(true);
 		return true;
 	}
 	
@@ -102,6 +178,7 @@ public class Reinforcement {
 		broken = true;
 		if (health != 0) health = 0;
 		SerennoCobalt.get().getCitadelManager().getReinforcementManager().destroyReinforcement(player, this);
+		setDirty(true);
 	}
 	
 	@Override

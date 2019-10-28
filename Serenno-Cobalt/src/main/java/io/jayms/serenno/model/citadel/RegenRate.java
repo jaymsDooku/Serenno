@@ -26,4 +26,9 @@ public class RegenRate {
 		return interval;
 	}
 	
+	@Override
+	public String toString() {
+		return "RegenRate[Amount=" + amount + ",Interval=" + interval + "]";
+	}
+	
 }

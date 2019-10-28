@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 
 import io.jayms.serenno.menu.Menu;
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 
 public interface ArtilleryCrate {
 	
@@ -11,9 +12,11 @@ public interface ArtilleryCrate {
 
 	Artillery getArtillery();
 	
-	void setLocation(Location loc);
-	
 	Location getLocation();
+	
+	void setReinforcement(Reinforcement rein);
+	
+	Reinforcement getReinforcement();
 	
 	boolean hasBeenPlaced();
 	

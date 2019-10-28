@@ -19,6 +19,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -36,7 +37,7 @@ import net.md_5.bungee.api.ChatColor;
 
 public class ArenaManager implements Listener {
 
-	private Map<String, Arena> arenas = new HashMap<>();
+	private Map<String, Arena> arenas = Maps.newConcurrentMap();
 	
 	public ArenaManager() {
 		Bukkit.getPluginManager().registerEvents(this, SerennoCrimson.get());
@@ -73,8 +74,13 @@ public class ArenaManager implements Listener {
 		}
 		
 		Arena arena = new SimpleArena(region);
+		saveArena(arena);
 		arenas.put(regionName, arena);
 		return arena;
+	}
+	
+	public void replaceArena(Arena arena) {
+		arenas.put(arena.getRegion().getName(), arena);
 	}
 
 	public Arena getArena(String name) {
@@ -197,10 +203,6 @@ public class ArenaManager implements Listener {
 	}
 	
 	public void saveArena(Arena arena) {
-		if (!MongoAPI.isConnected()) {
-			return;
-		}
-		
 		if (!arena.isDirty()) {
 			return;
 		}
@@ -234,6 +236,7 @@ public class ArenaManager implements Listener {
 			return;
 		}
 		
+		arenas.remove(regionName);
 		new BukkitRunnable() {
 			
 			@Override
@@ -244,7 +247,6 @@ public class ArenaManager implements Listener {
 
                 if (document != null) {
                     collection.findOneAndDelete(document);
-                    arenas.remove(regionName);
                     Bukkit.broadcast(ChatColor.YELLOW + "Arena: " + ChatColor.GOLD + regionName + ChatColor.YELLOW + " has been deleted.", "arena.engineer");
                 }
 			}

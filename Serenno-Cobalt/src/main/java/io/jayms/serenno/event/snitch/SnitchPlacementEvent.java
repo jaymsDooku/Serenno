@@ -2,10 +2,7 @@ package io.jayms.serenno.event.snitch;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.inventory.ItemStack;
 
-import io.jayms.serenno.model.citadel.CitadelPlayer;
-import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 
 public class SnitchPlacementEvent extends Event {

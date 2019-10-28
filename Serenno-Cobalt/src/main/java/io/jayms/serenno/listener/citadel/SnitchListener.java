@@ -9,10 +9,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.inventory.ItemStack;
 
-import io.jayms.serenno.event.reinforcement.PlayerReinforcementCreationEvent;
+import io.jayms.serenno.event.reinforcement.ReinforcementCreationEvent;
+import io.jayms.serenno.event.reinforcement.ReinforcementDestroyEvent;
 import io.jayms.serenno.manager.SnitchManager;
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.snitch.Snitch;
 
 public class SnitchListener implements Listener {
@@ -24,13 +25,19 @@ public class SnitchListener implements Listener {
 	}
 	
 	@EventHandler
-	public void onReinforce(PlayerReinforcementCreationEvent e) {
-		ItemStack item = e.getItemPlaced();
-		if (item.getType() != Material.NOTE_BLOCK) {
+	public void onReinforce(ReinforcementCreationEvent e) {
+		Reinforcement rein = e.getReinforcement();
+		Location loc = rein.getLocation();
+		if (loc.getBlock().getType() != Material.NOTE_BLOCK) {
 			return;
 		}
 		
-		sm.placeSnitch(e.getReinforcement());
+		sm.placeSnitch(rein);
+	}
+	
+	@EventHandler
+	public void onDestroy(ReinforcementDestroyEvent e) {
+		sm.destroySnitch(e.getReinforcement());
 	}
 	
 	@EventHandler
@@ -49,6 +56,7 @@ public class SnitchListener implements Listener {
 		for (Snitch snitch : snitches) {
 			if (!insideOf.contains(snitch)) {
 				snitch.notifyEntrance(player);
+				sm.enterSnitch(player, snitch);
 			}
 		}
 		for (Snitch insideSnitch : insideOf) {

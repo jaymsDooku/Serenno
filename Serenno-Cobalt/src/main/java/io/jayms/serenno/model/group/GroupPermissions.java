@@ -12,5 +12,6 @@ public class GroupPermissions {
 	public static final String BASTION_INFORMATION = "bastion-information"; // get bastion information of friendly bastions
 	public static final String SNITCH_NOTIFICATION_BYPASS = "snitch-notification-bypass"; // bypass snitch notifications
 	public static final String SNITCH_RENAME = "snitch-rename"; // rename snitch
+	public static final String ACID = "acid"; // acid
 	
 }

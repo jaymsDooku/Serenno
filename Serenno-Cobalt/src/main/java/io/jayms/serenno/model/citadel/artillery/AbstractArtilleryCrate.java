@@ -2,25 +2,32 @@ package io.jayms.serenno.model.citadel.artillery;
 
 import org.bukkit.Location;
 
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+
 public abstract class AbstractArtilleryCrate implements ArtilleryCrate {
 
 	protected Artillery artillery;
 	
-	private Location location;
-	
-	@Override
-	public void setLocation(Location loc) {
-		this.location = loc;
-	}
+	private Reinforcement reinforcement;
 	
 	@Override
 	public Location getLocation() {
-		return location;
+		return reinforcement.getLocation();
+	}
+	
+	@Override
+	public void setReinforcement(Reinforcement reinforcement) {
+		this.reinforcement = reinforcement;
+	}
+	
+	@Override
+	public Reinforcement getReinforcement() {
+		return reinforcement;
 	}
 	
 	@Override
 	public boolean hasBeenPlaced() {
-		return location != null;
+		return reinforcement != null;
 	}
 	
 }

@@ -3,8 +3,10 @@ package io.jayms.serenno.vault;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.util.SerennoDataSource;
@@ -19,9 +21,9 @@ public class VaultMapCoreDataSource implements SerennoDataSource<Core, Reinforce
 	
 	private static final String INSERT_CORE = "INSERT INTO CORE"
 			+ "("
-			+ "ReinforcementID, TeamColor"
+			+ "TeamColor, ReinforcementID"
 			+ ") VALUES("
-			+ "?, ?, ?, ?"
+			+ "?, ?"
 			+ ")";
 	
 	private static final String UPDATE_CORE = "UPDATE CORE "
@@ -29,17 +31,26 @@ public class VaultMapCoreDataSource implements SerennoDataSource<Core, Reinforce
 			+ "WHERE ReinforcementID = ?";
 	
 	private static final String SELECT_CORE = "SELECT TeamColor FROM CORE WHERE ReinforcementID = ?";
+	private static final String SELECT_CORE_ALL = "SELECT * FROM CORE";
 	
 	private static final String DELETE_CORE = "DELETE FROM CORE WHERE ReinforcementID = ?";
 	
 	private VaultMapDatabase db;
+	
+	private Map<ChatColor, Core> cores = new HashMap<>();
 	
 	public VaultMapCoreDataSource(VaultMapDatabase db) {
 		this.db = db;
 	}
 	
 	public void createTables() {
-		db.getDatabase().modifyQuery(CREATE_CORE, true);
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(CREATE_CORE);
+			ps.execute();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -53,6 +64,7 @@ public class VaultMapCoreDataSource implements SerennoDataSource<Core, Reinforce
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		cores.put(value.getTeamColor(), value);
 	}
 
 	@Override
@@ -67,14 +79,27 @@ public class VaultMapCoreDataSource implements SerennoDataSource<Core, Reinforce
 
 	@Override
 	public Core get(Reinforcement rein) {
+		ChatColor teamColor = db.getTeamColourFromGroupName(rein.getGroup().getName().toLowerCase());
+		if (teamColor != null) {
+			if (cores.containsKey(teamColor)) {
+				return cores.get(teamColor);
+			}
+		}
+		
 		try {
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_CORE);
 			ps.setString(1, rein.getID().toString());
 			
 			ResultSet rs = ps.executeQuery();
-			ps.close();
+			
+			if (!rs.next()) {
+				return null;
+			}
 			
 			Core core = new Core(db, ChatColor.valueOf(rs.getString("TeamColor")), rein);
+			ps.close();
+			
+			cores.put(core.getTeamColor(), core);
 			return core;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -83,20 +108,25 @@ public class VaultMapCoreDataSource implements SerennoDataSource<Core, Reinforce
 	}
 
 	@Override
-	public Set<Core> getAll() {
-		Set<Core> all = new HashSet<>();
-		/*try {
-			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_ALL_BASTION);
+	public Collection<Core> getAll() {
+		if (!cores.isEmpty()) {
+			return cores.values();
+		}
+		
+		try {
+			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(SELECT_CORE_ALL);
 			ResultSet rs = ps.executeQuery();
+			
 			while (rs.next()) {
-				
-				VaultMapBastion bastion = new VaultMapBastion();
-				all.add(bastion);
+				Core core = new Core(db, ChatColor.valueOf(rs.getString("TeamColor")),
+						db.getReinforcementSource().get(UUID.fromString(rs.getString("ReinforcementID"))));
+				cores.put(core.getTeamColor(), core);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}*/
-		return all;
+		}
+		
+		return cores.values();
 	}
 
 	@Override
@@ -109,6 +139,7 @@ public class VaultMapCoreDataSource implements SerennoDataSource<Core, Reinforce
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		cores.remove(value.getTeamColor());
 	}
 
 	

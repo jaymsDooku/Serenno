@@ -43,6 +43,8 @@ public interface Region {
 	
 	boolean hasChildWorld(World world);
 	
+	void removeChildWorld(World world);
+	
 	Set<String> getFlags();
 	
 	List<String> getPossibleFlags();

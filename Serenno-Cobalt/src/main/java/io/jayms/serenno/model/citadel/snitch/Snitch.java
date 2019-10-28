@@ -2,15 +2,11 @@ package io.jayms.serenno.model.citadel.snitch;
 
 import java.text.DecimalFormat;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-import com.google.common.collect.HashMultimap;
-
-import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.model.group.GroupMember;
@@ -18,7 +14,7 @@ import io.jayms.serenno.model.group.GroupPermissions;
 import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.locations.QTBox;
 
-public class Snitch implements QTBox, Comparable<Bastion> {
+public class Snitch implements QTBox, Comparable<Snitch> {
 	
 	private Reinforcement reinforcement;
 	private String name;
@@ -42,7 +38,7 @@ public class Snitch implements QTBox, Comparable<Bastion> {
 			player.sendMessage(ChatColor.BLACK + "[" + ChatColor.AQUA + "Snitch" + ChatColor.BLACK + "]: " + ChatColor.DARK_AQUA + entering.getName() + ChatColor.AQUA
 				+ " has entered a snitch " + ChatColor.DARK_AQUA + name + ChatColor.AQUA + " at " 
 				+ ChatColor.DARK_AQUA + "[" + getLocation().getBlockX() + ChatColor.DARK_AQUA  + ", " + getLocation().getBlockY() + ChatColor.DARK_AQUA + ", " + getLocation().getBlockZ() + ChatColor.DARK_AQUA + "]"
-				+ ChatColor.GOLD + " (" + ChatColor.YELLOW + df.format(player.getLocation().distance(getLocation())) + ChatColor.GOLD + ")");
+				+ ChatColor.GOLD + " (" + ChatColor.YELLOW + df.format(player.getLocation().distance(getLocation())) + "m" + ChatColor.GOLD + ")");
 		}
 	}
 	
@@ -85,7 +81,7 @@ public class Snitch implements QTBox, Comparable<Bastion> {
 	}
 	
 	@Override
-	public int compareTo(Bastion other) {
+	public int compareTo(Snitch other) {
 		Location location = getLocation();
 		UUID thisWorld = location.getWorld().getUID();
 		int thisX = location.getBlockX();

@@ -287,7 +287,7 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 				stop(null);
 			}
 			
-		}.runTaskLater(SerennoCrimson.get(), 6 * 20L);
+		}.runTaskLater(SerennoCrimson.get(), 5 * 20L);
 	}
 	
 	private MatchReportMenu reportMenu;

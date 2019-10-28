@@ -231,7 +231,7 @@ public class TrebuchetMenu extends SingleMenu {
 						
 						if (e.getCursor().getType() != trebuchet.getFiringAmmoMaterial()) {
 							e.setCancelled(true);
-							player.sendMessage(ChatColor.RED + "You can only ammo here.");
+							player.sendMessage(ChatColor.RED + "You can only put ammo here.");
 						}
 					}
 					

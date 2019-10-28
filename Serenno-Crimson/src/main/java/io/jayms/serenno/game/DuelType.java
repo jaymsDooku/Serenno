@@ -52,7 +52,7 @@ public enum DuelType {
 			new Kit[] { DefaultKits.noDebuff(), DefaultKits.archer() }, true),
 	VAULTBATTLE(ChatColor.DARK_RED + "Vault Battles",
 			new ItemStackBuilder(Material.OBSIDIAN, 1).meta(new ItemMetaBuilder().name(ChatColor.DARK_RED + "Vault Battles")).build(),
-			new Kit[] { DefaultKits.vaultBattle(null), DefaultKits.vaultBattle(ClassType.ARCHER), DefaultKits.vaultBattle(ClassType.ENGINEER) }, true),
+			new Kit[] { DefaultKits.vaultBattle(), DefaultKits.vaultBattleArcher(), DefaultKits.vaultBattleEngineer() }, true),
 	KOTH(ChatColor.GOLD + "KOTH",
 			new ItemStackBuilder(Material.DARK_OAK_FENCE, 1).meta(new ItemMetaBuilder().name(ChatColor.GOLD + "KOTH")).build(),
 			new Kit[] { DefaultKits.koth() }, false),

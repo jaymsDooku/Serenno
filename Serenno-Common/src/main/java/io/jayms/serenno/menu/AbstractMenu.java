@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.Maps;
@@ -76,7 +77,9 @@ public abstract class AbstractMenu implements Menu {
 		}
 		
 		using.add(player.getUniqueId());
-		player.openInventory(getInventory(player, initData));
+		Inventory inventory = getInventory(player, initData);
+		if (inventory == null) return;
+		player.openInventory(inventory);
 	}
 
 	@Override

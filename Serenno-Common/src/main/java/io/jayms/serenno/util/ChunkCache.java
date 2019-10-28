@@ -1,25 +1,34 @@
 package io.jayms.serenno.util;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.block.Block;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 
 public class ChunkCache<T> {
 
 	private ChunkCoord chunkPair;
-	private LoadingCache<Coords, T> cache;
+	private Cache<Coords, T> cache;
 	private boolean dirty = false;
 	
-	public ChunkCache(ChunkCoord chunkPair, CacheLoader<Coords, T> loader, RemovalListener<Coords, T> remover) {
+	public ChunkCache(ChunkCoord chunkPair, Map<Coords, T> init, RemovalListener<Coords, T> remover) {
 		this.chunkPair = chunkPair;
-		cache = CacheBuilder.newBuilder()
-		.removalListener(remover)
-		.build(loader);
+		CacheBuilder builder = CacheBuilder.newBuilder();
+		if (remover != null) {
+			builder.removalListener(remover);
+		}
+		this.cache = builder.build();
+		
+		if (init != null) {
+			for (Entry<Coords, T> val : init.entrySet()) {
+				cache.put(val.getKey(), val.getValue());
+			}
+		}
 	}
 	
 	public ChunkCoord getChunkPair() {

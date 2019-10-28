@@ -22,18 +22,15 @@ import io.jayms.serenno.model.citadel.artillery.ArtilleryWorld;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetCrateMenu;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
 import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetMissileRunner;
-import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
-import io.jayms.serenno.model.citadel.bastion.BastionWorld;
-import io.jayms.serenno.util.Coords;
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import net.md_5.bungee.api.ChatColor;
-import vg.civcraft.mc.civmodcore.locations.QTBox;
-import vg.civcraft.mc.civmodcore.locations.SparseQuadTree;
 
 public class ArtilleryManager {
 
 	private CitadelManager cm;
+	private ReinforcementManager rm;
 	
-	private Map<Coords, ArtilleryCrate> crates = Maps.newConcurrentMap();
+	private Map<Reinforcement, ArtilleryCrate> crates = Maps.newConcurrentMap();
 	private Map<String, ArtilleryWorld> artilleryWorlds = Maps.newConcurrentMap();
 	
 	private ArtilleryRunnable artilleryRunnable;
@@ -49,7 +46,11 @@ public class ArtilleryManager {
 	
 	public ArtilleryManager(CitadelManager cm) {
 		this.cm = cm;
+		this.rm = cm.getReinforcementManager();
 		this.artilleryListener = new ArtilleryListener(this);
+		
+		World world = Bukkit.getWorld(SerennoCobalt.get().getConfigManager().getDefaultReinforcementWorld());
+		newArtilleryWorld(world);
 		
 		registerMissileRunner(new TrebuchetMissileRunner());
 		
@@ -70,14 +71,21 @@ public class ArtilleryManager {
 		return missileRunners.get(clazz);
 	}
 	
-	public void placeArtilleryCrate(Player player, ArtilleryCrate crate, Location loc) {
-		crates.put(Coords.fromLocation(loc), crate);
-		crate.setLocation(loc);
+	public void placeArtilleryCrate(Player player, ArtilleryCrate crate, Reinforcement reinforcement) {
+		crates.put(reinforcement, crate);
+		crate.setReinforcement(reinforcement);
 		player.sendMessage(ChatColor.YELLOW + "You have placed down a " + crate.getDisplayName());
 	}
 	
-	public ArtilleryCrate getArtilleryCrate(Location loc) {
-		return crates.get(Coords.fromLocation(loc));
+	public void breakArtilleryCrate(Player player, ArtilleryCrate crate) {
+		crates.remove(crate.getReinforcement());
+		if (player != null) {
+			player.sendMessage(ChatColor.YELLOW + "You have broken " + crate.getDisplayName());
+		}
+	}
+	
+	public ArtilleryCrate getArtilleryCrate(Reinforcement reinforcement) {
+		return crates.get(reinforcement);
 	}
 	
 	public ArtilleryWorld newArtilleryWorld(World world) {
@@ -96,16 +104,25 @@ public class ArtilleryManager {
 	
 	public void assemble(Artillery artillery) {
 		ArtilleryWorld artilleryWorld = getArtilleryWorld(artillery.getLocation().getWorld());
+		if (artilleryWorld == null) {
+			return;
+		}
 		artilleryWorld.addArtillery(artillery);
 	}
 	
 	public void disassemble(Artillery artillery) {
 		ArtilleryWorld artilleryWorld = getArtilleryWorld(artillery.getLocation().getWorld());
+		if (artilleryWorld == null) {
+			return;
+		}
 		artilleryWorld.deleteArtillery(artillery);
 	}
 	
 	public Artillery getArtillery(Location loc) {
 		ArtilleryWorld artilleryWorld = getArtilleryWorld(loc.getWorld());
+		if (artilleryWorld == null) {
+			return null;
+		}
 		Set<Artillery> artilleries = artilleryWorld.getArtilleries(loc);
 		if (artilleries.isEmpty()) return null;
 		return artilleries.iterator().next();

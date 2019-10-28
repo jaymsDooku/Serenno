@@ -1,8 +1,10 @@
 package io.jayms.serenno.game.vaultbattle.pearling;
 
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemFlag;
 
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.item.CustomItem;
@@ -30,7 +32,9 @@ public class SpectatorPearlItem extends CustomItem {
 	@Override
 	protected ItemStackBuilder getItemStackBuilder() {
 		return new ItemStackBuilder(Material.ENDER_PEARL, 1)
-				.meta(new ItemMetaBuilder().name(ChatColor.RED + (pearled != null ? pearled.getName() : "No one") + "'s Pearl"));
+				.meta(new ItemMetaBuilder().name(ChatColor.RED + (pearled != null ? pearled.getName() : "No one") + "'s Pearl")
+						.enchant(Enchantment.DURABILITY, 1, false)
+						.flag(ItemFlag.HIDE_ENCHANTS));
 	}
 	
 	@Override
