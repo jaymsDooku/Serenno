@@ -14,7 +14,7 @@ public class CitadelListener implements Listener {
 	protected ReinforcementManager rm;
 	protected BastionManager bm;
 	
-	protected final DecimalFormat df = new DecimalFormat("##.##");
+	protected static final DecimalFormat df = new DecimalFormat("##.##");
 	
 	protected CitadelListener(CitadelManager cm, ReinforcementManager rm, BastionManager bm) {
 		this.cm = cm;

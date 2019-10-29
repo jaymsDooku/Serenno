@@ -47,14 +47,14 @@ public class CitadelBlockListener extends CitadelListener {
 		super(cm, rm, bm);
 	}
 	
-	private String getReinforcementHealth(Player player, Reinforcement rein) {
+	public static String getReinforcementHealth(Player player, Reinforcement rein) {
 		ReinforcementBlueprint rb = rein.getBlueprint();
 		ChatColor healthPC = NumberUtils.getPrimaryColor(rein.getHealthAsPercentage());
 		ChatColor healthSC = NumberUtils.getSecondaryColor(rein.getHealthAsPercentage());
 		double health = rein.getHealth();
 		double maxHealth = rb.getMaxHealth();
 		String healthStr = df.format(rein.getHealthAsPercentage() * 100) + "%";
-		return healthPC + healthStr + healthSC + " (" + healthPC + health + healthSC + "/" + healthPC + maxHealth + healthSC + ")";
+		return healthPC + healthStr + healthSC + " (" + healthPC + df.format(health) + healthSC + "/" + healthPC + maxHealth + healthSC + ")";
 	}
 	
 	private String getReinforcementMaturity(Player player, Reinforcement rein) {
@@ -62,7 +62,7 @@ public class CitadelBlockListener extends CitadelListener {
 		ChatColor progressSC = NumberUtils.getSecondaryColor(rein.getProgress());
 		double damage = rein.getDamage();
 		String progressStr = df.format(rein.getProgress() * 100) + "%";
-		return progressPC + progressStr + " Maturity " + progressSC + "(" + progressPC + damage + progressSC + ")";
+		return progressPC + progressStr + " Maturity " + progressSC + "(" + progressPC + df.format(damage) + progressSC + ")";
 	}
 	
 	private String getAcidMaturity(Player player, Reinforcement rein) {
@@ -87,6 +87,7 @@ public class CitadelBlockListener extends CitadelListener {
 				if (!group.isAuthorized(player, GroupPermissions.BASTION_PLACE)) {
 					player.sendMessage(ChatColor.RED + "Bastion prevents block place. " + ChatColor.DARK_RED + "| " + ChatColor.RESET + getReinforcementHealth(player, rein));
 					e.setCancelled(true);
+					rein.damage(player);
 					return;
 				}
 			}

@@ -263,8 +263,9 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 				return null;
 			}
 			
-			ReinforcementBlueprint rb = ReinforcementBlueprint.builder()
-					.name(rs.getString("Name"))
+			String name = rs.getString("Name");
+			ReinforcementBlueprint.Builder rbb = ReinforcementBlueprint.builder()
+					.name(name)
 					.displayName(rs.getString("DisplayName"))
 					.itemStack(key)
 					.regenRate(new RegenRate(rs.getInt("RegenRateAmount"), rs.getInt("RegenRateInterval")))
@@ -273,9 +274,30 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 					.maturationScale(rs.getDouble("MaturationScale"))
 					.acidTime(rs.getLong("AcidTime"))
 					.damageCooldown(rs.getLong("DamageCooldown"))
-					.defaultDamage(rs.getDouble("DefaultDamage"))
-					.build();
+					.defaultDamage(rs.getDouble("DefaultDamage"));
+			rs.close();
 			ps.close();
+			
+			ps = db.getDatabase().getConnection().prepareStatement(SELECT_MATERIAL);
+			ps.setString(1, name);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				List<Material> reinforceable = new ArrayList<>();
+				List<Material> unreinforceable = new ArrayList<>();
+				
+				Material material = Material.valueOf(rs.getString("MaterialName"));
+				if (rs.getBoolean("Reinforceable")) {
+					reinforceable.add(material);
+				} else {
+					unreinforceable.add(material);
+				}
+				
+				rbb.reinforceableMaterials(reinforceable);
+				rbb.unreinforceableMaterials(unreinforceable);
+			}
+			ps.close();
+			
+			ReinforcementBlueprint rb = rbb.build();
 			
 			cache(rb);
 			
@@ -299,8 +321,9 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			System.out.println("fetchSize: " + rs.getFetchSize());
 			
 			while (rs.next()) {
-				ReinforcementBlueprint rb = ReinforcementBlueprint.builder()
-						.name(rs.getString("Name"))
+				String name = rs.getString("Name");
+				ReinforcementBlueprint.Builder rbb = ReinforcementBlueprint.builder()
+						.name(name)
 						.displayName(rs.getString("DisplayName"))
 						.itemStack(new ItemStack(Material.valueOf(rs.getString("ItemStackMaterial")), rs.getInt("ItemStackAmount")))
 						.regenRate(new RegenRate(rs.getInt("RegenRateAmount"), rs.getInt("RegenRateInterval")))
@@ -309,9 +332,30 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 						.maturationScale(rs.getDouble("MaturationScale"))
 						.acidTime(rs.getLong("AcidTime"))
 						.damageCooldown(rs.getLong("DamageCooldown"))
-						.defaultDamage(rs.getDouble("DefaultDamage"))
-						.build();
-				System.out.println("rb: " + rb);
+						.defaultDamage(rs.getDouble("DefaultDamage"));
+				rs.close();
+				ps.close();
+				
+				ps = db.getDatabase().getConnection().prepareStatement(SELECT_MATERIAL);
+				ps.setString(1, name);
+				rs = ps.executeQuery();
+				while (rs.next()) {
+					List<Material> reinforceable = new ArrayList<>();
+					List<Material> unreinforceable = new ArrayList<>();
+					
+					Material material = Material.valueOf(rs.getString("MaterialName"));
+					if (rs.getBoolean("Reinforceable")) {
+						reinforceable.add(material);
+					} else {
+						unreinforceable.add(material);
+					}
+					
+					rbb.reinforceableMaterials(reinforceable);
+					rbb.unreinforceableMaterials(unreinforceable);
+				}
+				ps.close();
+				
+				ReinforcementBlueprint rb = rbb.build();
 				
 				cache(rb);
 			}
@@ -328,6 +372,11 @@ public class VaultMapReinforcementBlueprintDataSource implements SerennoDataSour
 			PreparedStatement ps = db.getDatabase().getConnection().prepareStatement(DELETE_REIN_BLUEPRINT);
 			ps.setString(1, value.getItemStack().getType().toString());
 			ps.setInt(2, value.getItemStack().getAmount());
+			ps.executeUpdate();
+			ps.close();
+			
+			ps = db.getDatabase().getConnection().prepareStatement(DELETE_MATERIAL);
+			ps.setString(1, value.getName());
 			ps.executeUpdate();
 			ps.close();
 		} catch (SQLException e) {

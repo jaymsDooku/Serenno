@@ -81,11 +81,15 @@ public class Reinforcement {
 		return maturation > 1 ? 1 : maturation;
 	}
 	
+	public boolean isMature() {
+		return getProgress() >= 1;
+	}
+	
 	public double getDamage() {
 		double progress = getProgress();
 		double damage = blueprint.getDefaultDamage();
 		if (progress < 1.0) {
-			damage /= (1.0 - progress);
+			damage *= progress;
 			damage *= blueprint.getMaturationScale();
 		}
 		return damage;
@@ -134,8 +138,16 @@ public class Reinforcement {
 		return group.isAuthorized(player, permission);
 	}
 	
+	public boolean damage() {
+		return damage(getDamage());
+	}
+	
 	public boolean damage(double dmg) {
 		return damage(null, dmg);
+	}
+	
+	public boolean damage(Player player) {
+		return damage(player, getDamage());
 	}
 	
 	// alive = true, dead = false

@@ -190,7 +190,10 @@ public class ReinforcementManager {
 			return true;
 		}
 		
-		reinforceBlock(player, block, item, blueprint, group);
+		Reinforcement rein = reinforceBlock(player, block, item, blueprint, group);
+		if (rein == null) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -249,7 +252,7 @@ public class ReinforcementManager {
 			return false;
 		}
 		
-		return reinforcement.damage(cp.getBukkitPlayer(), reinforcement.getDamage());
+		return reinforcement.damage(cp.getBukkitPlayer());
 	}
 
 	public void destroyReinforcement(Player player, Reinforcement reinforcement) {

@@ -2,12 +2,14 @@ package io.jayms.serenno.manager;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.Maps;
@@ -22,6 +24,7 @@ import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
 import io.jayms.serenno.model.citadel.bastion.BastionWorld;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+import io.jayms.serenno.model.finance.FinancialEntity;
 import io.jayms.serenno.util.LocationTools;
 import net.md_5.bungee.api.ChatColor;
 
@@ -86,9 +89,41 @@ public class BastionManager {
 		bastionWorlds.remove(world.getName());
 	}
 	
+	public boolean shouldStopBlock(Block origin, List<Block> blocks) {
+		Set<FinancialEntity> owners = new HashSet<>();
+		Set<Bastion> originBastions = getBastions(origin.getLocation());
+		Set<Bastion> toBastions = getBastions(blocks);
+		
+		if (toBastions.isEmpty()) {
+			return false;
+		}
+		
+		for (Bastion originBastion : originBastions) {
+			owners.add(originBastion.getReinforcement().getGroup().getOwner());
+		}
+		
+		for (Bastion toBastion : toBastions) {
+			FinancialEntity owner = toBastion.getReinforcement().getGroup().getOwner();
+			if (!owners.contains(owner)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public Set<Bastion> getBastions(Location l) {
 		BastionWorld bastionWorld = getBastionWorld(l.getWorld());
 		return bastionWorld.getBastions(l);
+	}
+	
+	public Set<Bastion> getBastions(List<Block> blocks) {
+		Set<Bastion> result = new HashSet<>();
+		
+		for (Block b : blocks) {
+			result.addAll(getBastions(b.getLocation()));
+		}
+		
+		return result;
 	}
 	
 	public Set<Bastion> getBastionsInArea(Location l1, Location l2) {
