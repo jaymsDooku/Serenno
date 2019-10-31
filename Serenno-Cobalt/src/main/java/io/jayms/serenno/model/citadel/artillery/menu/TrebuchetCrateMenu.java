@@ -140,7 +140,7 @@ public class TrebuchetCrateMenu extends SingleMenu {
 	private SimpleButton getStarterItemButton() {
 		return new SimpleButton.Builder(this)
 				.setItemStack(null)
-				.setPickUpAble(true)
+				.setNormal(true)
 				.setClickHandler(new ClickHandler() {
 					
 					@Override
@@ -164,11 +164,13 @@ public class TrebuchetCrateMenu extends SingleMenu {
 						EngineerPlayer engineer = EngineerTools.getEngineer(player);
 						
 						ItemStack starterItem = inventory.getItem(23);
-						if (starterItem.getType() != crate.getStarterItemType() || starterItem.getAmount() != crate.getStarterItemAmount()) {
+						if (starterItem == null || starterItem.getType() != crate.getStarterItemType() || starterItem.getAmount() != crate.getStarterItemAmount()) {
 							player.sendMessage(ChatColor.RED + "Trebuchet requires a starter item in order to assemble.");
 							return;
 						}
-					
+						inventory.remove(starterItem);
+						
+						player.closeInventory();
 						Artillery artillery = crate.getArtillery();
 						artillery.assemble(engineer);
 					}

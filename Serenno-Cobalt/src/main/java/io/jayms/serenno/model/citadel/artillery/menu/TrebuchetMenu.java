@@ -21,8 +21,18 @@ import io.jayms.serenno.util.ItemUtil;
 
 public class TrebuchetMenu extends SingleMenu {
 	
+	private boolean isOpen = false;
+	
 	public TrebuchetMenu() {
 		super("");
+	}
+	
+	public void setOpen(boolean isOpen) {
+		this.isOpen = isOpen;
+	}
+	
+	public boolean isOpen() {
+		return isOpen;
 	}
 	
 	@Override
@@ -32,20 +42,25 @@ public class TrebuchetMenu extends SingleMenu {
 
 	@Override
 	public boolean onOpen(Player player) {
+		if (isOpen()) {
+			player.sendMessage(ChatColor.RED + "Someone is already looking into the Trebuchet.");
+			return false;
+		}
+		setOpen(true);
 		return true;
 	}
 	
 	@Override
-	public void onClose(Player player, Map<String, Object> data) {
+	public void onClose(Player player, Inventory inventory, Map<String, Object> data) {
 		Trebuchet trebuchet = (Trebuchet) data.get("artillery");
 		
 		int ammo = 0;
+		int k = 14;
 		for (int i = 0; i < 3; i++) {
-			int k = 14;
 			for (int j = k; j < k + 3; j++) {
 				Button button = getButton(j);
 				if (button == null) continue;
-				ItemStack it = button.getItemStack();
+				ItemStack it = inventory.getItem(j);
 				if (it == null) continue;
 				if (it.getType() != trebuchet.getFiringAmmoMaterial()) {
 					throw new IllegalStateException("A non-ammo material found inside trebuchet.");
@@ -55,6 +70,7 @@ public class TrebuchetMenu extends SingleMenu {
 			k += 9;
 		}
 		trebuchet.setFiringAmmoAmount(ammo);
+		setOpen(false);
 	}
 
 	@Override
@@ -74,17 +90,17 @@ public class TrebuchetMenu extends SingleMenu {
 		
 		Inventory inventory = Bukkit.createInventory(null, this.getSize(), this.getName());
 		
-		addButton(1, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.ADD, 10));
-		addButton(10, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.ADD, 1));
-		addButton(28, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.SUB, 1));
-		addButton(37, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.SUB, 10));
+		addButton(1, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.ADD, 1));
+		addButton(10, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.ADD, 0.1));
+		addButton(28, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.SUB, 0.1));
+		addButton(37, getFiringAngleAdjustButton(inventory, trebuchet, Adjustment.SUB, 1));
 		
 		addButton(19, getFiringAngleDisplayButton(trebuchet));
 		
-		addButton(3, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.ADD, 10));
-		addButton(12, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.ADD, 1));
-		addButton(30, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.SUB, 1));
-		addButton(39, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.SUB, 10));
+		addButton(3, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.ADD, 1));
+		addButton(12, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.ADD, 0.1));
+		addButton(30, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.SUB, 0.1));
+		addButton(39, getFiringPowerAdjustButton(inventory, trebuchet, Adjustment.SUB, 1));
 		
 		addButton(21, getFiringPowerDisplayButton(trebuchet));
 		
@@ -94,6 +110,7 @@ public class TrebuchetMenu extends SingleMenu {
 		int k = 14;
 		for (int i = 0; i < 3; i++) {
 			for (int j = k; j < k + 3; j++) {
+				addButton(j, getAmmoItemButton(trebuchet, ammoAmount));
 				if (ammoAmount >= 64) {
 					ammoAmount -= 64;
 				} else {
@@ -102,8 +119,6 @@ public class TrebuchetMenu extends SingleMenu {
 				if (ammoAmount <= 0) {
 					ammoAmount = 0;
 				}
-				System.out.println("j: " + j);
-				addButton(j, getAmmoItemButton(trebuchet, ammoAmount));
 			}
 			k += 9;
 		}
@@ -131,6 +146,9 @@ public class TrebuchetMenu extends SingleMenu {
 							newAngle += step;
 						} else {
 							newAngle -= step;
+						}
+						if (newAngle <= 0) {
+							newAngle = 1.0;
 						}
 						trebuchet.setFiringAngleThreshold(newAngle);
 						ItemUtil.setName(firingAngleDisplay, ChatColor.RED + "Firing Angle: " + ChatColor.WHITE + trebuchet.getFiringAngleThreshold());
@@ -219,7 +237,7 @@ public class TrebuchetMenu extends SingleMenu {
 	private SimpleButton getAmmoItemButton(Trebuchet trebuchet, int amount) {
 		return new SimpleButton.Builder(this)
 				.setItemStack(amount == 0 ? null : new ItemStack(trebuchet.getFiringAmmoMaterial(), amount))
-				.setPickUpAble(true)
+				.setNormal(true)
 				.setClickHandler(new ClickHandler() {
 					
 					@Override

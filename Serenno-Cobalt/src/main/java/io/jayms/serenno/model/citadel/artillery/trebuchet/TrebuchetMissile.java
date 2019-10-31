@@ -41,7 +41,6 @@ public class TrebuchetMissile extends AbstractMissile<Trebuchet> implements List
 		
 		this.missileBlock = loc.getWorld().spawnFallingBlock(loc, Material.STONE, (byte) 1);
 		missileBlock.setDropItem(false);
-		TrebuchetMissileRunner.addMissileBlock(missileBlock);
 		
 		setMissileState(LAUNCH);
 		Bukkit.getPluginManager().registerEvents(this, SerennoCobalt.get());
@@ -154,8 +153,12 @@ public class TrebuchetMissile extends AbstractMissile<Trebuchet> implements List
 	
 	@EventHandler
 	public void onMissileLand(EntityChangeBlockEvent e) {
+		if (getMissileBlock() == null) {
+			return;
+		}
 		if (getMissileBlock().getUniqueId().equals(e.getEntity().getUniqueId())) {
 			setMissileBlock(null);
+			setMissileState(FINISH);
 			e.setCancelled(true);
 		}
 	}

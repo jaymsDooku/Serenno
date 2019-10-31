@@ -6,11 +6,13 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.game.SimpleDuel;
 import io.jayms.serenno.game.vaultbattle.pearling.SpectatorPearlManager;
+import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.player.SerennoPlayer;
 import io.jayms.serenno.vault.VaultMap;
@@ -59,12 +61,12 @@ public class VaultBattle extends SimpleDuel {
 	
 	private void addToGroup(VaultMapDatabase database, DuelTeam team) {
 		ChatColor teamColour = team.getTeamColor();
-		System.out.println("teamColour: " + teamColour);
 		String groupName = database.getGroupNameFromColour(team.getTeamColor());
-		System.out.println("groupName: " + groupName);
 		Group group = database.getGroupSource().get(groupName.toLowerCase());
 		for (SerennoPlayer player : team.getAlive()) {
 			player.sendMessage(ChatColor.YELLOW + "You are fighting for the " + team.getTeamColor() + group.getName());
+			CitadelPlayer citadelPlayer = SerennoCobalt.get().getCitadelManager().getCitadelPlayer(player.getBukkitPlayer());
+			citadelPlayer.setDefaultGroup(group);
 			group.addMember(player.getBukkitPlayer());
 		}
 	}

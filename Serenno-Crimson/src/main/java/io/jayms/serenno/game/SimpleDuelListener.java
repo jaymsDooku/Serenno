@@ -36,6 +36,7 @@ import io.jayms.serenno.bot.BotTrait;
 import io.jayms.serenno.game.event.DuelPlayerDeathEvent;
 import io.jayms.serenno.game.event.DuelPlayerStartEvent;
 import io.jayms.serenno.game.statistics.DuelStatistics;
+import io.jayms.serenno.item.CustomItem;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.player.SerennoBot;
 import io.jayms.serenno.player.SerennoPlayer;
@@ -63,7 +64,7 @@ public class SimpleDuelListener implements Listener {
 			if (item.getType() != Material.BOOK) {
 				return;
 			}
-			int kitIndex = new NBTItem(item).getInteger("index");
+			int kitIndex = CustomItem.getNBTCompound(item).getInt("index");
 			Kit kit = serennoPlayer.getDuelingKit(duel.getDuelType(), kitIndex);
 			kit.load(player);
 			player.sendMessage(ChatColor.YELLOW + "You have loaded kit " + ChatColor.GOLD + "#" + (kitIndex+1));

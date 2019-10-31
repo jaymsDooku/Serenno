@@ -15,12 +15,14 @@ import net.md_5.bungee.api.ChatColor;
 
 public class KitEditorItem extends CustomItem {
 	
-	public KitEditorItem() {
-		super(SerennoCrimson.get());
+	public static final int ID = 402;
+	
+	public KitEditorItem(int id) {
+		super(SerennoCrimson.get(), id);
 	}
 
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.BOOK, 1)
 				.meta(new ItemMetaBuilder().name(ChatColor.YELLOW + "Open Kit Editor"));
 	}

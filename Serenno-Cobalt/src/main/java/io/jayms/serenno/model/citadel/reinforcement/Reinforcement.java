@@ -89,7 +89,7 @@ public class Reinforcement {
 		double progress = getProgress();
 		double damage = blueprint.getDefaultDamage();
 		if (progress < 1.0) {
-			damage *= progress;
+			damage /= progress;
 			damage *= blueprint.getMaturationScale();
 		}
 		return damage;
@@ -164,7 +164,7 @@ public class Reinforcement {
 		if (lastReinforcementDamage == null) {
 			lastReinforcementDamage = new Cooldown<>();
 		}
-		if (lastReinforcementDamage.isOnCooldown(player)) {
+		if (player != null && lastReinforcementDamage.isOnCooldown(player)) {
 			player.sendMessage(ChatColor.RED + "Reinforcement is still on cooldown for " + lastReinforcementDamage.getReadableTimeLeft(player));
 			return true;
 		}

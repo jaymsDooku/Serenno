@@ -59,7 +59,7 @@ public abstract class AbstractMenu implements Menu {
 	}
 	
 	@Override
-	public void onClose(Player player, Map<String, Object> data) {
+	public void onClose(Player player, Inventory inventory, Map<String, Object> data) {
 	}
 	
 	private Map<Player, Map<String, Object>> data = Maps.newConcurrentMap();
@@ -83,10 +83,10 @@ public abstract class AbstractMenu implements Menu {
 	}
 
 	@Override
-	public void close(Player player) {
+	public void close(Player player, Inventory inventory) {
 		Map<String, Object> initData = data.remove(player);
 		if (initData != null) {
-			onClose(player, initData);
+			onClose(player, inventory, initData);
 		}
 		
 		onClose(player);

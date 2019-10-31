@@ -1,6 +1,8 @@
 package io.jayms.serenno.model.citadel.artillery;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.ChatColor;
@@ -18,7 +20,9 @@ import com.sk89q.worldedit.world.World;
 
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCobaltConfigManager;
+import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+import io.jayms.serenno.model.group.GroupPermissions;
 
 public abstract class AbstractArtillery implements Artillery, Comparable<Artillery> {
 
@@ -78,7 +82,7 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		Location loc = getLocation();
 		
 		int minX = qtXMin();
-		int minZ = qtXMin();
+		int minZ = qtZMin();
 		int maxX = qtXMax();
 		int maxZ = qtZMax();
 		int minY = crate.getLocation().getBlockY();
@@ -93,6 +97,22 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 						return;
 					}
 				}
+			}
+		}
+		
+		Location plusPlus = new Location(loc.getWorld(), maxX, minY, maxZ);
+		Location minusMinus = new Location(loc.getWorld(), maxX, minY, maxZ);
+		Location plusMinus = new Location(loc.getWorld(), maxX, minY, minZ);
+		Location minusPlus = new Location(loc.getWorld(), minX, minY, maxZ);
+		Set<Bastion> bastions = new HashSet<>();
+		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(plusPlus));
+		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(minusMinus));
+		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(plusMinus));
+		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(minusPlus));
+		for (Bastion bastion : bastions) {
+			if (!bastion.getReinforcement().getGroup().isAuthorized(player.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_FORTIFICATION)) {
+				player.sendMessage(ChatColor.RED + "You aren't allowed to assemble artillery in foreign bastions.");
+				return;
 			}
 		}
 		

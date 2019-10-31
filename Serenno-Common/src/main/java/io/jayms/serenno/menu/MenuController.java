@@ -49,10 +49,17 @@ public class MenuController implements Listener {
 			return;
 		}
 		
-		e.setCancelled(true);
 		Button btn = getButton(player, e.getSlot());
+		if (btn == null) {
+			e.setCancelled(true);
+			return;
+		}
 		
-		if (btn == null) return;
+		boolean cancel = true;
+		if (btn.isNormal()) {
+			cancel = false;
+		}
+		e.setCancelled(cancel);
 		
 		if (btn.isPickUpAble()) {
 			e.setCursor(btn.getItemStack().clone());
@@ -72,7 +79,7 @@ public class MenuController implements Listener {
 		Player player = (Player) e.getPlayer();
 		
 		System.out.println("Closing " + menu);
-		menu.close(player);
+		menu.close(player, e.getInventory());
 	}
 	
 }

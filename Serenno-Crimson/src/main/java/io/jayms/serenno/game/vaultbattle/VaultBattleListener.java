@@ -22,6 +22,7 @@ import com.github.maxopoly.finale.classes.archer.event.SiegeArrowHitEvent;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.game.DuelTeam;
+import io.jayms.serenno.model.citadel.artillery.Artillery;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.team.Team;
@@ -84,6 +85,10 @@ public class VaultBattleListener implements Listener {
 			}
 			
 			Block hitBlock = e.getHitBlock();
+			Artillery artillery = SerennoCobalt.get().getCitadelManager().getArtilleryManager().getArtillery(hitBlock.getLocation());
+			if (artillery != null) {
+				artillery.getReinforcement().damage();
+			}
 			Set<Bastion> bastions = SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(hitBlock.getLocation());
 			Reinforcement rein = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcement(hitBlock);
 			if (rein != null) {
@@ -116,6 +121,10 @@ public class VaultBattleListener implements Listener {
 		int explosiveRadius = config.getSiegeExplosiveRadius();
 		List<Location> explodeLocs = LocationTools.getCircle(loc, explosiveRadius, explosiveRadius, false, true, 0);
 		for (Location explodeLoc : explodeLocs) {
+			Artillery artillery = SerennoCobalt.get().getCitadelManager().getArtilleryManager().getArtillery(explodeLoc);
+			if (artillery != null) {
+				artillery.getReinforcement().damage();
+			}
 			Block explodeBlock = explodeLoc.getBlock();
 			if (explodeBlock.getType() != Material.AIR) {
 				Reinforcement rein = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcement(explodeBlock);

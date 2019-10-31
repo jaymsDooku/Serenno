@@ -31,10 +31,11 @@ public class SpectatorPearlManager {
 	}
 	
 	public void pearl(SerennoPlayer player) {
-		SpectatorPearlItem pearlItem = (SpectatorPearlItem) CustomItemManager.getCustomItemManager().createCustomItem(SpectatorPearlItem.class);
-		pearlItem.setPearled(player);
+		SpectatorPearlItem pearlItem = (SpectatorPearlItem) CustomItemManager.getCustomItemManager().getCustomItem(SpectatorPearlItem.ID, SpectatorPearlItem.class);
 		
-		ItemStack pearlStack = pearlItem.getItemStack();
+		Map<String, Object> data = new HashMap<>();
+		data.put("pearled", player);
+		ItemStack pearlStack = pearlItem.getItemStack(data);
 		
 		DuelStatistics stats = duel.getStatistics();
 		SortedSet<Entry<UUID, Double>> sortedDamageDealers = stats.getSortedDamageDealersTo(player, 1000 * 60 * 2);
@@ -73,7 +74,11 @@ public class SpectatorPearlManager {
 	}
 	
 	public void free(SerennoPlayer master, SpectatorPearlItem pearl, ItemStack pearlStack) {
-		SerennoPlayer pearledPlayer = pearl.getPearled();
+		SerennoPlayer pearledPlayer = pearl.getPearled(pearlStack);
+		if (pearledPlayer == null) {
+			master.sendMessage(ChatColor.RED + "This pearl holds no one.");
+			return;
+		}
 		if (!isPearled(pearledPlayer)) {
 			master.sendMessage(ChatColor.RED + "That player is not pearled.");
 			master.getBukkitPlayer().getInventory().remove(pearlStack);

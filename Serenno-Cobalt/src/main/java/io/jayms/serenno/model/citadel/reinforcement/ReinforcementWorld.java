@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -23,6 +24,13 @@ import io.jayms.serenno.util.ChunkCoord;
 import io.jayms.serenno.util.Coords;
 
 public class ReinforcementWorld {
+	
+	@FunctionalInterface
+	public interface UnloadCallback {
+		
+		void unload();
+		
+	}
 
 	private World world;
 	private ReinforcementDataSource dataSource;
@@ -32,19 +40,16 @@ public class ReinforcementWorld {
 		this.world = world;
 		this.dataSource = source;
 		reinCache = CacheBuilder.newBuilder()
+				.expireAfterAccess(5, TimeUnit.MINUTES)
 				.removalListener(new RemovalListener<ChunkCoord, ChunkCache<Reinforcement>>() {
 					
 					@Override
 					public void onRemoval(RemovalNotification<ChunkCoord, ChunkCache<Reinforcement>> notification) {
-						new BukkitRunnable() {
-							@Override
-							public void run() {
-								if (dataSource != null) {
-									dataSource.persistAll(notification.getValue().getAll());
-								}
+						if (dataSource != null) {
+							dataSource.persistAll(notification.getValue().getAll(), () -> {
 								notification.getValue().unload();
-							}
-						}.runTaskLater(SerennoCobalt.get(), 1L);
+							});
+						}
 					}
 					
 				})

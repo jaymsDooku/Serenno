@@ -1,5 +1,6 @@
 package io.jayms.serenno.listener.citadel;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -8,18 +9,22 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.material.Comparator;
+import org.bukkit.material.MaterialData;
 import org.bukkit.material.Openable;
 
 import io.jayms.serenno.manager.BastionManager;
@@ -219,6 +224,7 @@ public class CitadelBlockListener extends CitadelListener {
 		Group group = rein.getGroup();
 		if (group.isMember(player)) {
 			player.sendMessage(ChatColor.GREEN + "Friendly bastion" + ChatColor.YELLOW + " | "
+					+ getReinforcementMaturity(player, rein) + ChatColor.YELLOW + " | "
 					+ getReinforcementHealth(player, rein) + ChatColor.YELLOW + " | "
 					+ ChatColor.GOLD + "Group: " + ChatColor.GREEN + group.getName());
 		} else {
@@ -324,6 +330,9 @@ public class CitadelBlockListener extends CitadelListener {
 		if (e.getHand() != EquipmentSlot.HAND) {
 			return;
 		}
+		if (PlayerTools.isLeftClick(e.getAction())) {
+			return;
+		}
 		if (!e.hasBlock()) {
 			return;
 		}
@@ -361,6 +370,38 @@ public class CitadelBlockListener extends CitadelListener {
 					e.setCancelled(true);
 					e.getPlayer().sendMessage(ChatColor.RED + "You can not place this because it'd allow bypassing a nearby reinforcement");
 					break;
+				}
+			}
+		}
+	}
+	
+	@EventHandler
+	public void onRedstone(BlockRedstoneEvent e) {
+		if (e.getNewCurrent() <= 0 || e.getOldCurrent() > 0) return;
+		
+		Block b = e.getBlock();
+		MaterialData md = b.getState().getData();
+		
+		if (md instanceof Openable) {
+			Openable openable = (Openable) md;
+			if (openable.isOpen()) {
+				return;
+			}
+			
+			Reinforcement rein = rm.getReinforcement(b);
+			if (rein != null) {
+				Collection<LivingEntity> livingEntities = LocationTools.getNearbyLivingEntities(b.getLocation(), 3);
+				boolean allow = false;
+				for (LivingEntity le : livingEntities) {
+					if (!(le instanceof Player)) continue;
+					Player player = (Player) le;
+					if (rein.getGroup().isAuthorized(player, GroupPermissions.REINFORCEMENT_OPENABLE_BYPASS)) {
+						allow = true;
+						break;
+					}
+				}
+				if (!allow) {
+					e.setNewCurrent(e.getOldCurrent());
 				}
 			}
 		}

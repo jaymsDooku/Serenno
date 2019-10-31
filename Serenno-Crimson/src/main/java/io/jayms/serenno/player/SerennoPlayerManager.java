@@ -177,7 +177,7 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 				}
 				
 				Duel duel = sp.getDuel();
-				if (duel != null) {
+				if (duel != null && !duel.isRunning()) {
 					DuelTeam team = duel.getTeam(sp);
 					
 					if (team != null && team.getTeam().size() > 1) {
@@ -188,45 +188,45 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 					
 					DuelTeam otherTeam = duel.getOtherTeam(team);
 					board.add(ChatColor.RED + "Opponent: " + ChatColor.WHITE + otherTeam.getTeam().getLeader().getName(), 14);
-					
-					for (Player online : Bukkit.getOnlinePlayers()) {
-						SerennoPlayer sOnline = get(online);
-						String name = online.getName();
-						SerennoPlayer onlineSp = get(online);
-						Duel onlineDuel = onlineSp.getDuel();
-						if (duel != null) {
-							if (norm.hasEntry(name)) {
-								norm.removeEntry(name);
-							}
-							if (onlineDuel != null && onlineDuel.isPlaying(sOnline)) {
-								if (team.getTeam().inTeam(sOnline)) {
-									if (!ally.hasEntry(name)) {
-										ally.addEntry(name);
-									}
-								} else {
-									if (!enemy.hasEntry(name)) {
-										enemy.addEntry(name);
-									}
-								}
-							}
-						} else {
-							if (ally.hasEntry(name)) {
-								ally.removeEntry(name);
-							}
-							if (enemy.hasEntry(name)) {
-								enemy.removeEntry(name);
-							}
-							if (tagged.hasEntry(name)) {
-								tagged.removeEntry(name);
-							}
-							if (!norm.hasEntry(name)) {
-								norm.addEntry(name);
-							}
-						}
-					}
 				} else {
 					board.remove(14, "");
 					board.remove(2, "");
+				}
+				
+				for (Player online : Bukkit.getOnlinePlayers()) {
+					SerennoPlayer sOnline = get(online);
+					String name = online.getName();
+					SerennoPlayer onlineSp = get(online);
+					Duel onlineDuel = onlineSp.getDuel();
+					if (duel != null && duel.isRunning()) {
+						if (norm.hasEntry(name)) {
+							norm.removeEntry(name);
+						}
+						if (onlineDuel != null && onlineDuel.isPlaying(sOnline)) {
+							if (duel != null && duel.getTeam(sp).getTeam().inTeam(sOnline)) {
+								if (!ally.hasEntry(name)) {
+									ally.addEntry(name);
+								}
+							} else {
+								if (!enemy.hasEntry(name)) {
+									enemy.addEntry(name);
+								}
+							}
+						}
+					} else {
+						if (ally.hasEntry(name)) {
+							ally.removeEntry(name);
+						}
+						if (enemy.hasEntry(name)) {
+							enemy.removeEntry(name);
+						}
+						if (tagged.hasEntry(name)) {
+							tagged.removeEntry(name);
+						}
+						if (!norm.hasEntry(name)) {
+							norm.addEntry(name);
+						}
+					}
 				}
 			}
 		});

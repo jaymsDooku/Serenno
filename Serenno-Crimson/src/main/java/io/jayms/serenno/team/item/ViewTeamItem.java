@@ -1,5 +1,7 @@
 package io.jayms.serenno.team.item;
 
+import java.util.Map;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -12,12 +14,14 @@ import net.md_5.bungee.api.ChatColor;
 
 public class ViewTeamItem extends CustomItem {
 	
-	public ViewTeamItem() {
-		super(SerennoCrimson.get());
+	public static final int ID = 406;
+	
+	public ViewTeamItem(int id) {
+		super(SerennoCrimson.get(), id);
 	}
 
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.NETHER_STAR, 1)
 				.meta(new ItemMetaBuilder().name(ChatColor.YELLOW + "List Teammates"));
 	}

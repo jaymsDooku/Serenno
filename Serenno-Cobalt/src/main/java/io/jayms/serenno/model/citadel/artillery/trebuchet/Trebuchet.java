@@ -196,20 +196,20 @@ public class Trebuchet extends AbstractArtillery {
 	@Override
 	public int qtZMid() {
 		Location crateLoc = getCrate().getLocation();
-		int x = crateLoc.getBlockX();
+		int z = crateLoc.getBlockZ();
 		switch (getDirection()) {
 			case SOUTH:
-				x += config.getTrebuchetBackwardLength(); 
+				z += config.getTrebuchetBackwardLength(); 
 				break;
 			case NORTH:
-				x -= config.getTrebuchetBackwardLength();
+				z -= config.getTrebuchetBackwardLength();
 				break;
 			case EAST:
 			case WEST:
 			default:
 				break;
 		}
-		return x;
+		return z;
 	}
 
 	@Override
@@ -235,18 +235,40 @@ public class Trebuchet extends AbstractArtillery {
 		
 		return qtZMid() + sub;
 	}
+	
+	private boolean isFiring = false;
 
 	@Override
 	public void fire(EngineerPlayer player) {
+		if (isFiring()) {
+			player.sendMessage(ChatColor.RED + "Trebuchet is already firing!");
+		}
 		if (firingAmmoAmount <= 0) {
 			player.sendMessage(ChatColor.RED + "Trebuchet is out of ammo.");
 			return;
+		}
+		
+		isFiring = true;
+		
+		firingAmmoAmount--;
+		if (firingAmmoAmount < 0) {
+			firingAmmoAmount = 0;
 		}
 		
 		ArtilleryManager am = SerennoCobalt.get().getCitadelManager().getArtilleryManager();
 		ArtilleryMissileRunner missileRunner = am.getMissileRunner(Trebuchet.class);
 		missileRunner.fireMissile(player, this);
 		player.notify(ChatColor.YELLOW + "You have fired the " + getDisplayName());
+	}
+	
+	@Override
+	public void setFiring(boolean set) {
+		isFiring = set;
+	}
+	
+	@Override
+	public boolean isFiring() {
+		return isFiring;
 	}
 
 	@Override

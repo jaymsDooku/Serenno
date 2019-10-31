@@ -1,5 +1,7 @@
 package io.jayms.serenno.model.citadel.artillery;
 
+import java.util.Map;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -14,14 +16,14 @@ import net.md_5.bungee.api.ChatColor;
 
 public abstract class ArtilleryCrateItem extends CustomItem {
 	
-	public ArtilleryCrateItem() {
-		super(SerennoCobalt.get());
+	public ArtilleryCrateItem(int id) {
+		super(SerennoCobalt.get(), id);
 	}
 	
 	public abstract String getDisplayName();
 	
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.WORKBENCH, 1)
 				.meta(new ItemMetaBuilder()
 						.name(getDisplayName()));

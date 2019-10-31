@@ -1,9 +1,9 @@
 package io.jayms.serenno.item;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
@@ -31,16 +31,17 @@ public class CustomItemManager implements Listener {
 	private CustomItemManager() {
 	}
 	
-	private Map<UUID, CustomItem> customItems = new ConcurrentHashMap<>();
+	private Map<Integer, CustomItem> customItems = new ConcurrentHashMap<>();
 	
 	private boolean registered = false;
 	
-	public CustomItem createCustomItem(Class<? extends CustomItem> clazz) {
+	public CustomItem createCustomItem(int id, Class<? extends CustomItem> clazz) {
 		CustomItem customItem = null;
 		try {
-			customItem = clazz.getConstructor().newInstance();
+			Constructor<? extends CustomItem> constructor = clazz.getConstructor(int.class);
+			customItem = constructor.newInstance(id);
 			customItems.put(customItem.getID(), customItem);
-			
+				
 			if (!registered) {
 				Bukkit.getPluginManager().registerEvents(this, SerennoCommon.get());
 				registered = true;
@@ -51,24 +52,24 @@ public class CustomItemManager implements Listener {
 		return customItem;
 	}
 	
-	public CustomItem getCustomItem(Class<? extends CustomItem> clazz) {
+	public CustomItem getCustomItem(int id, Class<? extends CustomItem> clazz) {
 		CustomItem customItem = null; 
-		for (Entry<UUID, CustomItem> ciEn : customItems.entrySet()) {
+		for (Entry<Integer, CustomItem> ciEn : customItems.entrySet()) {
 			if (ciEn.getValue().getClass().equals(clazz)) {
 				customItem = ciEn.getValue();
 			}
 		}
 		
 		if (customItem == null) {
-			customItem = createCustomItem(clazz);
+			customItem = createCustomItem(id, clazz);
 		}
 		
 		return customItem;
 	}
 	
 	public CustomItem getCustomItem(ItemStack itemStack) {
-		UUID id = CustomItem.getCustomItemID(itemStack);
-		if (id == null) {
+		int id = CustomItem.getCustomItemID(itemStack);
+		if (id == -1) {
 			return null;
 		}
 		return customItems.get(id);
@@ -84,11 +85,12 @@ public class CustomItemManager implements Listener {
 		
 		if (item == null || item.getType() == Material.AIR) return;
 		
-		UUID customItemID = CustomItem.getCustomItemID(item);
-		if (customItemID == null) return;
+		int customItemID = CustomItem.getCustomItemID(item);
+		if (customItemID == -1) return;
 		if (!(customItems.containsKey(customItemID))) return;
 		
 		CustomItem customItem = customItems.get(customItemID);
+		if (customItem == null) return;
 
 		Runnable runnable = null;
 		if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
@@ -112,11 +114,12 @@ public class CustomItemManager implements Listener {
 		
 		if (item == null || item.getType() == Material.AIR) return;
 		
-		UUID customItemID = CustomItem.getCustomItemID(item);
-		if (customItemID == null) return;
+		int customItemID = CustomItem.getCustomItemID(item);
+		if (customItemID == -1) return;
 		if (!(customItems.containsKey(customItemID))) return;
 		
 		CustomItem customItem = customItems.get(customItemID);
+		if (customItem == null) return;
 		Runnable runnable = customItem.onSwitchSlot(e);
 		
 		if (runnable == null) return;
@@ -134,11 +137,12 @@ public class CustomItemManager implements Listener {
 		
 		if (item == null || item.getType() == Material.AIR) return;
 		
-		UUID customItemID = CustomItem.getCustomItemID(item);
-		if (customItemID == null) return;
+		int customItemID = CustomItem.getCustomItemID(item);
+		if (customItemID == -1) return;
 		if (!(customItems.containsKey(customItemID))) return;
 		
 		CustomItem customItem = customItems.get(customItemID);
+		if (customItem == null) return;
 		
 		if (customItem.preventOnBlockPlace(e)) {
 			e.setCancelled(true);

@@ -1,5 +1,7 @@
 package io.jayms.serenno.vault.item;
 
+import java.util.Map;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -14,17 +16,19 @@ import net.md_5.bungee.api.ChatColor;
 
 public class ManageVaultsItem extends CustomItem {
 	
+	public static final int ID = 405;
+	
 	private ManageVaultsMenu manageVaultsMenu;
 	private MenuController menuController;
 	
-	public ManageVaultsItem() {
-		super(SerennoCrimson.get());
+	public ManageVaultsItem(int id) {
+		super(SerennoCrimson.get(), id);
 		this.manageVaultsMenu = new ManageVaultsMenu();
 		this.menuController = new MenuController(this.manageVaultsMenu);
 	}
 
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.OBSIDIAN, 1)
 				.meta(new ItemMetaBuilder().name(ChatColor.YELLOW + "Manage Vaults"));
 	}

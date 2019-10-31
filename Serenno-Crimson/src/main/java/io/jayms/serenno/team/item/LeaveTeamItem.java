@@ -1,5 +1,7 @@
 package io.jayms.serenno.team.item;
 
+import java.util.Map;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -13,12 +15,14 @@ import net.md_5.bungee.api.ChatColor;
 
 public class LeaveTeamItem extends CustomItem {
 	
-	public LeaveTeamItem() {
-		super(SerennoCrimson.get());
+	public static final int ID = 407;
+	
+	public LeaveTeamItem(int id) {
+		super(SerennoCrimson.get(), id);
 	}
 
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.END_CRYSTAL, 1)
 				.meta(new ItemMetaBuilder().name(ChatColor.YELLOW + "Leave Team"));
 	}

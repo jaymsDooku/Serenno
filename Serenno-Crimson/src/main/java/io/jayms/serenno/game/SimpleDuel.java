@@ -6,6 +6,7 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -29,6 +30,7 @@ import io.jayms.serenno.team.TeamManager;
 import io.jayms.serenno.util.PlayerTools;
 import mkremins.fanciful.FancyMessage;
 import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_12_R1.NBTTagCompound;
 
 public abstract class SimpleDuel extends AbstractGame implements Duel {
 
@@ -143,12 +145,11 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 									.name(duelType.getDisplayName() + ChatColor.WHITE + "#" + (i+1))
 									.enchant(Enchantment.DURABILITY, 1, true)
 									.flag(ItemFlag.HIDE_ENCHANTS)).build();
-					ItemMeta meta = kitBook.getItemMeta();
-					NBTItem nbtKitBook = new NBTItem(kitBook);
-					nbtKitBook.setInteger("index", i);
-					kitBook = nbtKitBook.getItem();
-					kitBook.setItemMeta(meta);
-					p.getInventory().setItem(i, kitBook);
+					net.minecraft.server.v1_12_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(kitBook);
+					NBTTagCompound compound = (nmsStack.hasTag()) ? nmsStack.getTag() : new NBTTagCompound();
+					compound.setInt("index", i);
+					nmsStack.setTag(compound);
+					p.getInventory().setItem(i, CraftItemStack.asBukkitCopy(nmsStack));
 				}
 			}
 		}

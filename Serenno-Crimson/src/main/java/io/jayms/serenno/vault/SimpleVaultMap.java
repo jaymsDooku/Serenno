@@ -19,15 +19,9 @@ import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.db.sql.SQLite;
 import io.jayms.serenno.game.DuelType;
-import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.ReinforcementManager;
-import io.jayms.serenno.manager.SnitchManager;
-import io.jayms.serenno.model.citadel.bastion.Bastion;
-import io.jayms.serenno.model.citadel.bastion.BastionWorld;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
-import io.jayms.serenno.model.citadel.snitch.Snitch;
-import io.jayms.serenno.model.citadel.snitch.SnitchWorld;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.region.Region;
 import io.jayms.serenno.util.LocationTools;
@@ -39,8 +33,6 @@ public class SimpleVaultMap implements VaultMap {
 	
 	private String originalWorldName;
 	private World originalWorld;
-	
-	private Set<Player> inOriginalWorld;
 	private Map<String, VaultMapDatabase> vaultMapDatabases;
 	private Set<World> activeWorlds = new HashSet<>();
 	private int activeWorldID;
@@ -50,7 +42,6 @@ public class SimpleVaultMap implements VaultMap {
 	public SimpleVaultMap(String originalWorldName, Arena arena, SQLite database) {
 		this.originalWorldName = originalWorldName;
 		this.arena = arena;
-		this.inOriginalWorld = new HashSet<>();
 		this.vaultMapDatabases = new HashMap<>();
 		//this.database = database;
 		
@@ -77,14 +68,7 @@ public class SimpleVaultMap implements VaultMap {
 		ReinforcementWorld reinWorld = rm.getReinforcementWorld(originalWorld);
 		
 		Set<Reinforcement> reinforcements = reinWorld.getAllReinforcements();
-		
-		for (Reinforcement rein : reinforcements) {
-			if (rein.isInMemory()) {
-				reinSource.create(rein);
-			} else {
-				reinSource.update(rein);
-			}
-		}
+		reinSource.persistAll(reinforcements, () -> {});
 		
 		SerennoCrimson.get().getArenaManager().saveArena(getArena());
 		SerennoCrimson.get().getRegionManager().saveRegion(getRegion());
@@ -130,7 +114,6 @@ public class SimpleVaultMap implements VaultMap {
 			group.addMember(player);
 		}
 		player.sendMessage(ChatColor.YELLOW + "You are going to vault map: " + arena.getRegion().getDisplayName());
-		inOriginalWorld.add(player);
 		new BukkitRunnable() {
 			
 			@Override
@@ -146,7 +129,6 @@ public class SimpleVaultMap implements VaultMap {
 		for (Group group : getDatabase().getGroupSource().values()) {
 			group.removeMember(player);
 		}
-		inOriginalWorld.remove(player);
 	}
 	
 	@Override

@@ -15,10 +15,12 @@ import org.bukkit.util.Vector;
 
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCobaltConfigManager;
+import io.jayms.serenno.model.citadel.artillery.Artillery;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileState;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.util.LocationTools;
+import io.jayms.serenno.util.ParticleEffect;
 
 public class TrebuchetMissileFinishState implements ArtilleryMissileState<TrebuchetMissile> {
 
@@ -45,7 +47,11 @@ public class TrebuchetMissileFinishState implements ArtilleryMissileState<Trebuc
 		List<Location> explodeLocs = LocationTools.getCircle(loc, impactRadius, impactRadius, false, true, 0);
 		for (Location explodeLoc : explodeLocs) {
 			Block explodeBlock = explodeLoc.getBlock();
-			if (explodeBlock.getType() != Material.AIR) {
+			if (explodeBlock.getType() != Material.AIR && explodeBlock.getType() != Material.BEDROCK && explodeBlock.getType() != Material.BARRIER) {
+				Artillery artillery = SerennoCobalt.get().getCitadelManager().getArtilleryManager().getArtillery(explodeLoc);
+				if (artillery != null) {
+					artillery.getReinforcement().damage();
+				}
 				Reinforcement rein = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcement(explodeBlock);
 				boolean notDead = rein != null;
 				if (notDead) {
@@ -65,6 +71,9 @@ public class TrebuchetMissileFinishState implements ArtilleryMissileState<Trebuc
 		}
 		
 		loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.5f);
+		ParticleEffect.EXPLOSION_HUGE.display(loc, 0f, 0f, 0f, 0, 5);
+		ParticleEffect.FLAME.display(loc, 0.2f, 0.2f, 0.2f, 0, 10);
+		ParticleEffect.LARGE_SMOKE.display(loc, 0.3f, 0.3f, 0.3f, 0, 5);
 		
 		Collection<LivingEntity> livingEntities = LocationTools.getNearbyLivingEntities(loc, impactRadius);
 		for (LivingEntity le : livingEntities) {
@@ -74,6 +83,7 @@ public class TrebuchetMissileFinishState implements ArtilleryMissileState<Trebuc
 			le.setVelocity(dir);
 			le.damage(config.getTrebuchetPlayerDamage());
 		}
+		
 		return this;
 	}
 

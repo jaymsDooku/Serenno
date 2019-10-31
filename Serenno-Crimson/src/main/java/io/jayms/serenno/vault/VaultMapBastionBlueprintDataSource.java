@@ -5,17 +5,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import com.google.common.collect.Lists;
+
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
-import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
+import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.util.ItemUtil;
 import io.jayms.serenno.util.SerennoDataSource;
 
@@ -272,6 +275,15 @@ public class VaultMapBastionBlueprintDataSource implements SerennoDataSource<Bas
 		}
 		blueprints.remove(new ItemStackKey(value.getItemStack()));
 		namedBlueprints.remove(value.getName());
+	}
+	
+	@Override
+	public void deleteAll() {
+		List<BastionBlueprint> blueprints = Lists.newArrayList(getAll());
+		for (BastionBlueprint bb : blueprints) {
+			delete(bb);
+		}
+		blueprints.clear();
 	}
 
 }

@@ -1,5 +1,7 @@
 package io.jayms.serenno.game.item;
 
+import java.util.Map;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -14,12 +16,12 @@ import net.md_5.bungee.api.ChatColor;
 
 public class StopSpectatingItem extends CustomItem {
 
-	public StopSpectatingItem() {
-		super(SerennoCrimson.get());
+	public StopSpectatingItem(int id) {
+		super(SerennoCrimson.get(), id);
 	}
 	
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.BARRIER, 1)
 				.meta(new ItemMetaBuilder().name(ChatColor.RED + "Stop Spectating"));
 	}

@@ -116,17 +116,14 @@ public class ReinforcementManager {
 	
 	public Reinforcement getReinforcement(Block block) {
 		Reinforcement directReinforcement = getDirectReinforcement(block);
-		System.out.println("direct: " + directReinforcement);
 		if (directReinforcement != null) {
 			return directReinforcement;
 		}
 		Block responsible = getResponsibleBlock(block);
-		System.out.println("responsible: " + responsible);
 		if (responsible == null) {
 			return null;
 		}
 		Reinforcement responsibleDirect = getDirectReinforcement(responsible);
-		System.out.println("responsibleDirect: " + responsibleDirect);
 		return responsibleDirect;
 	}
 	
@@ -225,7 +222,7 @@ public class ReinforcementManager {
 		
 		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
 		if (placer != null) {
-			placer.getInventory().remove(blueprint.getItemStack());
+			placer.getInventory().removeItem(blueprint.getItemStack());
 		}
 		return reinforcement;
 	}
@@ -267,7 +264,7 @@ public class ReinforcementManager {
 	
 	public static Block getResponsibleBlock(Block block) {
 		Material type = block.getType();
-		System.out.println("type: " + type);
+		//System.out.println("type: " + type);
 		switch (type) {
 			case YELLOW_FLOWER:
 			case RED_ROSE:
@@ -295,8 +292,8 @@ public class ReinforcementManager {
 			case SPRUCE_DOOR:
 			case JUNGLE_DOOR:
 			case WOOD_DOOR:
-				System.out.println("up: " + block.getRelative(BlockFace.UP).getType());
-				System.out.println("down: " + block.getRelative(BlockFace.DOWN).getType());
+				//System.out.println("up: " + block.getRelative(BlockFace.UP).getType());
+				//System.out.println("down: " + block.getRelative(BlockFace.DOWN).getType());
 				if (block.getRelative(BlockFace.UP).getType() != block.getType()) {
 					// block is upper half of a door
 					return block.getRelative(BlockFace.DOWN);

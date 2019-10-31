@@ -1,5 +1,6 @@
 package io.jayms.serenno.command;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -8,7 +9,9 @@ import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.boydti.fawe.FaweCache;
@@ -30,11 +33,16 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Subcommand;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
+import io.jayms.serenno.kit.ItemMetaBuilder;
+import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.manager.BastionManager;
 import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
+import io.jayms.serenno.model.citadel.RegenRate;
 import io.jayms.serenno.model.citadel.ReinforcementMode;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
+import io.jayms.serenno.model.citadel.bastion.BastionShape;
+import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.util.MaterialTools;
@@ -44,10 +52,12 @@ import io.jayms.serenno.util.PlayerTools.Clipboard;
 import io.jayms.serenno.util.worldedit.Bastionizer;
 import io.jayms.serenno.util.worldedit.Reinforcer;
 import io.jayms.serenno.vault.VaultMap;
+import io.jayms.serenno.vault.VaultMapBastionBlueprintDataSource;
 import io.jayms.serenno.vault.VaultMapDatabase;
 import io.jayms.serenno.vault.VaultMapManager;
 import io.jayms.serenno.vault.VaultMapPlayerList;
 import io.jayms.serenno.vault.VaultMapPlayerListType;
+import io.jayms.serenno.vault.VaultMapReinforcementBlueprintDataSource;
 import net.md_5.bungee.api.ChatColor;
 
 @CommandAlias("vault")
@@ -86,6 +96,101 @@ public class VaultCommand extends BaseCommand {
 		player.sendMessage(ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "--------------");
 		player.sendMessage(ChatColor.GOLD + "Cores: " + ChatColor.YELLOW + database.getCoreSource().getAll());
 		player.sendMessage(ChatColor.GOLD + "Group Colours: " + ChatColor.YELLOW + database.getGroupColours());
+	}
+	
+	@Subcommand("blueprints reset")
+	public void resetBlueprints(Player player, String vaultName) {
+		if (!vm.isVaultMap(vaultName)) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+		
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		VaultMapDatabase database = vaultMap.getDatabase();
+		VaultMapReinforcementBlueprintDataSource reinSource = database.getReinforcementBlueprintSource();
+		VaultMapBastionBlueprintDataSource bastionSource = database.getBastionBlueprintSource();
+		reinSource.deleteAll();
+		bastionSource.deleteAll();
+		ReinforcementBlueprint stoneBlueprint = ReinforcementBlueprint.builder()
+				.name("stone")
+				.displayName(ChatColor.GRAY + "Stone")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 5)
+				.damageCooldown(0)
+				.maturationTime(1000 * 60 * 1)
+				.maturationScale(2)
+				.itemStack(new ItemStack(Material.STONE, 1))
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(50)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
+				.build();
+		ReinforcementBlueprint ironBlueprint = ReinforcementBlueprint.builder()
+				.name("iron")
+				.displayName(ChatColor.DARK_GRAY + "Iron")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 9)
+				.damageCooldown(0)
+				.itemStack(new ItemStack(Material.IRON_INGOT, 1))
+				.maturationTime(1000 * 60 * 3)
+				.maturationScale(2)
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(200)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
+				.build();
+		ReinforcementBlueprint diamondBlueprint = ReinforcementBlueprint.builder()
+				.name("diamond")
+				.displayName(ChatColor.AQUA + "Diamond")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 27)
+				.damageCooldown(0)
+				.itemStack(new ItemStack(Material.DIAMOND, 1))
+				.maturationTime(1000 * 60 * 9)
+				.maturationScale(2)
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(400)
+				.unreinforceableMaterials(Arrays.asList(Material.WEB))
+				.build();
+		ReinforcementBlueprint diamondBastionBlueprint = ReinforcementBlueprint.builder()
+				.name("diamond-bastion")
+				.displayName(ChatColor.AQUA + "Diamond Bastion")
+				.defaultDamage(1)
+				.acidTime(1000 * 60 * 30)
+				.damageCooldown(2500)
+				.maturationTime(1000 * 60 * 30)
+				.maturationScale(2)
+				.itemStack(new ItemStackBuilder(Material.DIAMOND, 1)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.AQUA + "Diamond Bastion")).build())
+				.regenRate(new RegenRate(1, 60000))
+				.maxHealth(400)
+				.reinforceableMaterials(Arrays.asList(Material.SPONGE))
+				.build();
+		
+		BastionBlueprint vaultBlueprint = BastionBlueprint.builder()
+				.name("vault")
+				.displayName(ChatColor.DARK_RED + "Vault Bastion")
+				.itemStack(new ItemStackBuilder(Material.SPONGE, 1)
+						.meta(new ItemMetaBuilder()
+								.name(ChatColor.DARK_RED + "Vault Bastion"))
+						.build())
+				.pearlConfig(PearlConfig.builder()
+						.consumeOnBlock(false)
+						.block(true)
+						.blockMidAir(false)
+						.damage(2)
+						.build())
+				.requiresMaturity(false)
+				.shape(BastionShape.SQUARE)
+				.radius(10)
+				.build();
+		
+		reinSource.create(stoneBlueprint);
+		reinSource.create(ironBlueprint);
+		reinSource.create(diamondBlueprint);
+		reinSource.create(diamondBastionBlueprint);
+		
+		bastionSource.create(vaultBlueprint);
+		player.sendMessage(ChatColor.GOLD + vaultMap.getName() + ChatColor.YELLOW + " vault blueprints reset.");
 	}
 	
 	@Subcommand("goto")
@@ -162,7 +267,7 @@ public class VaultCommand extends BaseCommand {
 			return;
 		}
 		
-		VaultMapPlayerListType playerListType = VaultMapPlayerListType.valueOf(type);
+		VaultMapPlayerListType playerListType = VaultMapPlayerListType.valueOf(type.toUpperCase());
 		if (playerListType == null) {
 			player.sendMessage(ChatColor.RED + "That isn't a valid player list type.");
 			return;

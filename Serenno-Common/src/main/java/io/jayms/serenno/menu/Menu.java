@@ -23,12 +23,12 @@ public interface Menu {
 	
 	void open(Player player, Map<String, Object> initData);
 	
-	void close(Player player);
+	void close(Player player, Inventory inventory);
 	
 	boolean onOpen(Player player);
 	
 	void onClose(Player player);
 	
-	void onClose(Player player, Map<String, Object> data);
+	void onClose(Player player, Inventory inventory, Map<String, Object> data);
 	
 }

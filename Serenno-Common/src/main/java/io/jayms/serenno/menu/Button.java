@@ -16,6 +16,10 @@ public interface Button {
 	
 	boolean isPickUpAble();
 	
+	void setNormal(boolean set);
+	
+	boolean isNormal();
+	
 	void setMenu(Menu menu);
 	
 	Menu getMenu();

@@ -26,9 +26,9 @@ import io.jayms.serenno.event.ViewReinforcementBlueprintEvent;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.manager.BastionManager;
+import io.jayms.serenno.manager.CitadelManager;
 import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.RegenRate;
-import io.jayms.serenno.model.citadel.artillery.ArtilleryCrateItem;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryType;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint.PearlConfig;
@@ -39,6 +39,7 @@ import net.md_5.bungee.api.ChatColor;
 @CommandAlias("citadel")
 public class CitadelCommand extends BaseCommand {
 
+	private CitadelManager cm = SerennoCobalt.get().getCitadelManager();
 	private ReinforcementManager rm = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
 	private BastionManager bm = SerennoCobalt.get().getCitadelManager().getBastionManager();
 	
@@ -135,7 +136,7 @@ public class CitadelCommand extends BaseCommand {
 			
 			rb = event.getReinforcementBlueprint();
 			
-			if (event.isCancelled()) {
+			if (!event.isCancelled()) {
 				rm.registerReinforcementBlueprint(rb);
 			}
 			player.sendMessage(ChatColor.YELLOW + "You have created a new reinforcement blueprint:");
@@ -164,7 +165,7 @@ public class CitadelCommand extends BaseCommand {
 			
 			bb = event.getBastionBlueprint();
 			
-			if (event.isCancelled()) {
+			if (!event.isCancelled()) {
 				bm.registerBastionBlueprint(bb);
 			}
 			player.sendMessage(ChatColor.YELLOW + "You have created a new bastion blueprint:");
@@ -379,7 +380,7 @@ public class CitadelCommand extends BaseCommand {
 			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
 			return;
 		}
-		blueprint.setAcidTime(damageCooldown);
+		blueprint.setDamageCooldown(damageCooldown);
 		
 		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
 		Bukkit.getPluginManager().callEvent(updateEvent);
@@ -406,6 +407,27 @@ public class CitadelCommand extends BaseCommand {
 		Bukkit.getPluginManager().callEvent(updateEvent);
 		
 		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " maturation time to " + ChatColor.GOLD + maturationTime);
+	}
+	
+	@Subcommand("blueprint maturationScale")
+	public void blueprintMaturationScale(Player player, String name, double maturationScale) {
+		ReinforcementBlueprint blueprint = rm.getReinforcementBlueprint(name);
+		
+		ReinforcementBlueprintModifyEvent event = new ReinforcementBlueprintModifyEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(event);
+		
+		blueprint = event.getReinforcementBlueprint();
+		
+		if (blueprint == null) {
+			player.sendMessage(ChatColor.RED + "That blueprint doesn't exist.");
+			return;
+		}
+		blueprint.setMaturationScale(maturationScale);
+		
+		ReinforcementBlueprintUpdateEvent updateEvent = new ReinforcementBlueprintUpdateEvent(player, name, blueprint);
+		Bukkit.getPluginManager().callEvent(updateEvent);
+		
+		player.sendMessage(ChatColor.YELLOW + "You have set reinforcement blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " maturation scale to " + ChatColor.GOLD + maturationScale);
 	}
 	
 	@Subcommand("blueprint maxHealth")

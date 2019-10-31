@@ -20,8 +20,8 @@ public class TrebuchetMissileProgressState implements ArtilleryMissileState<Treb
 		Location loc = fallBlock.getLocation();
 		Location prevLoc = missile.getPrevLocation();
 		
-		if (Math.abs(prevLoc.getBlockX() - loc.getBlockX()) < 0.1
-				&& Math.abs(prevLoc.getBlockZ() - loc.getBlockZ()) < 0.1) {
+		if (Math.abs(prevLoc.getBlockX() - loc.getBlockX()) < 0.00001
+				&& Math.abs(prevLoc.getBlockZ() - loc.getBlockZ()) < 0.00001) {
 			fallBlock.remove();
 			missile.setMissileBlock(null);
 			return TrebuchetMissile.FINISH;
@@ -33,6 +33,7 @@ public class TrebuchetMissileProgressState implements ArtilleryMissileState<Treb
 				dir = missile.getLocation().clone().toVector().subtract(missile.getPrevLocation().toVector());
 			}
 			fallBlock.setVelocity(dir.multiply(missile.getArtillery().getFiringPower()));
+			missile.getArtillery().setFiring(false);
 			missile.setLaunching(false);
 		}
 		

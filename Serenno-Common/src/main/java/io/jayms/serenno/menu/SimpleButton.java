@@ -10,6 +10,7 @@ public class SimpleButton implements Button {
 	private ClickHandler clickHandler;
 	private ItemStack itemStack;
 	private boolean pickUpAble;
+	private boolean normal;
 	private Menu menu;
 	
 	@Override
@@ -43,6 +44,16 @@ public class SimpleButton implements Button {
 	}
 	
 	@Override
+	public boolean isNormal() {
+		return normal;
+	}
+	
+	@Override
+	public void setNormal(boolean normal) {
+		this.normal = normal;
+	}
+	
+	@Override
 	public Menu getMenu() {
 		return menu;
 	}
@@ -54,7 +65,7 @@ public class SimpleButton implements Button {
 	
 	@Override
 	public String toString() {
-		return "SimpleButton [clickHandler=" + clickHandler + ", itemStack=" + itemStack + ", pickUpAble=" + pickUpAble
+		return "SimpleButton [clickHandler=" + clickHandler + ", itemStack=" + itemStack + ", pickUpAble=" + pickUpAble + ", normal=" + normal
 				+ ", menu=" + menu + "]";
 	}
 
@@ -63,6 +74,7 @@ public class SimpleButton implements Button {
 		this.itemStack = builder.itemStack;
 		this.pickUpAble = builder.pickUpAble;
 		this.menu = builder.menu;
+		this.normal = builder.normal;
 	}
 	
 	public static class Builder {
@@ -70,6 +82,7 @@ public class SimpleButton implements Button {
 		private ClickHandler clickHandler = null;
 		private ItemStack itemStack = new ItemStackBuilder(Material.STAINED_GLASS_PANE, 1).durability((short) 7).build();
 		private boolean pickUpAble = false;
+		private boolean normal = false;
 		private Menu menu;
 		
 		public Builder(Menu menu) {
@@ -88,6 +101,11 @@ public class SimpleButton implements Button {
 		
 		public Builder setPickUpAble(boolean set) {
 			this.pickUpAble = set;
+			return this;
+		}
+		
+		public Builder setNormal(boolean set) {
+			this.normal = set;
 			return this;
 		}
 		

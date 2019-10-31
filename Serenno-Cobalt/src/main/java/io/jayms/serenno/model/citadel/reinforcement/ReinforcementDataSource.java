@@ -5,13 +5,14 @@ import java.util.Map;
 
 import org.bukkit.Material;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld.UnloadCallback;
 import io.jayms.serenno.util.ChunkCoord;
 import io.jayms.serenno.util.Coords;
 import io.jayms.serenno.util.SerennoDataSource;
 
 public interface ReinforcementDataSource extends SerennoDataSource<Reinforcement, Coords> {
 	
-	void persistAll(Collection<Reinforcement> reinforcements);
+	void persistAll(Collection<Reinforcement> reinforcements, UnloadCallback callback);
 	
 	boolean isAcidBlock(Material type);
 	

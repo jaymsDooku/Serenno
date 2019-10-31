@@ -21,6 +21,7 @@ public class TrebuchetCrate extends AbstractArtilleryCrate {
 	
 	public TrebuchetCrate(TrebuchetCrateItem crateItem) {
 		this.starterItemType = Material.DIAMOND_BLOCK;
+		this.starterItemAmount = 1;
 		this.crateItem = crateItem;
 	}
 	

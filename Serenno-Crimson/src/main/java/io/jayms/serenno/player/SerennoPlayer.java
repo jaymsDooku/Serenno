@@ -71,6 +71,9 @@ public class SerennoPlayer implements Duelable {
 	}
 	
 	public Duel getDuel() {
+		if (currentGame == null) {
+			return null;
+		}
 		if (!(currentGame instanceof Duel)) {
 			return null;
 		}
@@ -97,11 +100,19 @@ public class SerennoPlayer implements Duelable {
 	}
 	
 	public Kit[] getDuelingKits(DuelType duelType) {
+		Kit[] defaultKits = duelType.getDefaultKitArray();
 		Kit[] kits = this.kits.get(duelType);
 		
 		if (kits == null) {
 			kits = duelType.getDefaultKitArray();
 			this.kits.put(duelType, kits);
+		}
+		
+		for (int i = 0; i < kits.length; i++) {
+			Kit defaultKit = defaultKits[i];
+			if (kits[i] == null && defaultKit != null) {
+				kits[i] = defaultKit;
+			}
 		}
 		
 		return kits;
@@ -111,7 +122,8 @@ public class SerennoPlayer implements Duelable {
 		Kit kit = getDuelingKits(duelType)[slot];
 		
 		if (kit == null) {
-			kit = duelType.getDefaultKitArray()[0];
+			Kit[] defaultKits = duelType.getDefaultKitArray();
+			kit = defaultKits[slot] != null ? defaultKits[slot] : duelType.getDefaultKitArray()[0];
 			setDuelingKit(duelType, slot, kit);
 		}
 		

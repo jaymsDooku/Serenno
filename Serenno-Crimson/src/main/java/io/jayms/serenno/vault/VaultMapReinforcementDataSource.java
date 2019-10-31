@@ -17,6 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementDataSource;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld.UnloadCallback;
 import io.jayms.serenno.util.ChunkCoord;
 import io.jayms.serenno.util.Coords;
 
@@ -97,50 +98,54 @@ public class VaultMapReinforcementDataSource implements ReinforcementDataSource 
 	}
 	
 	@Override
-	public void persistAll(Collection<Reinforcement> reinforcements) {
-		try {
-			if (db.getDatabase().getConnection().isClosed()) {
-				return;
-			}
+	public void persistAll(Collection<Reinforcement> reinforcements, UnloadCallback callback) {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				try {
+					if (db.getDatabase().getConnection().isClosed()) {
+						return;
+					}
 			
-			PreparedStatement insertPs = db.getDatabase().getConnection().prepareStatement(INSERT_REIN);
-			PreparedStatement updatePs = db.getDatabase().getConnection().prepareStatement(UPDATE_REIN);
-			PreparedStatement deletePs = db.getDatabase().getConnection().prepareStatement(DELETE_REIN);
-			for (Reinforcement reinforcement : reinforcements) {
-				if (!reinforcement.isDirty()) {
-					continue;
-				}
-				if (reinforcement.isBroken()) {
-					deleteReinforcement(deletePs, reinforcement);
-				} else {
-					if (reinforcement.isInMemory()) {
-						insertReinforcement(insertPs, reinforcement);
-						reinforcement.setInMemory(false);
-					} else {
-						updateReinforcement(updatePs, reinforcement);
+					PreparedStatement insertPs = db.getDatabase().getConnection().prepareStatement(INSERT_REIN);
+					PreparedStatement updatePs = db.getDatabase().getConnection().prepareStatement(UPDATE_REIN);
+					PreparedStatement deletePs = db.getDatabase().getConnection().prepareStatement(DELETE_REIN);
+					for (Reinforcement reinforcement : reinforcements) {
+						if (!reinforcement.isDirty()) {
+							continue;
+						}
+						if (reinforcement.isBroken()) {
+							deleteReinforcement(deletePs, reinforcement);
+						} else {
+							if (reinforcement.isInMemory()) {
+								insertReinforcement(insertPs, reinforcement);
+								reinforcement.setInMemory(false);
+							} else {
+								updateReinforcement(updatePs, reinforcement);
+							}
+						}
+						reinforcement.setDirty(false);
 					}
+					deletePs.executeBatch();
+					insertPs.executeBatch();
+					updatePs.executeBatch();
+					
+					insertPs.close();
+					updatePs.close();
+					deletePs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
 				}
-				reinforcement.setDirty(false);
+				new BukkitRunnable() {
+					
+					@Override
+					public void run() {
+						callback.unload();
+					}
+					
+				}.runTask(SerennoCobalt.get());
 			}
-			new BukkitRunnable() {
-				@Override
-				public void run() {
-					try {
-						deletePs.executeBatch();
-						insertPs.executeBatch();
-						updatePs.executeBatch();
-						
-						insertPs.close();
-						updatePs.close();
-						deletePs.close();	
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-			}.runTaskAsynchronously(SerennoCobalt.get());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		}.runTaskAsynchronously(SerennoCobalt.get());
 	}
 	
 	private void insertReinforcement(PreparedStatement ps, Reinforcement value) throws SQLException {

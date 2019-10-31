@@ -13,7 +13,7 @@ import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetCrateItem;
 public enum ArtilleryType {
 
 	TREBUCHET(Trebuchet.class, () -> {
-		return (ArtilleryCrateItem) CustomItemManager.getCustomItemManager().createCustomItem(TrebuchetCrateItem.class);
+		return (ArtilleryCrateItem) CustomItemManager.getCustomItemManager().getCustomItem(TrebuchetCrateItem.ID, TrebuchetCrateItem.class);
 	}),
 	CANNON(null, null);
 	

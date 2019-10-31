@@ -81,30 +81,30 @@ public class Lobby implements Listener {
 	
 	private Kit normalItems() {
 		return new Kit()
-				.set(0, CustomItemManager.getCustomItemManager().getCustomItem(DuelMenuItem.class).getItemStack())
-				.set(4, CustomItemManager.getCustomItemManager().getCustomItem(CreateTeamItem.class).getItemStack())
-				.set(6, CustomItemManager.getCustomItemManager().getCustomItem(KitEditorItem.class).getItemStack())
-				.set(8, CustomItemManager.getCustomItemManager().getCustomItem(SetRespawnItem.class).getItemStack());
+				.set(0, CustomItemManager.getCustomItemManager().getCustomItem(DuelMenuItem.ID, DuelMenuItem.class).getItemStack())
+				.set(4, CustomItemManager.getCustomItemManager().getCustomItem(CreateTeamItem.ID, CreateTeamItem.class).getItemStack())
+				.set(6, CustomItemManager.getCustomItemManager().getCustomItem(KitEditorItem.ID, KitEditorItem.class).getItemStack())
+				.set(8, CustomItemManager.getCustomItemManager().getCustomItem(SetRespawnItem.ID, SetRespawnItem.class).getItemStack());
 	}
 	
 	private Kit vaultManagementItems() {
 		return new Kit()
-				.set(0, CustomItemManager.getCustomItemManager().getCustomItem(DuelMenuItem.class).getItemStack())
-				.set(4, CustomItemManager.getCustomItemManager().getCustomItem(CreateTeamItem.class).getItemStack())
-				.set(5, CustomItemManager.getCustomItemManager().getCustomItem(ManageVaultsItem.class).getItemStack())
-				.set(6, CustomItemManager.getCustomItemManager().getCustomItem(KitEditorItem.class).getItemStack())
-				.set(8, CustomItemManager.getCustomItemManager().getCustomItem(SetRespawnItem.class).getItemStack());
+				.set(0, CustomItemManager.getCustomItemManager().getCustomItem(DuelMenuItem.ID, DuelMenuItem.class).getItemStack())
+				.set(4, CustomItemManager.getCustomItemManager().getCustomItem(CreateTeamItem.ID, CreateTeamItem.class).getItemStack())
+				.set(5, CustomItemManager.getCustomItemManager().getCustomItem(ManageVaultsItem.ID, ManageVaultsItem.class).getItemStack())
+				.set(6, CustomItemManager.getCustomItemManager().getCustomItem(KitEditorItem.ID, KitEditorItem.class).getItemStack())
+				.set(8, CustomItemManager.getCustomItemManager().getCustomItem(SetRespawnItem.ID, SetRespawnItem.class).getItemStack());
 	}
 	
 	private Kit teamMemberItems() {
 		return normalItems()
-				.set(0, CustomItemManager.getCustomItemManager().getCustomItem(ViewTeamItem.class).getItemStack())
-				.set(8, CustomItemManager.getCustomItemManager().getCustomItem(LeaveTeamItem.class).getItemStack());
+				.set(0, CustomItemManager.getCustomItemManager().getCustomItem(ViewTeamItem.ID, ViewTeamItem.class).getItemStack())
+				.set(8, CustomItemManager.getCustomItemManager().getCustomItem(LeaveTeamItem.ID, LeaveTeamItem.class).getItemStack());
 	}
 	
 	private Kit teamLeaderItems() {
 		return teamMemberItems()
-				.set(4, CustomItemManager.getCustomItemManager().getCustomItem(ManageTeamItem.class).getItemStack());
+				.set(4, CustomItemManager.getCustomItemManager().getCustomItem(ManageTeamItem.ID, ManageTeamItem.class).getItemStack());
 	}
 	
 	public void newDamager(String name, Location p1, Location p2, double damage) {
@@ -214,9 +214,10 @@ public class Lobby implements Listener {
 	public void onQuit(PlayerQuitEvent e) {
 		Player player = e.getPlayer();
 		SerennoPlayer sPlayer = SerennoCrimson.get().getPlayerManager().get(player);
-		if (inLobby(sPlayer)) {
-			depart(sPlayer);
+		if (!inLobby(sPlayer)) {
+			sendToLobby(sPlayer);
 		}
+		depart(sPlayer);
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)

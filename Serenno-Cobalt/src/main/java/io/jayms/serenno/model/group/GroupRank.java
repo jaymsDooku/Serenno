@@ -38,7 +38,7 @@ public class GroupRank {
 	}
 	
 	public boolean hasPermission(String perm) {
-		return permissions.contains(perm);
+		return permissions.contains(perm) || permissions.contains(GroupPermissions.ALL);
 	}
 	
 	public Set<String> getPermissions() {

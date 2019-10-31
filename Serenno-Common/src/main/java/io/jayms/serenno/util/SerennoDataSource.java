@@ -16,4 +16,7 @@ public interface SerennoDataSource<T, K> {
 	
 	public void delete(T value);
 	
+	default void deleteAll() {
+	}
+	
 }

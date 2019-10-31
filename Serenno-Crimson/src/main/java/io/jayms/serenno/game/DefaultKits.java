@@ -11,8 +11,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
-import com.github.maxopoly.finale.classes.ClassType;
 import com.github.maxopoly.finale.classes.ability.item.LinkerItem;
+import com.github.maxopoly.finale.classes.ability.item.SmokeBombItem;
 import com.github.maxopoly.finale.classes.ability.item.SugarRushItem;
 import com.github.maxopoly.finale.classes.engineer.item.WrenchItem;
 
@@ -64,15 +64,17 @@ public final class DefaultKits {
 	public static ItemStack poisonExtended(int duration) {
 		return new ItemStackBuilder(Material.SPLASH_POTION, 1)
 				.meta(new ItemMetaBuilder()
-				.colour(Color.fromRGB(43, 135, 63))
-				.effects(Arrays.asList(new PotionEffect(PotionEffectType.POISON, duration * 20, 0)))).build();
+					.name(ChatColor.DARK_GREEN + "Poison Potion")
+					.colour(Color.fromRGB(43, 135, 63))
+					.effects(Arrays.asList(new PotionEffect(PotionEffectType.POISON, duration * 20, 0)))).build();
 	}
 	
 	public static ItemStack slow(int duration) {
 		return new ItemStackBuilder(Material.SPLASH_POTION, 1)
 				.meta(new ItemMetaBuilder()
-				.colour(Color.fromRGB(73, 76, 74))
-				.effects(Arrays.asList(new PotionEffect(PotionEffectType.SLOW, duration * 20, 0)))).build();
+						.name(ChatColor.DARK_GRAY + "Slowness Potion")
+						.colour(Color.fromRGB(73, 76, 74))
+						.effects(Arrays.asList(new PotionEffect(PotionEffectType.SLOW, duration * 20, 0)))).build();
 	}
 	
 	public static ItemStack dhelmet() {
@@ -110,7 +112,7 @@ public final class DefaultKits {
 	}
 	
 	public static ItemStack sugar() {
-		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(SugarRushItem.class).getItemStack();
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(SugarRushItem.ID, SugarRushItem.class).getItemStack();
 		result.setAmount(64);
 		return result;
 	}
@@ -345,12 +347,18 @@ public final class DefaultKits {
 	}
 	
 	public static ItemStack linker() {
-		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(LinkerItem.class).getItemStack();
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(LinkerItem.ID, LinkerItem.class).getItemStack();
 		return result;
 	}
 	
 	public static ItemStack wrench() {
-		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(WrenchItem.class).getItemStack();
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(WrenchItem.ID, WrenchItem.class).getItemStack();
+		return result;
+	}
+	
+	public static ItemStack smokeBomb(int amount) {
+		ItemStack result = CustomItemManager.getCustomItemManager().getCustomItem(SmokeBombItem.ID, SmokeBombItem.class).getItemStack();
+		result.setAmount(amount);
 		return result;
 	}
 	
@@ -440,7 +448,7 @@ public final class DefaultKits {
 		Kit result = prot4IronSet()
 			.range(4, 36, health())
 			.set(2, wrench())
-			.set(3, linker())
+			.set(3, smokeBomb(64))
 			.set(6, fres(8 * 60))
 			.set(7, strength(150))
 			.set(8, speed(150))

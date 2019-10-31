@@ -51,6 +51,9 @@ public class ArtilleryListener implements Listener {
 		}
 		
 		Reinforcement reinforcement = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcement(clicked.getLocation().getBlock());
+		if (reinforcement == null) {
+			return;
+		}
 		EngineerPlayer engineer = e.getUser();
 		ArtilleryCrate crate = am.getArtilleryCrate(reinforcement);
 		if (crate == null) {

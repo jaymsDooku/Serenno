@@ -1,5 +1,7 @@
 package io.jayms.serenno.lobby.item;
 
+import java.util.Map;
+
 import org.bukkit.Material;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -12,12 +14,14 @@ import net.md_5.bungee.api.ChatColor;
 
 public class SetRespawnItem extends CustomItem {
 	
-	public SetRespawnItem() {
-		super(SerennoCrimson.get());
+	public static final int ID = 404;
+	
+	public SetRespawnItem(int id) {
+		super(SerennoCrimson.get(), id);
 	}
 
 	@Override
-	protected ItemStackBuilder getItemStackBuilder() {
+	protected ItemStackBuilder getItemStackBuilder(Map<String, Object> data) {
 		return new ItemStackBuilder(Material.ENDER_PORTAL_FRAME, 1)
 				.meta(new ItemMetaBuilder().name(ChatColor.DARK_PURPLE + "Set Respawn Location"));
 	}

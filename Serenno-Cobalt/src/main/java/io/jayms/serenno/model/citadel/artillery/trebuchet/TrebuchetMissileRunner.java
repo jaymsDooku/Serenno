@@ -11,12 +11,6 @@ import io.jayms.serenno.model.citadel.artillery.AbstractMissileRunner;
 import io.jayms.serenno.model.citadel.artillery.Artillery;
 
 public class TrebuchetMissileRunner extends AbstractMissileRunner<TrebuchetMissile> {
-	
-	private static Set<FallingBlock> missileBlocks = Sets.newConcurrentHashSet();
-	
-	public static void addMissileBlock(FallingBlock fb) {
-		missileBlocks.add(fb);
-	}
 
 	public TrebuchetMissileRunner() {
 	}
