@@ -1,8 +1,8 @@
 package io.jayms.serenno.util;
 
-import java.util.Objects;
-
 import org.bukkit.Location;
+
+import com.google.common.base.Objects;
 
 public class Coords {
 
@@ -44,7 +44,7 @@ public class Coords {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(x, y, z);
+		return Objects.hashCode(x, y, z);
 	}
 	
 	

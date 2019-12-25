@@ -47,6 +47,7 @@ public class SimpleVaultMap implements VaultMap {
 		
 		VaultMapDatabase db = new VaultMapDatabase(originalWorldName, SimpleVaultMap.this, database);
 		db.load();
+		db.getDatabase().close();
 		vaultMapDatabases.put(originalWorldName, db);
 	}
 	
@@ -68,7 +69,9 @@ public class SimpleVaultMap implements VaultMap {
 		ReinforcementWorld reinWorld = rm.getReinforcementWorld(originalWorld);
 		
 		Set<Reinforcement> reinforcements = reinWorld.getAllReinforcements();
-		reinSource.persistAll(reinforcements, () -> {});
+		reinSource.persistAll(reinforcements, () -> {
+			SerennoCrimson.get().getLogger().info("Saved reinforcements for: " + arena.getName());
+		});
 		
 		SerennoCrimson.get().getArenaManager().saveArena(getArena());
 		SerennoCrimson.get().getRegionManager().saveRegion(getRegion());
@@ -77,6 +80,10 @@ public class SimpleVaultMap implements VaultMap {
 	
 	@Override
 	public void delete() {
+		for (VaultMapDatabase db : vaultMapDatabases.values()) {
+			db.delete();
+		}
+		
 		if (isOriginalWorldLoaded()) {
 			World originalWorld = getOriginalWorld();
 			SerennoCrimson.get().getLobby().sendToLobby(originalWorld);
@@ -100,7 +107,6 @@ public class SimpleVaultMap implements VaultMap {
 		SerennoCrimson.get().getArenaManager().deleteArena(getArena());
 		SerennoCrimson.get().getRegionManager().deleteRegion(getArena().getRegion());
 		SerennoCrimson.get().getLogger().info("Deleted vault map: " + getArena().getName());
-		getDatabase().delete();
 	}
 	
 	@Override

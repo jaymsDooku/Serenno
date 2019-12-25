@@ -72,6 +72,7 @@ public abstract class Database {
 		if (this.connection != null) {
 			try {
 				this.connection.close();
+				this.connection = null;
 			}
 			catch (final SQLException e) {
 				e.printStackTrace();

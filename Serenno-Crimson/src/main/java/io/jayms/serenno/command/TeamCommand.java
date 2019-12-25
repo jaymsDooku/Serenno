@@ -2,6 +2,7 @@ package io.jayms.serenno.command;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -33,7 +34,7 @@ public class TeamCommand extends BaseCommand {
 	
 	@CommandPermission(Permissions.TEAM_INVITE)
 	@Subcommand("invite")
-	public void invite(Player player, Player invitee) {
+	public void invite(Player player, String invitee) {
 		SerennoPlayer sp = pm.get(player);
 		Team team = tm.getTeam(sp);
 		if (team == null) {
@@ -41,7 +42,12 @@ public class TeamCommand extends BaseCommand {
 			return;
 		}
 		
-		SerennoPlayer inviteeSp = pm.get(invitee);
+		Player inviteeP = Bukkit.getPlayer(invitee);
+		if (inviteeP == null) {
+			player.sendMessage(ChatColor.RED + "That player isn't online.");
+			return;
+		}
+		SerennoPlayer inviteeSp = pm.get(inviteeP);
 		Team inviteeTeam = tm.getTeam(inviteeSp);
 		if (inviteeTeam != null) {
 			player.sendMessage(ChatColor.RED + "That player is already part of a team.");
@@ -49,14 +55,33 @@ public class TeamCommand extends BaseCommand {
 		}
 		
 		tm.invite(inviteeSp, team);
+		player.sendMessage(ChatColor.LIGHT_PURPLE + "You have invited " + ChatColor.DARK_PURPLE + inviteeP.getName() + ChatColor.LIGHT_PURPLE + " to your team!");
+	}
+	
+	@CommandPermission(Permissions.TEAM_JOIN)
+	@Subcommand("join")
+	public void join(Player player) {
+		SerennoPlayer sp = pm.get(player);
+		Team team = tm.getTeam(sp);
+		if (team != null) {
+			player.sendMessage(ChatColor.RED + "You are already apart of a team.");
+			return;
+		}
+		
+		tm.acceptInvite(sp);
 	}
 	
 	@CommandPermission(Permissions.TEAM_INFO)
 	@Subcommand("info")
-	public void info(Player player, @Optional Player otherPlayer) {
+	public void info(Player player, @Optional String otherPlayer) {
 		SerennoPlayer target = pm.get(player);
 		if (otherPlayer != null) {
-			target = pm.get(otherPlayer);
+			Player otherPlayerP = Bukkit.getPlayer(otherPlayer);
+			if (otherPlayerP == null) {
+				player.sendMessage(ChatColor.RED + "That player isn't online.");
+				return;
+			}
+			target = pm.get(otherPlayerP);
 		}
 		
 		Team team = tm.getTeam(target);
@@ -101,9 +126,15 @@ public class TeamCommand extends BaseCommand {
 	
 	@CommandPermission(Permissions.TEAM_PROMOTE)
 	@Subcommand("promote")
-	public void promote(Player player, Player otherPlayer) {
+	public void promote(Player player, String otherPlayer) {
 		SerennoPlayer sp = pm.get(player);
-		SerennoPlayer osp = pm.get(otherPlayer);
+		
+		Player otherPlayerP = Bukkit.getPlayer(otherPlayer);
+		if (otherPlayerP == null) {
+			player.sendMessage(ChatColor.RED + "That player isn't online.");
+			return;
+		}
+		SerennoPlayer osp = pm.get(otherPlayerP);
 		Team team = tm.getTeam(sp);
 		if (team == null) {
 			player.sendMessage(ChatColor.RED + "You can't leave your team because you don't have one.");
@@ -131,7 +162,7 @@ public class TeamCommand extends BaseCommand {
 	
 	@CommandPermission(Permissions.TEAM_KICK)
 	@Subcommand("kick")
-	public void kick(Player player, Player kickee) {
+	public void kick(Player player, String kickee) {
 		SerennoPlayer sp = pm.get(player);
 		Team team = tm.getTeam(sp);
 		if (team == null) {
@@ -144,7 +175,12 @@ public class TeamCommand extends BaseCommand {
 			return;
 		}
 		
-		SerennoPlayer osp = pm.get(kickee);
+		Player kickeeP = Bukkit.getPlayer(kickee);
+		if (kickeeP == null) {
+			player.sendMessage(ChatColor.RED + "That player isn't online.");
+			return;
+		}
+		SerennoPlayer osp = pm.get(kickeeP);
 		if (sp.equals(osp)) {
 			player.sendMessage(ChatColor.RED + "You can't kick yourself.");
 			return;

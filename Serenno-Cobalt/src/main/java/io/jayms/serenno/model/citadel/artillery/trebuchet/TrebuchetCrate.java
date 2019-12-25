@@ -15,22 +15,10 @@ public class TrebuchetCrate extends AbstractArtilleryCrate {
 		return Trebuchet.DISPLAY_NAME + " Crate";
 	}
 	
-	private Material starterItemType;
-	private int starterItemAmount;
 	private TrebuchetCrateItem crateItem;
 	
 	public TrebuchetCrate(TrebuchetCrateItem crateItem) {
-		this.starterItemType = Material.DIAMOND_BLOCK;
-		this.starterItemAmount = 1;
 		this.crateItem = crateItem;
-	}
-	
-	public Material getStarterItemType() {
-		return starterItemType;
-	}
-	
-	public int getStarterItemAmount() {
-		return starterItemAmount;
 	}
 	
 	@Override
@@ -53,7 +41,7 @@ public class TrebuchetCrate extends AbstractArtilleryCrate {
 
 	@Override
 	public Menu getInterface() {
-		return SerennoCobalt.get().getCitadelManager().getArtilleryManager().getTrebuchetCrateMenu();
+		return SerennoCobalt.get().getCitadelManager().getArtilleryManager().getArtilleryCrateMenu();
 	}
 
 	@Override
@@ -62,6 +50,11 @@ public class TrebuchetCrate extends AbstractArtilleryCrate {
 			return false;
 		}
 		return artillery.isAssembled();
+	}
+
+	@Override
+	public ItemStack getRequiredStarterItem() {
+		return new ItemStack(Material.DIAMOND_BLOCK, 1);
 	}
 	
 }

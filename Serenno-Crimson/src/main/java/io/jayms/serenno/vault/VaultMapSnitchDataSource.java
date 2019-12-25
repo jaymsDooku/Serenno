@@ -24,7 +24,7 @@ public class VaultMapSnitchDataSource implements SnitchDataSource {
 			+ "("
 			+ "ReinforcementID, Name, Radius"
 			+ ") VALUES("
-			+ "?, ?"
+			+ "?, ?, ?"
 			+ ")";
 	
 	private static final String SELECT_SNITCH = "SELECT Name, Radius FROM SNITCH WHERE ReinforcementID = ?";

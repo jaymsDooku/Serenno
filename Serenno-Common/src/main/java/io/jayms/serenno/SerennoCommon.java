@@ -19,6 +19,7 @@ import io.jayms.serenno.armourtype.ArmorListener;
 import io.jayms.serenno.db.DBManager;
 import io.jayms.serenno.db.MongoAPI;
 import io.jayms.serenno.player.CommonPlayerManager;
+import io.jayms.serenno.ui.UIManager;
 import vg.civcraft.mc.civmodcore.ACivMod;
 
 public class SerennoCommon extends ACivMod {
@@ -96,6 +97,8 @@ public class SerennoCommon extends ACivMod {
 			        	serverPing.setPlayers(Arrays.asList(new WrappedGameProfile("1", "long live wp, death to nox")));
 			        }
 			      });
+		
+		UIManager.getUIManager().start();
 	}
 	
 	@Override

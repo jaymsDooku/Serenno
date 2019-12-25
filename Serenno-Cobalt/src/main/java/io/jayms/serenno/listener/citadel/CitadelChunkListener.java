@@ -27,7 +27,7 @@ public class CitadelChunkListener implements Listener {
 		reinWorld.loadChunkData(e.getChunk());
 	}
 	
-	/*@EventHandler
+	@EventHandler
 	public void chunkUnload(ChunkUnloadEvent e) {
 		Chunk chunk = e.getChunk();
 		ReinforcementWorld reinWorld = rm.getReinforcementWorld(chunk.getWorld());
@@ -35,6 +35,6 @@ public class CitadelChunkListener implements Listener {
 			return;
 		}
 		reinWorld.unloadChunkData(e.getChunk());
-	}*/
+	}
 	
 }

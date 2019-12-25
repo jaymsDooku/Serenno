@@ -3,20 +3,20 @@ package io.jayms.serenno.model.citadel.reinforcement;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
 
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.util.ChunkCache;
@@ -39,28 +39,23 @@ public class ReinforcementWorld {
 	public ReinforcementWorld(World world, ReinforcementDataSource source) {
 		this.world = world;
 		this.dataSource = source;
-		reinCache = CacheBuilder.newBuilder()
-				.expireAfterAccess(5, TimeUnit.MINUTES)
+		reinCache = Caffeine.newBuilder()
 				.removalListener(new RemovalListener<ChunkCoord, ChunkCache<Reinforcement>>() {
 					
 					@Override
-					public void onRemoval(RemovalNotification<ChunkCoord, ChunkCache<Reinforcement>> notification) {
+					public void onRemoval(@Nullable ChunkCoord key, @Nullable ChunkCache<Reinforcement> value,
+							@NonNull RemovalCause cause) {
 						if (dataSource != null) {
-							dataSource.persistAll(notification.getValue().getAll(), () -> {
-								notification.getValue().unload();
+							dataSource.persistAll(value.getAll(), () -> {
+								value.unload();
 							});
 						}
 					}
-					
+				
 				})
-				.build(new CacheLoader<ChunkCoord, ChunkCache<Reinforcement>>() {
-				
-					@Override
-					public ChunkCache<Reinforcement> load(ChunkCoord key) throws Exception {
-						Map<Coords, Reinforcement> reins = dataSource != null ? dataSource.getAll(key) : null;
-						return new ChunkCache<Reinforcement>(key, reins, null);
-					}
-				
+				.build((key) -> {
+					Map<Coords, Reinforcement> reins = dataSource != null ? dataSource.getAll(key) : null;
+					return new ChunkCache<Reinforcement>(key, reins, null);
 				});
 	}
 	
@@ -73,12 +68,7 @@ public class ReinforcementWorld {
 	}
 	
 	public ChunkCache<Reinforcement> getChunkCache(ChunkCoord cc) {
-		try {
-			return reinCache.get(cc);
-		} catch (ExecutionException e) {
-			SerennoCobalt.get().getLogger().warning("Failed to load from cache: " + e.getMessage());
-			return null;
-		}
+		return reinCache.get(cc);
 	}
 	
 	public void loadChunkData(Chunk chunk) {

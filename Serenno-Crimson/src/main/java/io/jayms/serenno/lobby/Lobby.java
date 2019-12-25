@@ -35,6 +35,7 @@ import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.lobby.event.SentToLobbyEvent;
 import io.jayms.serenno.lobby.item.SetRespawnItem;
 import io.jayms.serenno.player.SerennoPlayer;
+import io.jayms.serenno.player.ui.LobbyTeam;
 import io.jayms.serenno.rank.Permissions;
 import io.jayms.serenno.team.Team;
 import io.jayms.serenno.team.TeamManager;
@@ -42,11 +43,16 @@ import io.jayms.serenno.team.item.CreateTeamItem;
 import io.jayms.serenno.team.item.LeaveTeamItem;
 import io.jayms.serenno.team.item.ManageTeamItem;
 import io.jayms.serenno.team.item.ViewTeamItem;
+import io.jayms.serenno.ui.UI;
+import io.jayms.serenno.ui.UIManager;
+import io.jayms.serenno.ui.UIScoreboard;
 import io.jayms.serenno.util.PlayerTools;
 import io.jayms.serenno.vault.item.ManageVaultsItem;
 import net.md_5.bungee.api.ChatColor;
 
 public class Lobby implements Listener {
+	
+	
 	
 	private Location lobbySpawn;
 	private Set<SerennoPlayer> inLobby = Sets.newConcurrentHashSet();
@@ -324,6 +330,21 @@ public class Lobby implements Listener {
 		
 		if (currentDamager != null && (damager == null || !currentDamager.getName().equals(damager.getName()))) {
 			currentDamager.stopDamaging(e.getPlayer());
+		}
+	}
+	
+	@EventHandler
+	public void onSentToLobby(SentToLobbyEvent e) {
+		Player player = e.getPlayer();
+		UI ui = UIManager.getUIManager().getScoreboard(player);
+		UIScoreboard scoreboard = ui.getScoreboard();
+		scoreboard.setTeam(player, LobbyTeam.TEAM);
+		
+		for (SerennoPlayer lobbyPlayer : inLobby) {
+			UI lobbyUI = UIManager.getUIManager().getScoreboard(lobbyPlayer.getBukkitPlayer());
+			UIScoreboard lobbyScoreboard = lobbyUI.getScoreboard();
+			lobbyScoreboard.setTeam(player, LobbyTeam.TEAM);
+			scoreboard.setTeam(lobbyPlayer.getBukkitPlayer(), LobbyTeam.TEAM);
 		}
 	}
 }

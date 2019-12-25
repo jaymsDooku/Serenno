@@ -1,5 +1,6 @@
 package io.jayms.serenno.model.citadel.artillery;
 
+import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -36,6 +37,8 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 	private ArtilleryCrate crate;
 	private BlockFace direction = BlockFace.NORTH;
 	private boolean assembled;
+	private boolean firing;
+	private long lastFired;
 	
 	protected SerennoCobaltConfigManager config = SerennoCobalt.get().getConfigManager();
 	
@@ -52,6 +55,16 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 	@Override
 	public ArtilleryCrate getCrate() {
 		return crate;
+	}
+	
+	@Override
+	public void setFiring(boolean set) {
+		firing = set;
+	}
+	
+	@Override
+	public boolean isFiring() {
+		return firing;
 	}
 	
 	@Override
@@ -75,6 +88,29 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		Location loc = new Location(crateLoc.getWorld(), this.qtXMid(), crateLoc.getBlockY(), this.qtZMid());
 		loc = loc.add(0, 1, 0);
 		return loc;
+	}
+	
+	@Override
+	public long getLastFiringTime() {
+		return lastFired;
+	}
+	
+	@Override
+	public boolean onCooldown() {
+		return System.currentTimeMillis() < (lastFired + config.getTrebuchetCooldown());
+	}
+	
+	private DecimalFormat df = new DecimalFormat("#.#");
+	
+	@Override
+	public boolean fire(EngineerPlayer player) {
+		if (onCooldown()) {
+			long timeLeft = (lastFired + getCooldown()) - System.currentTimeMillis();
+			double secLeft = timeLeft / 1000L;
+			player.sendMessage(ChatColor.RED + "Trebuchet is still cooling down. Time left: " + df.format(secLeft) + "s");
+			return false;
+		}
+		return true;
 	}
 	
 	@Override
@@ -190,7 +226,7 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		if (reinforcement == null) {
 			this.reinforcement = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getDirectReinforcement(crate.getLocation().getBlock());
 		}
-		reinforcement.damage(1);
+		reinforcement.damage(getBlockDamageCooldown());
 	}
 	
 	@Override

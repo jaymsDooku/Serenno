@@ -11,13 +11,11 @@ import java.util.stream.Collectors;
 
 import org.bson.Document;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.Scoreboard;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -32,13 +30,14 @@ import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.manager.PlayerManager;
+import io.jayms.serenno.ui.ActionBarHandler;
+import io.jayms.serenno.ui.UI;
+import io.jayms.serenno.ui.UIHandler;
+import io.jayms.serenno.ui.UIManager;
+import io.jayms.serenno.ui.UIScoreboard;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
-import vg.civcraft.mc.civmodcore.ui.ActionBarHandler;
-import vg.civcraft.mc.civmodcore.ui.UI;
-import vg.civcraft.mc.civmodcore.ui.UIHandler;
-import vg.civcraft.mc.civmodcore.ui.UIManager;
-import vg.civcraft.mc.civmodcore.ui.UIScoreboard;
+import net.md_5.bungee.api.ChatColor;
 
 public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 
@@ -101,14 +100,14 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 		}
 		
 		if (async) {
-		new BukkitRunnable() {
-			
-			@Override
-			public void run() {
-				savePlayer(player);
-			}
-			
-		}.runTaskAsynchronously(SerennoCrimson.get());
+			new BukkitRunnable() {
+				
+				@Override
+				public void run() {
+					savePlayer(player);
+				}
+				
+			}.runTaskAsynchronously(SerennoCrimson.get());
 		} else {
 			savePlayer(player);
 		}
@@ -136,39 +135,20 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 		SerennoCrimson.get().getLogger().info("Saved player: " + player.getBukkitPlayer().getName());
 	}
 	
-	private org.bukkit.scoreboard.Team getTeam(Scoreboard mcBoard, String t, boolean friendly, String prefix) {
-		org.bukkit.scoreboard.Team team;
-		try {
-            team = mcBoard.registerNewTeam(t);
-            team.setCanSeeFriendlyInvisibles(friendly);
-            team.setPrefix(prefix);
-        } catch (IllegalArgumentException e) {
-            team = mcBoard.getTeam(t);
-        }
-		return team;
-	}
-	
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		Player p = e.getPlayer();
 		
 		UI ui = UIManager.getUIManager().getScoreboard(p);
 		ui.getScoreboard().setTitle(ChatColor.DARK_RED + "Serenno " + ChatColor.DARK_RED + "[" + ChatColor.RED + ChatColor.ITALIC + "Crimson" + ChatColor.RESET + ChatColor.DARK_RED + "]");
+		UIScoreboard board = ui.getScoreboard();
+		board.add(ChatColor.STRIKETHROUGH + "--------------" + ChatColor.WHITE + ChatColor.STRIKETHROUGH + "----", 1);
+		board.add(ChatColor.WHITE + "" + ChatColor.STRIKETHROUGH + "-------------" + ChatColor.WHITE + ChatColor.STRIKETHROUGH + "-----", 15);
 		ui.getUIHandlers().add(new UIHandler() {
 			
 			@Override
 			public void handle(Player player, UIScoreboard board) {
 				SerennoPlayer sp = get(player);
-				Scoreboard sb = board.getScoreboard();
-				org.bukkit.scoreboard.Team norm, ally, enemy, tagged;
-				
-				norm = getTeam(sb, "n", true, ChatColor.WHITE + "");
-				ally = getTeam(sb, "t", true, ChatColor.GREEN + "");
-				enemy = getTeam(sb, "e", true, ChatColor.RED + "");
-				tagged = getTeam(sb, "tagged", true, ChatColor.GOLD + "");
-				
-				board.add(ChatColor.STRIKETHROUGH + "--------------" + ChatColor.WHITE + ChatColor.STRIKETHROUGH + "----", 1);
-				board.add(ChatColor.WHITE + "" + ChatColor.STRIKETHROUGH + "-------------" + ChatColor.WHITE + ChatColor.STRIKETHROUGH + "-----", 15);
 				
 				if (SerennoCrimson.get().getLobby().inLobby(sp)) {
 					board.add(ChatColor.RED + "Online: " + ChatColor.WHITE + Bukkit.getOnlinePlayers().size(), 3);
@@ -191,42 +171,6 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 				} else {
 					board.remove(14, "");
 					board.remove(2, "");
-				}
-				
-				for (Player online : Bukkit.getOnlinePlayers()) {
-					SerennoPlayer sOnline = get(online);
-					String name = online.getName();
-					SerennoPlayer onlineSp = get(online);
-					Duel onlineDuel = onlineSp.getDuel();
-					if (duel != null && duel.isRunning()) {
-						if (norm.hasEntry(name)) {
-							norm.removeEntry(name);
-						}
-						if (onlineDuel != null && onlineDuel.isPlaying(sOnline)) {
-							if (duel != null && duel.getTeam(sp).getTeam().inTeam(sOnline)) {
-								if (!ally.hasEntry(name)) {
-									ally.addEntry(name);
-								}
-							} else {
-								if (!enemy.hasEntry(name)) {
-									enemy.addEntry(name);
-								}
-							}
-						}
-					} else {
-						if (ally.hasEntry(name)) {
-							ally.removeEntry(name);
-						}
-						if (enemy.hasEntry(name)) {
-							enemy.removeEntry(name);
-						}
-						if (tagged.hasEntry(name)) {
-							tagged.removeEntry(name);
-						}
-						if (!norm.hasEntry(name)) {
-							norm.addEntry(name);
-						}
-					}
 				}
 			}
 		});

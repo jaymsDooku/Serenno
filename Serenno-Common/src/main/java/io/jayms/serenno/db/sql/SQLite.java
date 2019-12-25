@@ -34,6 +34,10 @@ public class SQLite extends Database {
 
 	@Override
 	public Connection open() {
+		if (this.connection != null) {
+			return this.connection;
+		}
+		
 		try {
 			Class.forName("org.sqlite.JDBC");
 

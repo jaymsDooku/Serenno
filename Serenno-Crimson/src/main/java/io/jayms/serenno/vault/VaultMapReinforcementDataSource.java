@@ -9,12 +9,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementDataSource;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld.UnloadCallback;
@@ -23,6 +25,8 @@ import io.jayms.serenno.util.Coords;
 
 public class VaultMapReinforcementDataSource implements ReinforcementDataSource {
 
+	private static final String TABLE_NAME = "REINFORCEMENT";
+	
 	private static final String CREATE_REIN = "CREATE TABLE IF NOT EXISTS REINFORCEMENT"
 			+ "("
 			+ "ReinforcementID TEXT PRIMARY KEY, "
@@ -104,6 +108,10 @@ public class VaultMapReinforcementDataSource implements ReinforcementDataSource 
 			public void run() {
 				try {
 					if (db.getDatabase().getConnection().isClosed()) {
+						return;
+					}
+					
+					if (!db.getDatabase().tableExists(TABLE_NAME)) {
 						return;
 					}
 			
@@ -193,6 +201,7 @@ public class VaultMapReinforcementDataSource implements ReinforcementDataSource 
 			ResultSet rs = ps.executeQuery();
 			
 			if (!rs.next()) {
+				SerennoCrimson.get().getLogger().warning("Failed to get reinforcement with ID: " + id.toString());
 				return null;
 			}
 			
@@ -288,13 +297,17 @@ public class VaultMapReinforcementDataSource implements ReinforcementDataSource 
 						.health(rs.getDouble("Health"))
 						.inMemory(false)
 						.build();
-				
+			
 				all.put(Coords.fromLocation(loc), rein);
 			}
+			
+			//SerennoCrimson.get().getLogger().info("CX: " + coord.getX() + ", CZ: " + coord.getZ());
+			//SerennoCrimson.get().getLogger().info("All: " + all);
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
 		return all;
 	}
 

@@ -2,6 +2,8 @@ package io.jayms.serenno.model.citadel.reinforcement;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import org.bukkit.Material;
 

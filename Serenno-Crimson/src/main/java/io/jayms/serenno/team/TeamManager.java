@@ -31,10 +31,18 @@ public class TeamManager implements Listener {
 		Bukkit.getPluginManager().registerEvents(teamListener = new TeamListener(), SerennoCrimson.get());
 	}
 	
+	public void acceptInvite(SerennoPlayer joiner) {
+		if (!invites.containsKey(joiner)) {
+			return;
+		}
+		
+		Team team = invites.remove(joiner);
+		team.addMember(joiner);
+	}
+	
 	public void invite(SerennoPlayer invitee, Team invitedTeam) {
 		invites.put(invitee, invitedTeam);
 		invitee.sendMessage(ChatColor.DARK_PURPLE + invitedTeam.getLeader().getName() + ChatColor.LIGHT_PURPLE + " has invited you to their team!");
-		
 	}
 	
 	public List<Team> listTeams() {

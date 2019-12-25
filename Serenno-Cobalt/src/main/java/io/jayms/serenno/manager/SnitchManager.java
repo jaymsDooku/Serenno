@@ -12,12 +12,13 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.event.snitch.SnitchDestroyEvent;
+import io.jayms.serenno.event.snitch.SnitchExitEvent;
 import io.jayms.serenno.event.snitch.SnitchPlacementEvent;
 import io.jayms.serenno.listener.citadel.SnitchListener;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
@@ -34,7 +35,7 @@ public class SnitchManager {
 	private ReinforcementManager rm;
 	private Map<String, SnitchWorld> snitchWorlds = Maps.newConcurrentMap();
 	
-	private Multimap<Player, Snitch> playersInSnitches = HashMultimap.create();
+	private Multimap<Player, Snitch> playersInSnitches = new ImmutableMultimap.Builder<Player, Snitch>().build();
 	
 	private SnitchListener snitchListener;
 	
@@ -50,6 +51,7 @@ public class SnitchManager {
 	}
 	
 	public void enterSnitch(Player player, Snitch snitch) {
+		snitch.notifyEntrance(player);
 		playersInSnitches.put(player, snitch);
 	}
 	
@@ -58,6 +60,9 @@ public class SnitchManager {
 	}
 	
 	public void leaveSnitch(Player player, Snitch snitch) {
+		SnitchExitEvent event = new SnitchExitEvent(snitch, player);
+		Bukkit.getPluginManager().callEvent(event);
+		
 		playersInSnitches.remove(player, snitch);
 	}
 	

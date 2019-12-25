@@ -36,6 +36,23 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 			e.printStackTrace();
 		}
 		
+		cannonForwardLength = config.getInt("artillery.cannon.length.forward", 11);
+		cannonBackwardLength = config.getInt("artillery.cannon.length.backward", 10);
+		cannonLeftWidth = config.getInt("artillery.cannon.width.left", 10);
+		cannonRightWidth = config.getInt("artillery.cannon.width.right", 10);
+		cannonHeight = config.getInt("artillery.cannon.height", 17);
+		
+		cannonHorizontalOffset = config.getInt("artillery.cannon.firingPoint.horizontalOffset", 3);
+		cannonVerticalOffset = config.getInt("artillery.cannon.firingPoint.verticalOffset", 14);
+		
+		cannonCooldown = config.getLong("artillery.cannon.cooldown", 6000);
+		cannonImpactRadius = config.getInt("artillery.cannon.missile.impactRadius", 4);
+		cannonPlayerDamage = config.getInt("artillery.cannon.missile.playerDamage", 5);
+		cannonBastionDamage = config.getDouble("artillery.cannon.missile.bastionDamage", 5);
+		cannonReinforcementDamage = config.getDouble("artillery.cannon.missile.reinforcementDamage", 5);
+		
+		cannonBlockDamageCD = config.getLong("artillery.cannon.blockDamageCD", 2500);
+		
 		trebuchetForwardLength = config.getInt("artillery.trebuchet.length.forward", 11);
 		trebuchetBackwardLength = config.getInt("artillery.trebuchet.length.backward", 10);
 		trebuchetLeftWidth = config.getInt("artillery.trebuchet.width.left", 10);
@@ -63,6 +80,90 @@ public class SerennoCobaltConfigManager extends CoreConfigManager {
 		return defaultReinforcementWorld;
 	}
 	
+	private Schematic cannonSchematic;
+	private int cannonRightWidth;
+	private int cannonLeftWidth;
+	private int cannonForwardLength;
+	private int cannonBackwardLength;
+	private int cannonHeight;
+	
+	private int cannonHorizontalOffset;
+	private int cannonVerticalOffset;
+	
+	private long cannonCooldown;
+	private int cannonImpactRadius;
+	private double cannonImpactHorizontal;
+	private double cannonImpactVertical;
+	private double cannonPlayerDamage;
+	private double cannonBastionDamage;
+	private double cannonReinforcementDamage;
+	
+	private long cannonBlockDamageCD;
+	
+	public long getCannonBlockDamageCD() {
+		return cannonBlockDamageCD;
+	}
+	
+	public Schematic getCannonSchematic() {
+		return cannonSchematic;
+	}
+
+	public int getCannonRightWidth() {
+		return cannonRightWidth;
+	}
+
+	public int getCannonLeftWidth() {
+		return cannonLeftWidth;
+	}
+
+	public int getCannonForwardLength() {
+		return cannonForwardLength;
+	}
+
+	public int getCannonBackwardLength() {
+		return cannonBackwardLength;
+	}
+
+	public int getCannonHeight() {
+		return cannonHeight;
+	}
+
+	public int getCannonHorizontalOffset() {
+		return cannonHorizontalOffset;
+	}
+
+	public int getCannonVerticalOffset() {
+		return cannonVerticalOffset;
+	}
+
+	public long getCannonCooldown() {
+		return cannonCooldown;
+	}
+
+	public int getCannonImpactRadius() {
+		return cannonImpactRadius;
+	}
+
+	public double getCannonImpactHorizontal() {
+		return cannonImpactHorizontal;
+	}
+
+	public double getCannonImpactVertical() {
+		return cannonImpactVertical;
+	}
+
+	public double getCannonPlayerDamage() {
+		return cannonPlayerDamage;
+	}
+
+	public double getCannonBastionDamage() {
+		return cannonBastionDamage;
+	}
+
+	public double getCannonReinforcementDamage() {
+		return cannonReinforcementDamage;
+	}
+
 	private Schematic trebuchetSchematic;
 	private int trebuchetRightWidth;
 	private int trebuchetLeftWidth;

@@ -116,6 +116,7 @@ public class VaultMapDatabase {
 	}
 	
 	public Database getDatabase() {
+		database.open();
 		return database;
 	}
 	
@@ -138,8 +139,6 @@ public class VaultMapDatabase {
 		groupSource.put(attackerGroup.getName().toLowerCase(), attackerGroup);
 		groupSource.put(defenderGroup.getName().toLowerCase(), defenderGroup);
 		
-		database.open();
-		
 		try {
 			PreparedStatement ps = getDatabase().getConnection().prepareStatement(CREATE_INFO);
 			ps.execute();
@@ -158,7 +157,7 @@ public class VaultMapDatabase {
 	
 	public void load() {
 		try {
-			PreparedStatement ps = database.getConnection().prepareStatement(SELECT_INFO);
+			PreparedStatement ps = getDatabase().getConnection().prepareStatement(SELECT_INFO);
 			ResultSet rs = ps.executeQuery();
 			
 			if (!rs.next()) {
@@ -192,7 +191,7 @@ public class VaultMapDatabase {
 	
 	public void updateInfo() {
 		try {
-			PreparedStatement ps = loaded ? database.getConnection().prepareStatement(UPDATE_INFO) :
+			PreparedStatement ps = loaded ? getDatabase().getConnection().prepareStatement(UPDATE_INFO) :
 				database.getConnection().prepareStatement(INSERT_INFO, Statement.RETURN_GENERATED_KEYS);
 			ps.setDouble(1, gotoX);
 			ps.setDouble(2, gotoY);

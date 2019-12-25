@@ -26,4 +26,10 @@ public interface ArtilleryCrate {
 	
 	boolean isAssembled();
 	
+	ItemStack getRequiredStarterItem();
+	
+	void setLoadedStarterItem(ItemStack set);
+	
+	ItemStack getLoadedStarterItem();
+	
 }

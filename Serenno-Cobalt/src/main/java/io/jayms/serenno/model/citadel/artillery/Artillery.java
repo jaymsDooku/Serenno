@@ -35,11 +35,15 @@ public interface Artillery extends QTBox {
 	
 	void disassemble();
 	
-	void fire(EngineerPlayer player);
+	boolean fire(EngineerPlayer player);
 	
 	void setFiring(boolean set);
 	
 	boolean isFiring();
+	
+	long getLastFiringTime();
+	
+	boolean onCooldown();
 	
 	long getCooldown();
 	

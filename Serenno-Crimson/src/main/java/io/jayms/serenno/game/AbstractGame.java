@@ -12,6 +12,12 @@ import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.arena.Arena;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.player.SerennoPlayer;
+import io.jayms.serenno.player.ui.AllyTeam;
+import io.jayms.serenno.player.ui.EnemyTeam;
+import io.jayms.serenno.ui.UI;
+import io.jayms.serenno.ui.UIManager;
+import io.jayms.serenno.ui.UIScoreboard;
+import io.jayms.serenno.ui.UITeam;
 import mkremins.fanciful.FancyMessage;
 import net.md_5.bungee.api.ChatColor;
 
@@ -165,6 +171,8 @@ public abstract class AbstractGame implements Game {
 		startSpectating(spectator, toSpectate.getBukkitPlayer().getLocation());
 	}
 	
+	public abstract void onSpectating(SerennoPlayer spectator, SerennoPlayer toSpectate);
+	
 	private static final Kit spectatorKit = new Kit();
 
 	@Override
@@ -175,6 +183,7 @@ public abstract class AbstractGame implements Game {
 		
 		getPlaying().forEach(p -> {
 			p.hidePlayer(spectator);
+			onSpectating(spectator, p);
 		});
 		new BukkitRunnable() {
 			

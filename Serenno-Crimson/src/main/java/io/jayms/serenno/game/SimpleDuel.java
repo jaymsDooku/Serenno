@@ -26,7 +26,13 @@ import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.menu.MenuController;
 import io.jayms.serenno.player.SerennoBot;
 import io.jayms.serenno.player.SerennoPlayer;
+import io.jayms.serenno.player.ui.AllyTeam;
+import io.jayms.serenno.player.ui.EnemyTeam;
 import io.jayms.serenno.team.TeamManager;
+import io.jayms.serenno.ui.UI;
+import io.jayms.serenno.ui.UIManager;
+import io.jayms.serenno.ui.UIScoreboard;
+import io.jayms.serenno.ui.UITeam;
 import io.jayms.serenno.util.PlayerTools;
 import mkremins.fanciful.FancyMessage;
 import net.md_5.bungee.api.ChatColor;
@@ -90,11 +96,28 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 	}
 	
 	@Override
+	public void onSpectating(SerennoPlayer spectator, SerennoPlayer toSpectate) {
+		UI ui = UIManager.getUIManager().getScoreboard(spectator.getBukkitPlayer());
+		UIScoreboard scoreboard = ui.getScoreboard();
+		DuelTeam team = getTeam(toSpectate);
+		UITeam uiTeam = new DuelUITeam(team.getTeamColor());
+		scoreboard.setTeam(toSpectate.getBukkitPlayer(), uiTeam);
+	}
+	
+	@Override
 	public void spawn(SerennoPlayer player) {
 		DuelTeam team = getTeam(player);
 		Location spawn = getSpawnPoint(team.getTeamColor());
 		PlayerTools.clean(player.getBukkitPlayer());
 		player.teleport(spawn);
+		
+		UI ui = UIManager.getUIManager().getScoreboard(player.getBukkitPlayer());
+		UIScoreboard scoreboard = ui.getScoreboard();
+		
+		for (SerennoPlayer playing : this.getPlaying()) {
+			UITeam uiTeam = team.getTeam().inTeam(playing) ? AllyTeam.TEAM : EnemyTeam.TEAM;
+			scoreboard.setTeam(playing.getBukkitPlayer(), uiTeam);
+		}
 		
 		Kit[] kits = player.getDuelingKits(getDuelType());
 		for (int i = 0; i < kits.length; i++) {

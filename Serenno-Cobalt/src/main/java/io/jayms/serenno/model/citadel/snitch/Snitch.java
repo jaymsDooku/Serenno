@@ -4,9 +4,11 @@ import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
+import io.jayms.serenno.event.snitch.SnitchEnterEvent;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.model.group.GroupMember;
@@ -33,6 +35,10 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 		if (group.isAuthorized(entering, GroupPermissions.SNITCH_NOTIFICATION_BYPASS)) {
 			return;
 		}
+		
+		SnitchEnterEvent event = new SnitchEnterEvent(this, entering);
+		Bukkit.getPluginManager().callEvent(event);
+		
 		for (GroupMember member : group.getMembers()) {
 			Player player = member.getPlayer();
 			player.sendMessage(ChatColor.BLACK + "[" + ChatColor.AQUA + "Snitch" + ChatColor.BLACK + "]: " + ChatColor.DARK_AQUA + entering.getName() + ChatColor.AQUA

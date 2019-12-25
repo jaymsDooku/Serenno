@@ -12,7 +12,6 @@ import io.jayms.serenno.menu.Menu;
 import io.jayms.serenno.model.citadel.artillery.AbstractArtillery;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileRunner;
-import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
 import net.md_5.bungee.api.ChatColor;
 
 public class Trebuchet extends AbstractArtillery {
@@ -34,7 +33,7 @@ public class Trebuchet extends AbstractArtillery {
 	public Location getRotationPoint() {
 		if (rotPoint == null) {
 			Location origin = getLocation();
-			int horizontalOffset = config.getTrebuchetHorizontalOffset();
+			int horizontalOffset = config.getTrebuchetBackwardLength();
 			int verticalOffset = config.getTrebuchetVerticalOffset();
 			rotPoint = origin.clone();
 			
@@ -235,20 +234,22 @@ public class Trebuchet extends AbstractArtillery {
 		
 		return qtZMid() + sub;
 	}
-	
-	private boolean isFiring = false;
 
 	@Override
-	public void fire(EngineerPlayer player) {
+	public boolean fire(EngineerPlayer player) {
+		if (super.fire(player)) {
+			return false;
+		}
 		if (isFiring()) {
 			player.sendMessage(ChatColor.RED + "Trebuchet is already firing!");
+			return false;
 		}
 		if (firingAmmoAmount <= 0) {
 			player.sendMessage(ChatColor.RED + "Trebuchet is out of ammo.");
-			return;
+			return false;
 		}
 		
-		isFiring = true;
+		setFiring(true);
 		
 		firingAmmoAmount--;
 		if (firingAmmoAmount < 0) {
@@ -259,16 +260,7 @@ public class Trebuchet extends AbstractArtillery {
 		ArtilleryMissileRunner missileRunner = am.getMissileRunner(Trebuchet.class);
 		missileRunner.fireMissile(player, this);
 		player.notify(ChatColor.YELLOW + "You have fired the " + getDisplayName());
-	}
-	
-	@Override
-	public void setFiring(boolean set) {
-		isFiring = set;
-	}
-	
-	@Override
-	public boolean isFiring() {
-		return isFiring;
+		return true;
 	}
 
 	@Override

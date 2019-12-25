@@ -111,7 +111,10 @@ public class ReinforcementManager {
 		ReinforcementWorld reinWorld = getReinforcementWorld(world);
 		if (reinWorld == null) return null;
 		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
-		return reinChunkCache.get(block);
+		SerennoCobalt.get().getLogger().info("Rein Chunk Cache: " + reinChunkCache.getAll().size());
+		Reinforcement rein = reinChunkCache.get(block);
+		SerennoCobalt.get().getLogger().info("Rein: " + rein);
+		return rein;
 	}
 	
 	public Reinforcement getReinforcement(Block block) {
@@ -299,9 +302,11 @@ public class ReinforcementManager {
 					return block.getRelative(BlockFace.DOWN);
 				}
 			case BED:
-				Bed bed = (Bed) block.getState();
-				if (bed.isHeadOfBed()) {
-					return block.getRelative(((Bed) block.getState()).getFacing().getOppositeFace());
+				if (block.getState() instanceof Bed) {
+					Bed bed = (Bed) block.getState();
+					if (bed.isHeadOfBed()) {
+						return block.getRelative(((Bed) block.getState()).getFacing().getOppositeFace());
+					}
 				}
 			default:
 				return null;

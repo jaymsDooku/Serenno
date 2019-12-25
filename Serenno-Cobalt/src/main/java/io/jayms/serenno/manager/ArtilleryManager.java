@@ -19,7 +19,8 @@ import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileRunner;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryRunnable;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryWorld;
-import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetCrateMenu;
+import io.jayms.serenno.model.citadel.artillery.menu.ArtilleryCrateMenu;
+import io.jayms.serenno.model.citadel.artillery.menu.CannonMenu;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
 import io.jayms.serenno.model.citadel.artillery.trebuchet.TrebuchetMissileRunner;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
@@ -38,11 +39,14 @@ public class ArtilleryManager {
 	
 	private ArtilleryListener artilleryListener;
 	
-	private TrebuchetCrateMenu trebuchetCrateMenu;
-	private MenuController trebuchetCrateMenuController;
+	private ArtilleryCrateMenu artilleryCrateMenu;
+	private MenuController artilleryCrateMenuController;
 	
 	private TrebuchetMenu trebuchetMenu;
 	private MenuController trebuchetMenuController;
+	
+	private CannonMenu cannonMenu;
+	private MenuController cannonMenuController;
 	
 	public ArtilleryManager(CitadelManager cm) {
 		this.cm = cm;
@@ -128,12 +132,12 @@ public class ArtilleryManager {
 		return artilleries.iterator().next();
 	}
 	
-	public TrebuchetCrateMenu getTrebuchetCrateMenu() {
-		if (trebuchetCrateMenu == null) {
-			trebuchetCrateMenu = new TrebuchetCrateMenu();
-			trebuchetMenuController = new MenuController(trebuchetCrateMenu);
+	public ArtilleryCrateMenu getArtilleryCrateMenu() {
+		if (artilleryCrateMenu == null) {
+			artilleryCrateMenu = new ArtilleryCrateMenu();
+			artilleryCrateMenuController = new MenuController(artilleryCrateMenu);
 		}
-		return trebuchetCrateMenu;
+		return artilleryCrateMenu;
 	}
 	
 	public TrebuchetMenu getTrebuchetMenu() {
@@ -142,6 +146,14 @@ public class ArtilleryManager {
 			trebuchetMenuController = new MenuController(trebuchetMenu);
 		}
 		return trebuchetMenu;
+	}
+	
+	public CannonMenu getCannonMenu() {
+		if (cannonMenu == null) {
+			cannonMenu = new CannonMenu();
+			cannonMenuController = new MenuController(cannonMenu);
+		}
+		return cannonMenu;
 	}
 
 }

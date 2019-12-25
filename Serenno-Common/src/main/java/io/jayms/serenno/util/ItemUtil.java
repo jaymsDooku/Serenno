@@ -70,6 +70,22 @@ public class ItemUtil {
 		return DEFAULT_ARMOUR.get(is.getType()).getArmour();
 	}
 	
+	public static boolean isHelmet(ItemStack is) {
+		return HELMET.contains(is.getType());
+	}
+	
+	public static boolean isChest(ItemStack is) {
+		return CHEST.contains(is.getType());
+	}
+	
+	public static boolean isLegs(ItemStack is) {
+		return LEGS.contains(is.getType());
+	}
+	
+	public static boolean isBoots(ItemStack is) {
+		return BOOTS.contains(is.getType());
+	}
+	
 	public static boolean isArmour(ItemStack is) {
 		Material type = is.getType();
 		return HELMET.contains(type) || CHEST.contains(type) || LEGS.contains(type) || BOOTS.contains(type);

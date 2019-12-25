@@ -164,7 +164,7 @@ public class Reinforcement {
 		if (lastReinforcementDamage == null) {
 			lastReinforcementDamage = new Cooldown<>();
 		}
-		if (player != null && lastReinforcementDamage.isOnCooldown(player)) {
+		if (player != null && lastReinforcementDamage.isOnCooldown(player) && lastReinforcementDamage.getTimeLeft(player) > 500) {
 			player.sendMessage(ChatColor.RED + "Reinforcement is still on cooldown for " + lastReinforcementDamage.getReadableTimeLeft(player));
 			return true;
 		}
@@ -210,7 +210,7 @@ public class Reinforcement {
 	
 	@Override
 	public String toString() {
-		return "Reinforcement [id=" + id + ", placer=" + placer + ", blueprint=" + blueprint + ", health=" + health
+		return "Reinforcement [id=" + id + ", placer=" + placer + ", blueprint=" + blueprint.getName() + ", health=" + health
 				+ ", loc=" + loc + ", creationTime=" + creationTime + ", group=" + group + ", inMemory=" + inMemory
 				+ ", broken=" + broken + "]";
 	}
