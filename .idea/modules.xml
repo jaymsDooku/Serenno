@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Serenno-Chartreuse/Serenno-Chartreuse.iml" filepath="$PROJECT_DIR$/Serenno-Chartreuse/Serenno-Chartreuse.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Serenno-Cobalt/Serenno-Cobalt.iml" filepath="$PROJECT_DIR$/Serenno-Cobalt/Serenno-Cobalt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Serenno-Common/Serenno-Common.iml" filepath="$PROJECT_DIR$/Serenno-Common/Serenno-Common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Serenno-Crimson/Serenno-Crimson.iml" filepath="$PROJECT_DIR$/Serenno-Crimson/Serenno-Crimson.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Serenno-Master.iml" filepath="$PROJECT_DIR$/Serenno-Master.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Serenno-Salamander/Serenno-Salamander.iml" filepath="$PROJECT_DIR$/Serenno-Salamander/Serenno-Salamander.iml" />
+    </modules>
+  </component>
+</project>

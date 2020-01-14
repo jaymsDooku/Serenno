@@ -1,7 +1,10 @@
 package io.jayms.serenno.db;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import org.bson.Document;
 import org.bukkit.Bukkit;
@@ -14,18 +17,26 @@ import io.jayms.serenno.db.event.DBConnectEvent;
 
 public class DBManager {
 	
-	private Map<String, MongoCollection<Document>> collections = new HashMap<>();
+	private Map<DBKey, MongoCollection<Document>> collections = new ConcurrentHashMap<>();
 	private String db;
-	
+
 	public MongoCollection<Document> getCollection(String name) {
+	    return getCollection(new DBKey(db, name), (c) -> {});
+    }
+
+    public MongoCollection<Document> getCollection(DBKey key) {
+	    return getCollection(key, (c) -> {});
+    }
+
+	public MongoCollection<Document> getCollection(DBKey key, Consumer<MongoCollection<Document>> init) {
 		if (!MongoAPI.isConnected()) {
 			return null;
 		}
 		
-		MongoCollection<Document> collection = collections.get(name);
+		MongoCollection<Document> collection = collections.get(key);
 		if (collection == null) {
-			collection = MongoAPI.getCollection(db, name);
-			collections.put(name, collection);
+			collection = MongoAPI.getCollection(key.getDb(), key.getCollection());
+			collections.put(key, collection);
 		}
 		return collection;
 	}

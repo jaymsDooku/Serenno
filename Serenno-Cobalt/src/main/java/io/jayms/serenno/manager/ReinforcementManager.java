@@ -111,9 +111,8 @@ public class ReinforcementManager {
 		ReinforcementWorld reinWorld = getReinforcementWorld(world);
 		if (reinWorld == null) return null;
 		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
-		SerennoCobalt.get().getLogger().info("Rein Chunk Cache: " + reinChunkCache.getAll().size());
+		System.out.println("rein cache size: " + reinChunkCache.getAll().size());
 		Reinforcement rein = reinChunkCache.get(block);
-		SerennoCobalt.get().getLogger().info("Rein: " + rein);
 		return rein;
 	}
 	

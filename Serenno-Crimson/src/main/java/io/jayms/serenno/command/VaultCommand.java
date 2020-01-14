@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.jayms.serenno.vault.data.mongodb.MongoVaultMapBastionBlueprintDataSource;
+import io.jayms.serenno.vault.data.mongodb.MongoVaultMapReinforcementBlueprintDataSource;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -52,12 +54,9 @@ import io.jayms.serenno.util.PlayerTools.Clipboard;
 import io.jayms.serenno.util.worldedit.Bastionizer;
 import io.jayms.serenno.util.worldedit.Reinforcer;
 import io.jayms.serenno.vault.VaultMap;
-import io.jayms.serenno.vault.VaultMapBastionBlueprintDataSource;
 import io.jayms.serenno.vault.VaultMapDatabase;
 import io.jayms.serenno.vault.VaultMapManager;
-import io.jayms.serenno.vault.VaultMapPlayerList;
 import io.jayms.serenno.vault.VaultMapPlayerListType;
-import io.jayms.serenno.vault.VaultMapReinforcementBlueprintDataSource;
 import net.md_5.bungee.api.ChatColor;
 
 @CommandAlias("vault")
@@ -77,6 +76,9 @@ public class VaultCommand extends BaseCommand {
 			@Override
 			public void run() {
 				VaultMap vaultMap = vm.createVault(SerennoCrimson.get().getPlayerManager().get(player), vaultName, radius);
+				if (vaultMap == null) {
+					return;
+				}
 				player.sendMessage(ChatColor.YELLOW + "You have created a new vault map: " + vaultMap.getArena().getRegion().getDisplayName());
 			}
 			
@@ -107,8 +109,8 @@ public class VaultCommand extends BaseCommand {
 		
 		VaultMap vaultMap = vm.getVaultMap(vaultName);
 		VaultMapDatabase database = vaultMap.getDatabase();
-		VaultMapReinforcementBlueprintDataSource reinSource = database.getReinforcementBlueprintSource();
-		VaultMapBastionBlueprintDataSource bastionSource = database.getBastionBlueprintSource();
+		MongoVaultMapReinforcementBlueprintDataSource reinSource = database.getReinforcementBlueprintSource();
+		MongoVaultMapBastionBlueprintDataSource bastionSource = database.getBastionBlueprintSource();
 		reinSource.deleteAll();
 		bastionSource.deleteAll();
 		ReinforcementBlueprint stoneBlueprint = ReinforcementBlueprint.builder()
@@ -230,8 +232,8 @@ public class VaultCommand extends BaseCommand {
 		}
 		
 		VaultMap vaultMap = vm.getVaultMap(vaultName);
-		VaultMapPlayerList playerList = vaultMap.getDatabase().getPlayerList();
-		if (playerList.inPlayerList(toAddID)) {
+		List<UUID> playerList = vaultMap.getDatabase().getPlayerList();
+		if (playerList.contains(toAddID)) {
 			player.sendMessage(ChatColor.RED + "That player is already in the player list.");
 			return;
 		}
@@ -252,8 +254,8 @@ public class VaultCommand extends BaseCommand {
 		}
 		
 		VaultMap vaultMap = vm.getVaultMap(vaultName);
-		VaultMapPlayerList playerList = vaultMap.getDatabase().getPlayerList();
-		if (playerList.inPlayerList(toRemoveID)) {
+		List<UUID> playerList = vaultMap.getDatabase().getPlayerList();
+		if (playerList.contains(toRemoveID)) {
 			player.sendMessage(ChatColor.RED + "That player is already in the player list.");
 			return;
 		}

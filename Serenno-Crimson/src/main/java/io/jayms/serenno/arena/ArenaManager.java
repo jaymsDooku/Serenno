@@ -167,7 +167,9 @@ public class ArenaManager implements Listener {
 		for (Entry<ChatColor, Location> spawnsEn : spawns.entrySet()) {
 			ChatColor teamColor = spawnsEn.getKey();
 			Location spawnLoc = spawnsEn.getValue();
-			spawnsDoc.append(teamColor.getName(), MongoTools.toDocument(spawnLoc));
+			if (spawnLoc != null) {
+				spawnsDoc.append(teamColor.getName(), MongoTools.toDocument(spawnLoc));
+			}
 		}
 		doc.append("spawns", spawnsDoc);
 		

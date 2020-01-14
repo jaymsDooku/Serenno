@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.boydti:fawe-bukkit:latest">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/boydti/fawe-bukkit/latest/fawe-bukkit-latest.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/boydti/fawe-bukkit/latest/fawe-bukkit-latest-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/boydti/fawe-bukkit/latest/fawe-bukkit-latest-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

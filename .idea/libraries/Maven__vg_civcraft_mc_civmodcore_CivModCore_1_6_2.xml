@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: vg.civcraft.mc.civmodcore:CivModCore:1.6.2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/vg/civcraft/mc/civmodcore/CivModCore/1.6.2/CivModCore-1.6.2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/vg/civcraft/mc/civmodcore/CivModCore/1.6.2/CivModCore-1.6.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/vg/civcraft/mc/civmodcore/CivModCore/1.6.2/CivModCore-1.6.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -50,5 +50,12 @@ public class ChunkCoord {
 	public int hashCode() {
 		return Objects.hashCode(x, z);
 	}
-	
+
+	@Override
+	public String toString() {
+		return "ChunkCoord{" +
+				"x=" + x +
+				", z=" + z +
+				'}';
+	}
 }

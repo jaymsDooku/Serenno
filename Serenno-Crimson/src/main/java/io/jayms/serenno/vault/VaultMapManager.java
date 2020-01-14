@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import io.jayms.serenno.db.MongoAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -75,13 +76,12 @@ public class VaultMapManager implements Listener {
 	public void onArenaLoad(ArenaLoadEvent e) {
 		Arena arena = e.getArena();
 		String name = arena.getRegion().getName();
-		File file = new File(vaultMapsFolder, name + ".db");
-		if (!file.exists()) {
+
+		if (!MongoAPI.databaseExists(name)) {
 			return;
 		}
 		
-		VaultMap vaultMap = new SimpleVaultMap(name, arena, 
-				new SQLite(SerennoCrimson.get(), SerennoCrimson.get().getLogger(), "[VaultMap - " + name + "]", name + ".db", vaultMapsFolder.getAbsolutePath()));
+		VaultMap vaultMap = new SimpleVaultMap(name, arena);
 		vaultMaps.put(name, vaultMap);
 		e.setArena(vaultMap);
 		SerennoCrimson.get().getLogger().info("Loaded vault map: " + name);
@@ -93,26 +93,23 @@ public class VaultMapManager implements Listener {
 		}
 		
 		World world = Bukkit.getWorld(name);
-		if (world != null) {
-			sp.sendMessage(ChatColor.RED + "A world with that name already exists.");
-			return null;
+		if (world == null) {
+			WorldCreator creator = new WorldCreator(name);
+			creator.generator(new ChunkGenerator() {
+				@Override
+				public byte[] generate(World world, Random random, int x, int z) {
+					return new byte[32768]; //Empty byte array
+				}
+			});
+			creator.environment(Environment.NORMAL);
+			creator.generateStructures(false);
+			creator.type(WorldType.FLAT);
+			world = creator.createWorld();
+			world.getBlockAt(0, 69, 0).setType(Material.BEDROCK);
 		}
 		
-		WorldCreator creator = new WorldCreator(name);
-		creator.generator(new ChunkGenerator() {
-		    @Override
-		    public byte[] generate(World world, Random random, int x, int z) {
-		        return new byte[32768]; //Empty byte array
-		    }
-		});
-		creator.environment(Environment.NORMAL);
-		creator.generateStructures(false);
-		creator.type(WorldType.FLAT);
-		World createdWorld = creator.createWorld();
-		createdWorld.getBlockAt(0, 69, 0).setType(Material.BEDROCK);
-		
-		Location p1 = new Location(createdWorld, -radius, 0, -radius);
-		Location p2 = new Location(createdWorld, radius, 256, radius);
+		Location p1 = new Location(world, -radius, 0, -radius);
+		Location p2 = new Location(world, radius, 256, radius);
 		Region worldRegion = SerennoCrimson.get().getRegionManager().createRegion(sp.getBukkitPlayer(), name, p1, p2);
 		
 		if (worldRegion == null) {
@@ -133,9 +130,8 @@ public class VaultMapManager implements Listener {
 			sp.sendMessage(ChatColor.RED + "Failed to create arena.");
 			return null;
 		}
-		
-		VaultMap vaultMap = new SimpleVaultMap(createdWorld.getName(), worldArena,
-				new SQLite(SerennoCrimson.get(), SerennoCrimson.get().getLogger(), "[VaultMap - " + name + "]", name + ".db", vaultMapsFolder.getAbsolutePath()));
+
+		VaultMap vaultMap = new SimpleVaultMap(world.getName(), worldArena);
 		SerennoCrimson.get().getArenaManager().replaceArena(vaultMap);
 		
 		VaultMapDatabase database = vaultMap.getDatabase();

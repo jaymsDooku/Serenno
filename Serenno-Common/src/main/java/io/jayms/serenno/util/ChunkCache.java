@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.google.common.cache.CacheLoader;
 import org.bukkit.block.Block;
 
 import com.google.common.cache.Cache;
@@ -23,10 +24,9 @@ public class ChunkCache<T> {
 			builder.removalListener(remover);
 		}
 		this.cache = builder.build();
-		
 		if (init != null) {
-			for (Entry<Coords, T> val : init.entrySet()) {
-				cache.put(val.getKey(), val.getValue());
+			for (Entry<Coords, T> en : init.entrySet()) {
+				cache.put(en.getKey(), en.getValue());
 			}
 		}
 	}

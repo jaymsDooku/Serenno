@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import io.jayms.serenno.vault.data.mongodb.MongoVaultMapReinforcementDataSource;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -39,15 +40,13 @@ public class SimpleVaultMap implements VaultMap {
 	
 	//private SQLite database;
 	
-	public SimpleVaultMap(String originalWorldName, Arena arena, SQLite database) {
+	public SimpleVaultMap(String originalWorldName, Arena arena) {
 		this.originalWorldName = originalWorldName;
 		this.arena = arena;
 		this.vaultMapDatabases = new HashMap<>();
-		//this.database = database;
 		
-		VaultMapDatabase db = new VaultMapDatabase(originalWorldName, SimpleVaultMap.this, database);
+		VaultMapDatabase db = new VaultMapDatabase(originalWorldName, SimpleVaultMap.this);
 		db.load();
-		db.getDatabase().close();
 		vaultMapDatabases.put(originalWorldName, db);
 	}
 	
@@ -64,7 +63,7 @@ public class SimpleVaultMap implements VaultMap {
 		VaultMapDatabase database = getDatabase();
 		ReinforcementManager rm = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
 		
-		VaultMapReinforcementDataSource reinSource = database.getReinforcementSource();
+		MongoVaultMapReinforcementDataSource reinSource = database.getReinforcementSource();
 		
 		ReinforcementWorld reinWorld = rm.getReinforcementWorld(originalWorld);
 		

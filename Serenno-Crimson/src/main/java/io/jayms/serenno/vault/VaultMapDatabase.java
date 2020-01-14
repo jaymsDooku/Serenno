@@ -6,10 +6,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
+import io.jayms.serenno.db.MongoAPI;
+import io.jayms.serenno.vault.data.mongodb.*;
+import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -30,7 +37,17 @@ import io.jayms.serenno.model.group.Group;
 import net.md_5.bungee.api.ChatColor;
 
 public class VaultMapDatabase {
-	
+
+	public static final String GOTO_X = "goto_x";
+	public static final String GOTO_Y = "goto_y";
+	public static final String GOTO_Z = "goto_z";
+	public static final String GOTO_YAW = "goto_yaw";
+	public static final String GOTO_PITCH = "goto_pitch";
+	public static final String PLAYER_LIST = "player_list";
+	public static final String PLAYER_LIST_TYPE = "player_list_type";
+	public static final String ATTACKERS_COLOUR = "attackers_colour";
+	public static final String DEFENDERS_COLOUR = "defenders_colour";
+
 	private static final String ATTACKERS = "Attackers";
 	private static final String DEFENDERS = "Defenders";
 	
@@ -68,13 +85,12 @@ public class VaultMapDatabase {
 	
 	private static final String DELETE_INFO = "DELETE FROM INFO WHERE ReinforcementID = ?";
 
-	private SQLite database;
+	private MongoDatabase database;
 
 	private String worldName;
 	private World world;
 	private VaultMap vaultMap;
-	
-	private int informationID;
+
 	private double gotoX;
 	private double gotoY;
 	private double gotoZ;
@@ -82,13 +98,13 @@ public class VaultMapDatabase {
 	private float gotoPitch;
 	
 	private VaultMapPlayerListType playerListType = VaultMapPlayerListType.NONE;
-	private VaultMapPlayerList playerList;
-	private VaultMapCoreDataSource coreSource;
-	private VaultMapReinforcementDataSource reinforcementSource;
-	private VaultMapBastionDataSource bastionSource;
-	private VaultMapReinforcementBlueprintDataSource reinforcementBlueprintSource;
-	private VaultMapBastionBlueprintDataSource bastionBlueprintSource;
-	private VaultMapSnitchDataSource snitchSource;
+	private List<UUID> playerList;
+	private MongoVaultMapCoreDataSource coreSource;
+	private MongoVaultMapReinforcementDataSource reinforcementSource;
+	private MongoVaultMapBastionDataSource bastionSource;
+	private MongoVaultMapReinforcementBlueprintDataSource reinforcementBlueprintSource;
+	private MongoVaultMapBastionBlueprintDataSource bastionBlueprintSource;
+	private MongoVaultMapSnitchDataSource snitchSource;
 	private Map<String, Group> groupSource;
 	private BiMap<ChatColor, String> groupColours;
 	private Map<String, Company> companySource;
@@ -97,27 +113,34 @@ public class VaultMapDatabase {
 	
 	private VaultBattle battle;
 	
-	public VaultMapDatabase(String worldName, VaultMap vaultMap, SQLite database) {
+	public VaultMapDatabase(String worldName, VaultMap vaultMap) {
 		this.worldName = worldName;
 		this.vaultMap = vaultMap;
-		this.database = database;
-		this.playerList = new VaultMapPlayerList(this);
-		this.coreSource = new VaultMapCoreDataSource(this);
-		this.reinforcementSource = new VaultMapReinforcementDataSource(this);
-		this.bastionSource = new VaultMapBastionDataSource(this);
-		this.reinforcementBlueprintSource = new VaultMapReinforcementBlueprintDataSource(this);
-		this.bastionBlueprintSource = new VaultMapBastionBlueprintDataSource(this);
-		this.snitchSource = new VaultMapSnitchDataSource(this);
+		this.database = MongoAPI.getDatabase(worldName);
+		this.playerList = new ArrayList<>();
+		this.coreSource = new MongoVaultMapCoreDataSource(this);
+		this.reinforcementSource = new MongoVaultMapReinforcementDataSource(this);
+		this.bastionSource = new MongoVaultMapBastionDataSource(this);
+		this.reinforcementBlueprintSource = new MongoVaultMapReinforcementBlueprintDataSource(this);
+		this.bastionBlueprintSource = new MongoVaultMapBastionBlueprintDataSource(this);
+		this.snitchSource = new MongoVaultMapSnitchDataSource(this);
 		this.groupSource = new HashMap<>();
 		this.groupColours = HashBiMap.create();
 		this.companySource = new HashMap<>();
 		
 		init();
 	}
-	
-	public Database getDatabase() {
-		database.open();
+
+	public MongoCollection<Document> getInfoCollection() {
+		return database.getCollection("information");
+	}
+
+	public MongoDatabase getDatabase() {
 		return database;
+	}
+
+	public String getWorldName() {
+		return worldName;
 	}
 	
 	public World getWorld() {
@@ -139,84 +162,64 @@ public class VaultMapDatabase {
 		groupSource.put(attackerGroup.getName().toLowerCase(), attackerGroup);
 		groupSource.put(defenderGroup.getName().toLowerCase(), defenderGroup);
 		
-		try {
-			PreparedStatement ps = getDatabase().getConnection().prepareStatement(CREATE_INFO);
-			ps.execute();
-			ps.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		coreSource.createTables();
-		reinforcementSource.createTables();
-		bastionSource.createTables();
-		reinforcementBlueprintSource.createTables();
-		bastionBlueprintSource.createTables();
-		snitchSource.createTables();
+		database = MongoAPI.getDatabase(worldName);
 	}
 	
 	public void load() {
-		try {
-			PreparedStatement ps = getDatabase().getConnection().prepareStatement(SELECT_INFO);
-			ResultSet rs = ps.executeQuery();
-			
-			if (!rs.next()) {
-				return;
-			}
-			
-			informationID = rs.getInt("InformationID");
-			
-			gotoX = rs.getDouble("GotoX");
-			gotoY = rs.getDouble("GotoY");
-			gotoZ = rs.getDouble("GotoZ");
-			gotoYaw = rs.getFloat("GotoYaw");
-			gotoPitch = rs.getFloat("GotoPitch");
-			playerListType = VaultMapPlayerListType.valueOf(rs.getString("PlayerListType"));
-			String attackerColour = rs.getString("AttackersColour");
-			if (attackerColour != null) {
-				groupColours.put(ChatColor.valueOf(attackerColour), ATTACKERS.toLowerCase());
-			}
-			String defenderColour = rs.getString("DefendersColour");
-			if (defenderColour != null) {
-				groupColours.put(ChatColor.valueOf(defenderColour), DEFENDERS.toLowerCase());
-			}
-			SerennoCrimson.get().getLogger().info("Loaded information for vault map: " + vaultMap.getArena().getName());
-			ps.close();
-			
-			loaded = true;
-		} catch (SQLException e) {
-			e.printStackTrace();
+		FindIterable<Document> query = getInfoCollection().find();
+		Document doc = query.first();
+		if (doc == null) {
+			return;
 		}
+		gotoX = doc.getDouble(GOTO_X);
+		gotoY = doc.getDouble(GOTO_Y);
+		gotoZ = doc.getDouble(GOTO_Z);
+		double dGotoYaw = doc.getDouble(GOTO_YAW);
+		double dGotoPitch = doc.getDouble(GOTO_PITCH);
+		gotoYaw = (float) dGotoYaw;
+		gotoPitch = (float) dGotoPitch;
+		List<String> uuidList = doc.getList(PLAYER_LIST, String.class);
+		playerList = uuidList.stream().map(u -> UUID.fromString(u)).collect(Collectors.toList());
+		playerListType = VaultMapPlayerListType.valueOf(doc.getString(PLAYER_LIST_TYPE));
+		String attackerColour = doc.getString(ATTACKERS_COLOUR);
+		if (attackerColour != null) {
+			groupColours.put(ChatColor.valueOf(attackerColour), ATTACKERS.toLowerCase());
+		}
+		String defenderColour = doc.getString(DEFENDERS_COLOUR);
+		if (defenderColour != null) {
+			groupColours.put(ChatColor.valueOf(defenderColour), DEFENDERS.toLowerCase());
+		}
+
+		SerennoCrimson.get().getLogger().info("Loaded information for vault map: " + vaultMap.getArena().getName());
+		loaded = true;
+	}
+
+	public Document infoDocument() {
+		Document doc = new Document();
+		doc.put(GOTO_X, gotoX);
+		doc.put(GOTO_Y, gotoY);
+		doc.put(GOTO_Z, gotoZ);
+		doc.put(GOTO_YAW, gotoYaw);
+		doc.put(GOTO_PITCH, gotoPitch);
+		doc.put(PLAYER_LIST, playerList);
+		doc.put(PLAYER_LIST_TYPE, playerListType.toString());
+		ChatColor attackersColour = groupColours.inverse().get(ATTACKERS.toLowerCase());
+		if (attackersColour != null) {
+			doc.put(ATTACKERS_COLOUR, attackersColour.name());
+		}
+		ChatColor defendersColour = groupColours.inverse().get(DEFENDERS.toLowerCase());
+		if (defendersColour != null) {
+			doc.put(DEFENDERS_COLOUR, defendersColour.name());
+		}
+		return doc;
 	}
 	
 	public void updateInfo() {
-		try {
-			PreparedStatement ps = loaded ? getDatabase().getConnection().prepareStatement(UPDATE_INFO) :
-				database.getConnection().prepareStatement(INSERT_INFO, Statement.RETURN_GENERATED_KEYS);
-			ps.setDouble(1, gotoX);
-			ps.setDouble(2, gotoY);
-			ps.setDouble(3, gotoZ);
-			ps.setDouble(4, gotoPitch);
-			ps.setDouble(5, gotoYaw);
-			ps.setString(6, playerListType.toString());
-			ChatColor attackerGroupColour = groupColours.inverse().get(ATTACKERS.toLowerCase());
-			ChatColor defenderGroupColour = groupColours.inverse().get(DEFENDERS.toLowerCase());
-			
-			ps.setString(7, attackerGroupColour != null ? attackerGroupColour.name() : null);
-			ps.setString(8, defenderGroupColour != null ? defenderGroupColour.name() : null);
-			if (loaded) {
-				ps.setInt(9, informationID);
-			}
-			ps.executeUpdate();
-			if (!loaded) {
-				ResultSet rs = ps.getGeneratedKeys();
-				informationID = rs.getInt(1);
-				loaded = true;
-			}
-			ps.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
+		Document doc = infoDocument();
+		if (getInfoCollection().countDocuments() > 0) {
+			getInfoCollection().drop();
 		}
+		getInfoCollection().insertOne(doc);
 	}
 	
 	public void setGotoLocation(Location gotoLocation) {
@@ -236,9 +239,9 @@ public class VaultMapDatabase {
 	public boolean isAllowed(Player player) {
 		switch (playerListType) {
 			case BLACK:
-				return !playerList.inPlayerList(player);
+				return !playerList.contains(player.getUniqueId());
 			case WHITE:
-				return playerList.inPlayerList(player);
+				return playerList.contains(player.getUniqueId());
 			default:
 				break;
 		}
@@ -250,50 +253,47 @@ public class VaultMapDatabase {
 	}
 	
 	public void delete() {
-		database.close();
-		if (database.getSQLfile().delete()) {
-			SerennoCrimson.get().getLogger().info("Deleted SQLite database for vault map: " + vaultMap.getArena().getRegion().getName());
-		}
+		database.drop();
+		SerennoCrimson.get().getLogger().info("Deleted Mongo database for vault map: " + vaultMap.getArena().getRegion().getName());
 	}
 	
 	public VaultMapDatabase copy(String worldName, File file) {
-		try {
-			Files.copy(database.getSQLfile(), file);
-			SQLite sqlite = new SQLite(SerennoCrimson.get(), SerennoCrimson.get().getLogger(), "[VaultMap - " + worldName + "]", file.getName(), file.getParentFile().getAbsolutePath());
-			VaultMapDatabase db = new VaultMapDatabase(worldName, vaultMap, sqlite);
-			db.load();
-			return db;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
+		VaultMapDatabase db = new VaultMapDatabase(worldName, vaultMap);
+		MongoAPI.copy(getInfoCollection(), db.getInfoCollection());
+		MongoAPI.copy(getReinforcementBlueprintSource().getCollection(), db.getReinforcementBlueprintSource().getCollection());
+		MongoAPI.copy(getBastionBlueprintSource().getCollection(), db.getBastionBlueprintSource().getCollection());
+		MongoAPI.copy(getReinforcementSource().getCollection(), db.getReinforcementSource().getCollection());
+		MongoAPI.copy(getBastionSource().getCollection(), db.getBastionSource().getCollection());
+		MongoAPI.copy(getSnitchSource().getCollection(), db.getSnitchSource().getCollection());
+		MongoAPI.copy(getCoreSource().getCollection(), db.getCoreSource().getCollection());
+		return db;
 	}
 	
-	public VaultMapPlayerList getPlayerList() {
+	public List<UUID> getPlayerList() {
 		return playerList;
 	}
 	
-	public VaultMapCoreDataSource getCoreSource() {
+	public MongoVaultMapCoreDataSource getCoreSource() {
 		return coreSource;
 	}
 	
-	public VaultMapReinforcementDataSource getReinforcementSource() {
+	public MongoVaultMapReinforcementDataSource getReinforcementSource() {
 		return reinforcementSource;
 	}
 	
-	public VaultMapBastionDataSource getBastionSource() {
+	public MongoVaultMapBastionDataSource getBastionSource() {
 		return bastionSource;
 	}
 	
-	public VaultMapReinforcementBlueprintDataSource getReinforcementBlueprintSource() {
+	public MongoVaultMapReinforcementBlueprintDataSource getReinforcementBlueprintSource() {
 		return reinforcementBlueprintSource;
 	}
 	
-	public VaultMapBastionBlueprintDataSource getBastionBlueprintSource() {
+	public MongoVaultMapBastionBlueprintDataSource getBastionBlueprintSource() {
 		return bastionBlueprintSource;
 	}
 	
-	public VaultMapSnitchDataSource getSnitchSource() {
+	public MongoVaultMapSnitchDataSource getSnitchSource() {
 		return snitchSource;
 	}
 	
@@ -311,7 +311,7 @@ public class VaultMapDatabase {
 			return;
 		}
 		
-		groupColours.put(colour, groupName);
+		groupColours.forcePut(colour, groupName);
 		updateInfo();
 	}
 	

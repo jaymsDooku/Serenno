@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="Serenno-Common" />
+        <module name="Serenno-Cobalt" />
+        <module name="Serenno-Chartreuse" />
+        <module name="Serenno-Salamander" />
+        <module name="Serenno-Crimson" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="Serenno-Chartreuse" target="1.8" />
+      <module name="Serenno-Cobalt" target="1.8" />
+      <module name="Serenno-Common" target="1.8" />
+      <module name="Serenno-Crimson" target="1.8" />
+      <module name="Serenno-Master" target="1.8" />
+      <module name="Serenno-Salamander" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
