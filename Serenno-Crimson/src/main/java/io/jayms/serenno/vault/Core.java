@@ -1,26 +1,41 @@
 package io.jayms.serenno.vault;
 
+import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import net.md_5.bungee.api.ChatColor;
+
+import java.util.UUID;
 
 public class Core {
 
-	private VaultMapDatabase vaultMapDatabase;
-	private Reinforcement reinforcement;
+	private UUID reinforcementID;
 	private ChatColor teamColor;
-	
-	public Core(VaultMapDatabase vaultMapDatabase, ChatColor teamColor, Reinforcement reinforcement) {
-		this.vaultMapDatabase = vaultMapDatabase;
-		this.reinforcement = reinforcement;
+	private VaultBattle battle;
+
+	public Core(ChatColor teamColor, Reinforcement reinforcement) {
+		this(teamColor, reinforcement.getID());
+	}
+
+	public Core(ChatColor teamColor, UUID reinforcementID) {
+		this.reinforcementID = reinforcementID;
 		this.teamColor = teamColor;
 	}
-	
-	public VaultMapDatabase getVaultMapDatabase() {
-		return vaultMapDatabase;
+
+	public UUID getReinforcementID() {
+		return reinforcementID;
 	}
-	
-	public Reinforcement getReinforcement() {
-		return reinforcement;
+
+	public void setBattle(VaultBattle battle) {
+		this.battle = battle;
+	}
+
+	public VaultBattle getBattle() {
+		return battle;
+	}
+
+	public Reinforcement getReinforcement(ReinforcementWorld world) {
+		return world.getReinforcement(reinforcementID);
 	}
 	
 	public ChatColor getTeamColor() {
@@ -29,7 +44,7 @@ public class Core {
 	
 	@Override
 	public String toString() {
-		return "Core[teamColor=" + teamColor.name() + ", reinforcement=" + reinforcement + "]";
+		return "Core[teamColor=" + teamColor.name() + ", reinforcement=" + reinforcementID + "]";
 	}
 	
 }

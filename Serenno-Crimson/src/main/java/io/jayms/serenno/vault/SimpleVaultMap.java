@@ -6,8 +6,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
+import io.jayms.serenno.manager.BastionManager;
+import io.jayms.serenno.manager.SnitchManager;
+import io.jayms.serenno.model.citadel.bastion.Bastion;
+import io.jayms.serenno.model.citadel.bastion.BastionWorld;
+import io.jayms.serenno.model.citadel.snitch.Snitch;
+import io.jayms.serenno.model.citadel.snitch.SnitchWorld;
+import io.jayms.serenno.vault.data.mongodb.MongoVaultMapBastionDataSource;
 import io.jayms.serenno.vault.data.mongodb.MongoVaultMapReinforcementDataSource;
+import io.jayms.serenno.vault.data.mongodb.MongoVaultMapSnitchDataSource;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -27,6 +36,7 @@ import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.region.Region;
 import io.jayms.serenno.util.LocationTools;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.util.Vector;
 
 public class SimpleVaultMap implements VaultMap {
 
@@ -34,22 +44,29 @@ public class SimpleVaultMap implements VaultMap {
 	
 	private String originalWorldName;
 	private World originalWorld;
-	private Map<String, VaultMapDatabase> vaultMapDatabases;
+	private VaultMapDatabase database;
 	private Set<World> activeWorlds = new HashSet<>();
 	private int activeWorldID;
-	
-	//private SQLite database;
+
+	private boolean ready;
 	
 	public SimpleVaultMap(String originalWorldName, Arena arena) {
 		this.originalWorldName = originalWorldName;
 		this.arena = arena;
-		this.vaultMapDatabases = new HashMap<>();
-		
-		VaultMapDatabase db = new VaultMapDatabase(originalWorldName, SimpleVaultMap.this);
-		db.load();
-		vaultMapDatabases.put(originalWorldName, db);
+		this.database = new VaultMapDatabase(originalWorldName, this);
+		database.load();
 	}
-	
+
+	@Override
+	public void setReady(boolean ready) {
+		this.ready = ready;
+	}
+
+	@Override
+	public boolean isReady() {
+		return ready;
+	}
+
 	@Override
 	public void load() {
 	}
@@ -62,14 +79,28 @@ public class SimpleVaultMap implements VaultMap {
 		
 		VaultMapDatabase database = getDatabase();
 		ReinforcementManager rm = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
+		BastionManager bm = SerennoCobalt.get().getCitadelManager().getBastionManager();
+		SnitchManager sm = SerennoCobalt.get().getCitadelManager().getSnitchManager();
 		
 		MongoVaultMapReinforcementDataSource reinSource = database.getReinforcementSource();
+		MongoVaultMapBastionDataSource bastionDataSource = database.getBastionSource();
+		MongoVaultMapSnitchDataSource snitchDataSource = database.getSnitchSource();
 		
 		ReinforcementWorld reinWorld = rm.getReinforcementWorld(originalWorld);
+		BastionWorld bastionWorld = bm.getBastionWorld(originalWorld);
+		SnitchWorld snitchWorld = sm.getSnitchWorld(originalWorld);
 		
 		Set<Reinforcement> reinforcements = reinWorld.getAllReinforcements();
 		reinSource.persistAll(reinforcements, () -> {
 			SerennoCrimson.get().getLogger().info("Saved reinforcements for: " + arena.getName());
+		});
+		Set<Bastion> bastions = bastionWorld.getAllBastions();
+		bastionDataSource.persistAll(reinWorld, bastions, () -> {
+			SerennoCrimson.get().getLogger().info("Saved bastions for: " + arena.getName());
+		});
+		Set<Snitch> snitches = snitchWorld.getAllSnitches();
+		snitchDataSource.persistAll(reinWorld, snitches, () -> {
+			SerennoCrimson.get().getLogger().info("Saved snitches for: " + arena.getName());
 		});
 		
 		SerennoCrimson.get().getArenaManager().saveArena(getArena());
@@ -79,9 +110,7 @@ public class SimpleVaultMap implements VaultMap {
 	
 	@Override
 	public void delete() {
-		for (VaultMapDatabase db : vaultMapDatabases.values()) {
-			db.delete();
-		}
+		database.delete();
 		
 		if (isOriginalWorldLoaded()) {
 			World originalWorld = getOriginalWorld();
@@ -93,7 +122,6 @@ public class SimpleVaultMap implements VaultMap {
 			SerennoCobalt.get().getCitadelManager().getArtilleryManager().deleteArtilleryWorld(originalWorld);
 			
 			Bukkit.unloadWorld(originalWorldName, false);
-			SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().remove(originalWorld.getUID());
 			LocationTools.deleteWorld(originalWorld.getWorldFolder());
 		} else {
 			LocationTools.deleteWorld(new File(SerennoCrimson.get().getDataFolder().getParentFile().getParentFile(), originalWorldName));
@@ -119,14 +147,9 @@ public class SimpleVaultMap implements VaultMap {
 			group.addMember(player);
 		}
 		player.sendMessage(ChatColor.YELLOW + "You are going to vault map: " + arena.getRegion().getDisplayName());
-		new BukkitRunnable() {
-			
-			@Override
-			public void run() {
-				player.teleport(getGotoLocation());
-			}
-			
-		}.runTaskLater(SerennoCrimson.get(), 1L);
+		getOriginalWorldAsync((vm) -> {
+			player.teleport(getGotoLocation());
+		});
 	}
 	
 	@Override
@@ -145,30 +168,10 @@ public class SimpleVaultMap implements VaultMap {
 	public Location getGotoLocation() {
 		return getDatabase().getGotoLocation();
 	}
-	
-	@Override
-	public VaultMapDatabase newDatabase(World world) {
-		String name = world.getName();
-		File newDBFile = new File(SerennoCrimson.get().getVaultMapManager().getVaultMapsFolderTemp(), name + ".db");
-		try {
-			newDBFile.createNewFile();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		VaultMapDatabase vmDB = getDatabase().copy(name, newDBFile);
-		vaultMapDatabases.put(name, vmDB);
-		return vmDB;
-	}
-	
-	@Override
-	public VaultMapDatabase getDatabase(World world) {
-		return vaultMapDatabases.get(world.getName());
-	}
 
 	@Override
 	public VaultMapDatabase getDatabase() {
-		VaultMapDatabase db = vaultMapDatabases.get(originalWorldName);
-		return db;
+		return database;
 	}
 
 	@Override
@@ -178,7 +181,7 @@ public class SimpleVaultMap implements VaultMap {
 	
 	@Override
 	public boolean inOriginalWorld(Player player) {
-		return inOriginalWorld(player);
+		return player.getWorld().getName().equals(originalWorldName);
 	}
 	
 	@Override
@@ -195,15 +198,66 @@ public class SimpleVaultMap implements VaultMap {
 		return originalWorldName;
 	}
 
+	private ReinforcementWorld reinforcementWorld;
+
+	@Override
+	public ReinforcementWorld getReinforcementWorld() {
+		return reinforcementWorld;
+	}
+
+	@Override
+	public void getReinforcementWorldAsync(Consumer<VaultMap> callback) {
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().newReinforcementWorld(originalWorldName, getDatabase().getGroupSource(), getDatabase().getReinforcementSource());
+				new BukkitRunnable() {
+
+					@Override
+					public void run() {
+						callback.accept(SimpleVaultMap.this);
+					}
+				}.runTaskLater(SerennoCrimson.get(), 1L);
+			}
+
+		}.runTaskAsynchronously(SerennoCrimson.get());
+	}
+
+	@Override
+	public void getOriginalWorldAsync(Consumer<VaultMap> callback) {
+		if (originalWorld != null) {
+			callback.accept(this);
+			return;
+		}
+		originalWorld = LocationTools.loadWorld(originalWorldName);
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				SerennoCobalt.get().getCitadelManager().getBastionManager().newBastionWorld(originalWorld, getDatabase().getBastionSource());
+				SerennoCobalt.get().getCitadelManager().getSnitchManager().newSnitchWorld(originalWorld, getDatabase().getSnitchSource());
+				SerennoCobalt.get().getCitadelManager().getArtilleryManager().newArtilleryWorld(originalWorld);
+				new BukkitRunnable() {
+
+					@Override
+					public void run() {
+						callback.accept(SimpleVaultMap.this);
+					}
+				}.runTaskLater(SerennoCrimson.get(), 1L);
+ 				}
+
+		}.runTaskAsynchronously(SerennoCrimson.get());
+	}
+
 	@Override
 	public World getOriginalWorld() {
 		if (originalWorld == null) {
 			originalWorld = LocationTools.loadWorld(originalWorldName);
-			SerennoCobalt.get().getCitadelManager().getReinforcementManager().newReinforcementWorld(originalWorld, getDatabase().getReinforcementSource());
+			reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().newReinforcementWorld(originalWorldName, getDatabase().getGroupSource(), getDatabase().getReinforcementSource());
 			SerennoCobalt.get().getCitadelManager().getBastionManager().newBastionWorld(originalWorld, getDatabase().getBastionSource());
 			SerennoCobalt.get().getCitadelManager().getSnitchManager().newSnitchWorld(originalWorld, getDatabase().getSnitchSource());
 			SerennoCobalt.get().getCitadelManager().getArtilleryManager().newArtilleryWorld(originalWorld);
-			SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().put(originalWorld.getUID(), this);
 		}
 		return originalWorld;
 	}
@@ -300,22 +354,16 @@ public class SimpleVaultMap implements VaultMap {
 
 	@Override
 	public World activateWorld() {
-		String worldName = getOriginalWorld().getName() + activeWorldID++;
-		File originalWorldFolder = getOriginalWorld().getWorldFolder();
-		File newWorldFolder = new File(originalWorldFolder.getParentFile(), worldName);
+		String worldName = getOriginalWorldName() + activeWorldID++;
+		File serverFolder = SerennoCrimson.get().getDataFolder().getParentFile().getParentFile();
+		File originalWorldFolder = new File(serverFolder, getOriginalWorldName());
+		File newWorldFolder = new File(serverFolder, worldName);
 		newWorldFolder.setReadable(true, false);
 		newWorldFolder.setWritable(true, false);
 		newWorldFolder.setExecutable(true, false);
 		LocationTools.copyWorld(originalWorldFolder, newWorldFolder);
 		World activatedWorld = LocationTools.loadWorld(worldName);
-		
-		VaultMapDatabase database = newDatabase(activatedWorld);
-		SerennoCobalt.get().getCitadelManager().getReinforcementManager().newReinforcementWorld(activatedWorld, database.getReinforcementSource());
-		SerennoCobalt.get().getCitadelManager().getBastionManager().newBastionWorld(activatedWorld, database.getBastionSource());
-		SerennoCobalt.get().getCitadelManager().getSnitchManager().newSnitchWorld(activatedWorld, database.getSnitchSource());
-		SerennoCobalt.get().getCitadelManager().getArtilleryManager().newArtilleryWorld(activatedWorld);
-		
-		SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().put(activatedWorld.getUID(), this);
+		activatedWorld.setAutoSave(false);
 		
 		activeWorlds.add(activatedWorld);
 		
@@ -331,16 +379,12 @@ public class SimpleVaultMap implements VaultMap {
 			return;
 		}
 		activeWorlds.remove(world);
-		SerennoCrimson.get().getVaultMapManager().getWorldToVaultMaps().remove(world.getUID());
 		SerennoCrimson.get().getLobby().sendToLobby(world);
 		
 		SerennoCobalt.get().getCitadelManager().getReinforcementManager().deleteReinforcementWorld(world, false);
 		SerennoCobalt.get().getCitadelManager().getBastionManager().deleteBastionWorld(world);
 		SerennoCobalt.get().getCitadelManager().getSnitchManager().deleteSnitchWorld(world);
 		SerennoCobalt.get().getCitadelManager().getArtilleryManager().deleteArtilleryWorld(world);
-		
-		VaultMapDatabase database = getDatabase(world);
-		database.delete();
 		
 		Bukkit.unloadWorld(world, false);
 		LocationTools.deleteWorld(world.getWorldFolder());
@@ -355,4 +399,8 @@ public class SimpleVaultMap implements VaultMap {
 		return activeWorlds.contains(world);
 	}
 
+	@Override
+	public void dispose() {
+		database.dispose();
+	}
 }

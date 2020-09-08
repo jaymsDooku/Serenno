@@ -1,13 +1,13 @@
 package io.jayms.serenno.game.vaultbattle.pearling;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.text.DecimalFormat;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.SortedSet;
-import java.util.UUID;
 
+import io.jayms.serenno.game.DeathCause;
+import io.jayms.serenno.util.LocationTools;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -20,6 +20,7 @@ import io.jayms.serenno.game.statistics.DuelStatistics;
 import io.jayms.serenno.item.CustomItemManager;
 import io.jayms.serenno.player.SerennoPlayer;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class SpectatorPearlManager {
 
@@ -30,20 +31,27 @@ public class SpectatorPearlManager {
 		this.duel = duel;
 	}
 	
-	public void pearl(SerennoPlayer player) {
+	public DeathCause pearl(SerennoPlayer player) {
+		DuelStatistics stats = duel.getStatistics();
+		SortedSet<Entry<UUID, Double>> sortedDamageDealers = stats.getSortedDamageDealersTo(player, 1000 * 60 * 2);
+
+		if (sortedDamageDealers.isEmpty()) {
+			DuelTeam team =  duel.getTeam(player);
+			Location spawn = duel.getSpawnPoint(team.getTeamColor());
+			player.teleport(spawn);
+ 			return DeathCause.ENVIRONMENT;
+		}
+
 		SpectatorPearlItem pearlItem = (SpectatorPearlItem) CustomItemManager.getCustomItemManager().getCustomItem(SpectatorPearlItem.ID, SpectatorPearlItem.class);
 		
 		Map<String, Object> data = new HashMap<>();
 		data.put("pearled", player);
 		ItemStack pearlStack = pearlItem.getItemStack(data);
-		
-		DuelStatistics stats = duel.getStatistics();
-		SortedSet<Entry<UUID, Double>> sortedDamageDealers = stats.getSortedDamageDealersTo(player, 1000 * 60 * 2);
-		
+
 		SerennoPlayer killer = null;
-		Iterator<Entry<UUID, Double>> damageDealersIt = sortedDamageDealers.iterator();
-		while (damageDealersIt.hasNext()) {
-			Entry<UUID, Double> damageDealersEn = damageDealersIt.next();
+		double damage = 0;
+		List<Entry<UUID, Double>> damageDealersList = new ArrayList<>(sortedDamageDealers);
+		for (Entry<UUID, Double> damageDealersEn : damageDealersList) {
 			UUID damageDealer = damageDealersEn.getKey();
 			Player damagePlayer = Bukkit.getPlayer(damageDealer);
 			if (damagePlayer == null || !damagePlayer.isOnline()) {
@@ -53,21 +61,38 @@ public class SpectatorPearlManager {
 			DuelTeam team = duel.getTeam(sDamagePlayer);
 			if (sDamagePlayer != null && team.isAlive(sDamagePlayer)) {
 				killer = sDamagePlayer;
+				damage = damageDealersEn.getValue();
 				break;
 			}
 		}
-		
-		
+
+		if (killer == null || damage <= 0) {
+			DuelTeam team =  duel.getTeam(player);
+			Location spawn = duel.getSpawnPoint(team.getTeamColor());
+			player.teleport(spawn);
+			return DeathCause.ENVIRONMENT;
+		}
+
+		pearled.put(player, pearlItem);
 		if (killer != null) {
 			HashMap<Integer, ItemStack> left = killer.getBukkitPlayer().getInventory().addItem(pearlStack);
 			for (ItemStack item : left.values()) {
 				killer.getLocation().getWorld().dropItemNaturally(killer.getLocation(), item);
 			}
-			return;
+			duel.broadcast(ChatColor.GOLD + player.getName() + ChatColor.YELLOW
+					+ " has been pearled by " + ChatColor.GOLD + killer.getName() + ChatColor.BLACK + "(" + ChatColor.YELLOW + df.format(damage) + ChatColor.BLACK + ")");
+			return DeathCause.PVP;
 		}
-		
-		player.getLocation().getWorld().dropItemNaturally(player.getLocation(), pearlStack);
+
+		Location pLoc = player.getLocation();
+		pLoc.getWorld().dropItemNaturally(pLoc, pearlStack);
+		duel.broadcast(ChatColor.GOLD + player.getName() + ChatColor.YELLOW
+				+ " has been pearled at "
+				+ ChatColor.BLACK + "[" + ChatColor.YELLOW + pLoc.getBlockX() + ChatColor.BLACK  + ", " + ChatColor.YELLOW + pLoc.getBlockY() + ChatColor.BLACK + ", " + ChatColor.YELLOW + pLoc.getBlockZ() + ChatColor.BLACK + "]");
+		return DeathCause.PVP;
 	}
+
+	DecimalFormat df = new DecimalFormat("######");
 	
 	public boolean isPearled(SerennoPlayer player) {
 		return pearled.containsKey(player);

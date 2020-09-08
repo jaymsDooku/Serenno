@@ -21,25 +21,72 @@ public class Reinforcement {
 	private ReinforcementBlueprint blueprint;
 	private double health;
 	private Location loc;
+	private int chunkX;
+	private int chunkZ;
 	
 	private Cooldown<Player> lastReinforcementDamage;
 	private long creationTime;
 	
-	private Group group;
+	private String group;
 	private boolean inMemory;
 	private boolean broken;
 	private boolean dirty;
-	
-	public Reinforcement(Builder builder) {
+
+	private ReinforcementWorld reinforcementWorld;
+
+	private Reinforcement() {
+	}
+
+	private Reinforcement(Builder builder) {
 		this.id = builder.getId();
 		this.placer = builder.getPlacer();
 		this.blueprint = builder.getBlueprint();
 		this.health = builder.getHealth();
 		this.loc = builder.getLoc();
+		this.chunkX = builder.getChunkX();
+		this.chunkZ = builder.getChunkZ();
 		this.creationTime = builder.getCreationTime();
 		this.group = builder.getGroup();
 		this.inMemory = builder.isInMemory();
 		this.dirty = inMemory;
+	}
+
+	public Reinforcement clone(ReinforcementWorld world) {
+		Reinforcement reinforcement = new Reinforcement();
+		reinforcement.id = this.id;
+		reinforcement.placer = this.placer;
+		reinforcement.health = this.health;
+		reinforcement.blueprint = this.blueprint;
+
+		reinforcement.loc = this.loc.clone();
+		reinforcement.loc.setWorld(world.getWorld());
+		reinforcement.chunkX = chunkX;
+		reinforcement.chunkZ = chunkZ;
+
+		reinforcement.inMemory = this.inMemory;
+		reinforcement.dirty = inMemory;
+		return reinforcement;
+	}
+
+	public void setReinforcementWorld(ReinforcementWorld reinforcementWorld) {
+		this.reinforcementWorld = reinforcementWorld;
+	}
+
+	public boolean repair() {
+		int cx = loc.getChunk().getX();
+		int cz = loc.getChunk().getZ();
+		boolean repaired = false;
+		if (cx != chunkX) {
+			chunkX = cx;
+			setDirty(true);
+			repaired = true;
+		}
+		if (cz != chunkZ) {
+			chunkZ = cz;
+			setDirty(true);
+			repaired = true;
+		}
+		return repaired;
 	}
 	
 	public UUID getID() {
@@ -53,9 +100,25 @@ public class Reinforcement {
 	public ReinforcementBlueprint getBlueprint() {
 		return blueprint;
 	}
-	
+
+	public void setHealth(double health) {
+		this.health = health;
+	}
+
 	public double getHealth() {
+		double health = this.health;
+		if (reinforcementWorld != null) {
+			health *= reinforcementWorld.getScaling();
+		}
 		return health;
+	}
+
+	public double getMaxHealth() {
+		double maxHealth = blueprint.getMaxHealth();
+		if (reinforcementWorld != null) {
+			maxHealth *= reinforcementWorld.getScaling();
+		}
+		return maxHealth;
 	}
 	
 	public double getHealthAsPercentage() {
@@ -109,9 +172,13 @@ public class Reinforcement {
 	public long getAcidTimeRemaining() {
 		return (getCreationTime() + blueprint.getAcidTime()) - System.currentTimeMillis(); 
 	}
+
+	public String getGroupName() {
+		return group;
+	}
 	
 	public Group getGroup() {
-		return group;
+		return reinforcementWorld.getGroupMap().get(group.toLowerCase());
 	}
 	
 	public void setInMemory(boolean inMemory) {
@@ -135,7 +202,7 @@ public class Reinforcement {
 	}
 	
 	public boolean hasPermission(Player player, String permission) {
-		return group.isAuthorized(player, permission);
+		return getGroup().isAuthorized(player, permission);
 	}
 	
 	public boolean damage() {
@@ -160,6 +227,7 @@ public class Reinforcement {
 		}
 		
 		dmg = event.getDamage();
+		dmg /= reinforcementWorld.getScaling();
 		
 		if (lastReinforcementDamage == null) {
 			lastReinforcementDamage = new Cooldown<>();
@@ -195,12 +263,16 @@ public class Reinforcement {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Reinforcement)) {
+		UUID id;
+		if (obj instanceof Reinforcement) {
+			Reinforcement rein = (Reinforcement) obj;
+			id = rein.getID();
+		} else if (obj instanceof UUID) {
+			id = (UUID) obj;
+		} else {
 			return false;
 		}
-		
-		Reinforcement rein = (Reinforcement) obj;
-		return rein.id.equals(id);
+		return this.id.equals(id);
 	}
 	
 	@Override
@@ -218,7 +290,15 @@ public class Reinforcement {
 	public static Builder builder() {
 		return new Builder();
 	}
-	
+
+	public int getChunkX() {
+		return chunkX;
+	}
+
+	public int getChunkZ() {
+		return chunkZ;
+	}
+
 	public static class Builder {
 		
 		private UUID id;
@@ -226,8 +306,10 @@ public class Reinforcement {
 		private ReinforcementBlueprint blueprint;
 		private double health;
 		private Location loc;
+		private int chunkX;
+		private int chunkZ;
 		private long creationTime = -1;
-		private Group group;
+		private String group;
 		private boolean inMemory = true;
 		
 		public Builder id(UUID id) {
@@ -254,13 +336,23 @@ public class Reinforcement {
 			this.loc = loc;
 			return this;
 		}
+
+		public Builder chunkX(int chunkX) {
+			this.chunkX = chunkX;
+			return this;
+		}
+
+		public Builder chunkZ(int chunkZ) {
+			this.chunkZ = chunkZ;
+			return this;
+		}
 		
 		public Builder creationTime(long creationTime) {
 			this.creationTime = creationTime;
 			return this;
 		}
 		
-		public Builder group(Group group) {
+		public Builder group(String group) {
 			this.group = group;
 			return this;
 		}
@@ -289,12 +381,20 @@ public class Reinforcement {
 		public Location getLoc() {
 			return loc;
 		}
-		
+
+		public int getChunkX() {
+			return chunkX;
+		}
+
+		public int getChunkZ() {
+			return chunkZ;
+		}
+
 		public long getCreationTime() {
 			return creationTime;
 		}
 		
-		public Group getGroup() {
+		public String getGroup() {
 			return group;
 		}
 		

@@ -7,11 +7,13 @@ import java.util.Set;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
 
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.region.Region;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.util.Vector;
 import vg.civcraft.mc.civmodcore.itemHandling.ISUtils;
 
 public class SimpleArena implements Arena {
@@ -91,7 +93,8 @@ public class SimpleArena implements Arena {
 	public Region getRegion() {
 		return region;
 	}
-	
+
+
 	@Override
 	public void addSpawnPoint(ChatColor teamColor, Location spawn) {
 		spawnPoints.put(teamColor, spawn);

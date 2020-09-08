@@ -3,6 +3,7 @@ package io.jayms.serenno.game;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -52,35 +53,35 @@ public abstract class AbstractGame implements Game {
 		return map;
 	}
 	
-	protected abstract void initGame();
+	protected abstract void initGame(Consumer<Void> callback);
 	
 	@Override
 	public void start() {
-		initGame();
-		
-		broadcast(ChatColor.GOLD + "You are now playing on " + map.getRegion().getDisplayName() + ChatColor.GOLD + " by " + ChatColor.BLACK + "[" + ChatColor.RESET + map.getCreators() + ChatColor.BLACK + "]");
-		
-		counterTask = new BukkitRunnable() {
-			
-			int c = getCountdown();
-			
-			@Override
-			public void run() {
-				if (!running) {
-					if (c <= 0) {
-						running = true;
-						broadcast(ChatColor.YELLOW + "Match started.");
-						this.cancel();
+		initGame((v) -> {
+			broadcast(ChatColor.GOLD + "You are now playing on " + map.getRegion().getDisplayName() + ChatColor.GOLD + " by " + ChatColor.BLACK + "[" + ChatColor.RESET + map.getCreators() + ChatColor.BLACK + "]");
+
+			counterTask = new BukkitRunnable() {
+
+				int c = getCountdown();
+
+				@Override
+				public void run() {
+					if (!running) {
+						if (c <= 0) {
+							running = true;
+							broadcast(ChatColor.YELLOW + "Match started.");
+							this.cancel();
+						} else {
+							broadcast(ChatColor.YELLOW + Integer.toString(c));
+							c--;
+						}
 					} else {
-						broadcast(ChatColor.YELLOW + Integer.toString(c));
-						c--;
+						duration++;
 					}
-				} else {
-					duration++;
 				}
-			}
-			
-		}.runTaskTimer(SerennoCrimson.get(), 0L, 20L);
+
+			}.runTaskTimer(SerennoCrimson.get(), 0L, 20L);
+		});
 	}
 
 	@Override
@@ -188,6 +189,9 @@ public abstract class AbstractGame implements Game {
 		new BukkitRunnable() {
 			
 			public void run() {
+				if (SerennoCrimson.get().getLobby().inLobby(spectator)) {
+					SerennoCrimson.get().getLobby().depart(spectator);
+				}
 				spectator.teleport(loc);
 				spectatorKit.load(spectator.getBukkitPlayer());
 			};

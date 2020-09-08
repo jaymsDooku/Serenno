@@ -1,12 +1,10 @@
 package io.jayms.serenno.command;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.vault.data.mongodb.MongoVaultMapBastionBlueprintDataSource;
 import io.jayms.serenno.vault.data.mongodb.MongoVaultMapReinforcementBlueprintDataSource;
 import org.bukkit.Bukkit;
@@ -58,6 +56,7 @@ import io.jayms.serenno.vault.VaultMapDatabase;
 import io.jayms.serenno.vault.VaultMapManager;
 import io.jayms.serenno.vault.VaultMapPlayerListType;
 import net.md_5.bungee.api.ChatColor;
+import sun.jvm.hotspot.code.LocationValue;
 
 @CommandAlias("vault")
 public class VaultCommand extends BaseCommand {
@@ -121,7 +120,9 @@ public class VaultCommand extends BaseCommand {
 				.damageCooldown(0)
 				.maturationTime(1000 * 60 * 1)
 				.maturationScale(2)
-				.itemStack(new ItemStack(Material.STONE, 1))
+				.itemStack(new ItemStackBuilder(Material.STONE, 1)
+						.meta(new ItemMetaBuilder()
+								.name("Stone")).build())
 				.regenRate(new RegenRate(1, 60000))
 				.maxHealth(50)
 				.unreinforceableMaterials(Arrays.asList(Material.WEB))
@@ -132,11 +133,13 @@ public class VaultCommand extends BaseCommand {
 				.defaultDamage(1)
 				.acidTime(1000 * 60 * 9)
 				.damageCooldown(0)
-				.itemStack(new ItemStack(Material.IRON_INGOT, 1))
+				.itemStack(new ItemStackBuilder(Material.IRON_INGOT, 1)
+						.meta(new ItemMetaBuilder()
+								.name("Iron Ingot")).build())
 				.maturationTime(1000 * 60 * 3)
 				.maturationScale(2)
 				.regenRate(new RegenRate(1, 60000))
-				.maxHealth(200)
+				.maxHealth(300)
 				.unreinforceableMaterials(Arrays.asList(Material.WEB))
 				.build();
 		ReinforcementBlueprint diamondBlueprint = ReinforcementBlueprint.builder()
@@ -145,11 +148,13 @@ public class VaultCommand extends BaseCommand {
 				.defaultDamage(1)
 				.acidTime(1000 * 60 * 27)
 				.damageCooldown(0)
-				.itemStack(new ItemStack(Material.DIAMOND, 1))
+				.itemStack(new ItemStackBuilder(Material.DIAMOND, 1)
+						.meta(new ItemMetaBuilder()
+								.name("Diamond")).build())
 				.maturationTime(1000 * 60 * 9)
 				.maturationScale(2)
 				.regenRate(new RegenRate(1, 60000))
-				.maxHealth(400)
+				.maxHealth(2000)
 				.unreinforceableMaterials(Arrays.asList(Material.WEB))
 				.build();
 		ReinforcementBlueprint diamondBastionBlueprint = ReinforcementBlueprint.builder()
@@ -164,7 +169,7 @@ public class VaultCommand extends BaseCommand {
 						.meta(new ItemMetaBuilder()
 								.name(ChatColor.AQUA + "Diamond Bastion")).build())
 				.regenRate(new RegenRate(1, 60000))
-				.maxHealth(400)
+				.maxHealth(2000)
 				.reinforceableMaterials(Arrays.asList(Material.SPONGE))
 				.build();
 		
@@ -203,6 +208,11 @@ public class VaultCommand extends BaseCommand {
 		}
 		
 		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		if (!vaultMap.isReady()) {
+			player.sendMessage(ChatColor.RED + "That vault map is not ready yet.");
+			return;
+		}
+
 		vaultMap.gotoVaultMap(player);
 	}
 	
@@ -518,6 +528,42 @@ public class VaultCommand extends BaseCommand {
 		
 		editSession.replaceBlocks(region, replaceFilter, replacement);
 		player.sendMessage(ChatColor.YELLOW + "You have replaced: [" + (replaceFilter.stream().map(b -> b.toString()).collect(Collectors.joining(", "))) + "] -> " + replacement.toString());
+	}
+
+	@Subcommand("update")
+	public void update(Player player, String vaultName) {
+		VaultMap vaultMap = vm.getVaultMap(vaultName);
+		if (vaultMap == null) {
+			player.sendMessage(ChatColor.RED + "That vault map doesn't exist.");
+			return;
+		}
+
+		Set<Reinforcement> allReinforcements = vaultMap.getReinforcementWorld().getAllReinforcements();
+		new BukkitRunnable() {
+
+			int total = allReinforcements.size();
+			Queue<Reinforcement> reinforcements = new ConcurrentLinkedQueue<>(allReinforcements);
+			int batchSize = 30000;
+			int repaired = 0;
+
+			@Override
+			public void run() {
+				if (reinforcements.isEmpty()) {
+					player.sendMessage(ChatColor.YELLOW + "Repaired " + repaired + "/" + total + " reinforcements");
+					cancel();
+					return;
+				}
+
+				for (int i = 0; i < batchSize; i++) {
+					Reinforcement reinforcement = reinforcements.poll();
+					if (reinforcement == null) continue;
+					if (reinforcement.repair()) {
+						repaired++;
+					}
+				}
+			}
+
+		}.runTaskTimer(SerennoCrimson.get(), 0L, 1L);
 	}
 	
 }

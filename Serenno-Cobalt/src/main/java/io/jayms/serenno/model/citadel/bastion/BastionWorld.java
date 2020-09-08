@@ -3,6 +3,7 @@ package io.jayms.serenno.model.citadel.bastion;
 import java.util.Collection;
 import java.util.Set;
 
+import io.jayms.serenno.SerennoCobalt;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -20,7 +21,7 @@ public class BastionWorld {
 		this.dataSource = dataSource;
 		this.bastions = new SparseQuadTree(900);
 		if (dataSource != null) {
-			Collection<Bastion> loadedBastions = dataSource.getAll();
+			Collection<Bastion> loadedBastions = dataSource.getAll(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(world));
 			for (Bastion b : loadedBastions) {
 				bastions.add(b);
 			}
@@ -29,8 +30,6 @@ public class BastionWorld {
 	
 	public void addBastion(Bastion b) {
 		bastions.add(b);
-		if (dataSource != null)
-			dataSource.create(b);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -47,8 +46,6 @@ public class BastionWorld {
 	
 	public void deleteBastion(Bastion bastion) {
 		bastions.remove(bastion);
-		if (dataSource != null) 
-			dataSource.delete(bastion);
 	}
 	
 	public World getWorld() {

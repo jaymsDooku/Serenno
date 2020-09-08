@@ -101,7 +101,7 @@ public class PrebuiltManager {
 				.map(r -> new PrebuiltBlock(r.getBlueprint().getName(), Coords.fromLocation(r.getLocation()), PrebuiltBlockType.REINFORCEMENT))
 				.collect(Collectors.toSet());
 		Set<PrebuiltBlock> pbBastions = bastions.stream()
-				.map(b -> new PrebuiltBlock(b.getBlueprint().getName(), Coords.fromLocation(b.getLocation()), PrebuiltBlockType.BASTION))
+				.map(b -> new PrebuiltBlock(b.getBlueprint().getName(), Coords.fromLocation(b.getReinforcement(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(w)).getLocation()), PrebuiltBlockType.BASTION))
 				.collect(Collectors.toSet());
 		
 		psBuilder.prebuiltBlocks(PrebuiltBlockType.REINFORCEMENT, pbReins);

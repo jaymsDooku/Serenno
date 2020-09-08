@@ -1,5 +1,6 @@
 package io.jayms.serenno.game.event;
 
+import io.jayms.serenno.game.DeathCause;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityDamageEvent;
 
@@ -12,11 +13,13 @@ public class DuelPlayerDeathEvent extends DuelEvent {
 	
 	private SerennoPlayer dead;
 	private EntityDamageEvent event;
+	private DeathCause cause;
 	
-	public DuelPlayerDeathEvent(Duel duel, SerennoPlayer dead, EntityDamageEvent event) {
+	public DuelPlayerDeathEvent(Duel duel, SerennoPlayer dead, EntityDamageEvent event, DeathCause cause) {
 		super(duel);
 		this.dead = dead;
 		this.event = event;
+		this.cause = cause;
 	}
 	
 	public SerennoPlayer getDead() {
@@ -25,6 +28,10 @@ public class DuelPlayerDeathEvent extends DuelEvent {
 
 	public EntityDamageEvent getEvent() {
 		return event;
+	}
+
+	public DeathCause getCause() {
+		return cause;
 	}
 
 	@Override

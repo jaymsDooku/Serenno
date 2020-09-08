@@ -2,6 +2,7 @@ package io.jayms.serenno.listener;
 
 import java.util.LinkedList;
 
+import io.jayms.serenno.event.TeleporterKillEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -39,7 +40,8 @@ public class MechanicsListener implements Listener {
 	      @Override
 	      public void run() {
 	        if (!tryToTeleport(player, vehicleLoc)) {
-	          player.setHealth(0.000000D);
+				TeleporterKillEvent teleporterKillEvent = new TeleporterKillEvent(vehicle, player);
+				Bukkit.getPluginManager().callEvent(teleporterKillEvent);
 	        }
 	      }
 	    }, 2L);

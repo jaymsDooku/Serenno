@@ -6,6 +6,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
+import io.jayms.serenno.util.ParticleEffect;
+import io.jayms.serenno.util.ParticleTools;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -86,7 +89,6 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 	public Location getLocation() {
 		Location crateLoc = crate.getLocation(); 
 		Location loc = new Location(crateLoc.getWorld(), this.qtXMid(), crateLoc.getBlockY(), this.qtZMid());
-		loc = loc.add(0, 1, 0);
 		return loc;
 	}
 	
@@ -112,7 +114,53 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		}
 		return true;
 	}
-	
+
+	private static final ParticleTools.ParticlePlay play = new ParticleTools.ParticlePlay() {
+		@Override
+		public void play(Location loc) {
+			ParticleEffect.FLAME.display(loc, 0, 0, 0, 0, 1);
+		}
+	};
+
+	@Override
+	public void projectHitBox() {
+		Location loc = getLocation();
+
+		int minX = qtXMin();
+		int minZ = qtZMin();
+		int maxX = qtXMax();
+		int maxZ = qtZMax();
+		int minY = getLowerY();
+		int maxY = getUpperY();
+
+		Location corner1 = new Location(loc.getWorld(), minX, minY, minZ);
+		Location corner2 = new Location(loc.getWorld(), minX, minY, maxZ);
+		Location corner3 = new Location(loc.getWorld(), maxX, minY, minZ);
+		Location corner4 = new Location(loc.getWorld(), maxX, minY, maxZ);
+
+		Location corner5 = new Location(loc.getWorld(), minX, maxY, minZ);
+		Location corner6 = new Location(loc.getWorld(), minX, maxY, maxZ);
+		Location corner7 = new Location(loc.getWorld(), maxX, maxY, minZ);
+		Location corner8 = new Location(loc.getWorld(), maxX, maxY, maxZ);
+
+		ParticleTools.drawLine(corner1, corner2, 20, play);
+		ParticleTools.drawLine(corner1, corner3, 20, play);
+		ParticleTools.drawLine(corner1, corner5, 20, play);
+
+		ParticleTools.drawLine(corner2, corner4, 20, play);
+		ParticleTools.drawLine(corner2, corner6, 20, play);
+
+		ParticleTools.drawLine(corner3, corner4, 20, play);
+		ParticleTools.drawLine(corner3, corner7, 20, play);
+
+		ParticleTools.drawLine(corner5, corner6, 20, play);
+		ParticleTools.drawLine(corner5, corner7, 20, play);
+
+		ParticleTools.drawLine(corner8, corner4, 20, play);
+		ParticleTools.drawLine(corner8, corner6, 20, play);
+		ParticleTools.drawLine(corner8, corner7, 20, play);
+	}
+
 	@Override
 	public void assemble(EngineerPlayer player) {
 		Location loc = getLocation();
@@ -121,8 +169,8 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		int minZ = qtZMin();
 		int maxX = qtXMax();
 		int maxZ = qtZMax();
-		int minY = crate.getLocation().getBlockY();
-		int maxY = minY + config.getTrebuchetHeight();
+		int minY = getLowerY();
+		int maxY = getUpperY();
 		
 		for (int x = minX; x <= maxX; x++) {
 			for (int y = minY; y <= maxY; y++) {
@@ -145,8 +193,9 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(minusMinus));
 		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(plusMinus));
 		bastions.addAll(SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(minusPlus));
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(loc.getWorld());
 		for (Bastion bastion : bastions) {
-			if (!bastion.getReinforcement().getGroup().isAuthorized(player.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_FORTIFICATION)) {
+			if (!bastion.getReinforcement(reinforcementWorld).getGroup().isAuthorized(player.getBukkitPlayer(), GroupPermissions.REINFORCEMENT_FORTIFICATION)) {
 				player.sendMessage(ChatColor.RED + "You aren't allowed to assemble artillery in foreign bastions.");
 				return;
 			}
@@ -180,6 +229,8 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 		assembled = true;
 		SerennoCobalt.get().getCitadelManager().getArtilleryManager().assemble(this);
 		player.sendMessage(ChatColor.YELLOW + "You have assembled a " + getDisplayName());
+		player.sendMessage(ChatColor.YELLOW + "Left click with your wrench to open the operator menu.");
+		player.sendMessage(ChatColor.YELLOW + "Right click with your wrench to fire!");
 	}
 	
 	@Override
@@ -222,11 +273,11 @@ public abstract class AbstractArtillery implements Artillery, Comparable<Artille
 	private Reinforcement reinforcement;
 	
 	@Override
-	public void dealBlockDamage(Player player) {
+	public boolean dealBlockDamage(Player player) {
 		if (reinforcement == null) {
 			this.reinforcement = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getDirectReinforcement(crate.getLocation().getBlock());
 		}
-		reinforcement.damage(getBlockDamageCooldown());
+		return reinforcement.damage(getBastionDamage());
 	}
 	
 	@Override

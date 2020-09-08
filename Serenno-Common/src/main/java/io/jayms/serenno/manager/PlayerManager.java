@@ -42,8 +42,12 @@ public abstract class PlayerManager<T> implements Listener {
 			result = getPlayerInstantiator().apply(player);
 			players.put(player.getUniqueId(), result);
 		}
-		
+
 		return result;
+	}
+
+	public T remove(Player player) {
+		return players.remove(player.getUniqueId());
 	}
 	
 }

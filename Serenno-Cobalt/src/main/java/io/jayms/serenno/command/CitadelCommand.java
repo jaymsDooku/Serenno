@@ -3,8 +3,14 @@ package io.jayms.serenno.command;
 import java.util.Arrays;
 import java.util.Collection;
 
+import io.jayms.serenno.manager.*;
+import io.jayms.serenno.model.citadel.artillery.ArtilleryWorld;
+import io.jayms.serenno.model.citadel.bastion.BastionWorld;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
+import io.jayms.serenno.model.citadel.snitch.SnitchWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -25,9 +31,6 @@ import io.jayms.serenno.event.ViewBastionBlueprintEvent;
 import io.jayms.serenno.event.ViewReinforcementBlueprintEvent;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
-import io.jayms.serenno.manager.BastionManager;
-import io.jayms.serenno.manager.CitadelManager;
-import io.jayms.serenno.manager.ReinforcementManager;
 import io.jayms.serenno.model.citadel.RegenRate;
 import io.jayms.serenno.model.citadel.artillery.ArtilleryType;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
@@ -42,6 +45,8 @@ public class CitadelCommand extends BaseCommand {
 	private CitadelManager cm = SerennoCobalt.get().getCitadelManager();
 	private ReinforcementManager rm = SerennoCobalt.get().getCitadelManager().getReinforcementManager();
 	private BastionManager bm = SerennoCobalt.get().getCitadelManager().getBastionManager();
+	private SnitchManager sm = SerennoCobalt.get().getCitadelManager().getSnitchManager();
+	private ArtilleryManager am = SerennoCobalt.get().getCitadelManager().getArtilleryManager();
 	
 	@Subcommand("give")
 	public void give(Player player, String thingType, String thingName, int amount) {
@@ -53,8 +58,13 @@ public class CitadelCommand extends BaseCommand {
 			Bukkit.getPluginManager().callEvent(event);
 			
 			rb = event.getReinforcementBlueprint();
-			
-			giveIt = rb.getItemStack();
+
+			if (rb == null) {
+				player.sendMessage(ChatColor.RED + "Blueprint doesn't exist.");
+				return;
+			}
+
+			giveIt = new ItemStack(rb.getItemStack());
 			giveIt.setAmount(amount);
 		} else if (thingType.equalsIgnoreCase("bastion")) {
 			BastionBlueprint bb = bm.getBastionBlueprint(thingName);
@@ -63,8 +73,13 @@ public class CitadelCommand extends BaseCommand {
 			Bukkit.getPluginManager().callEvent(event);
 			
 			bb = event.getBastionBlueprint();
-			
-			giveIt = bb.getItemStack();
+
+			if (bb == null) {
+				player.sendMessage(ChatColor.RED + "Blueprint doesn't exist.");
+				return;
+			}
+
+			giveIt = new ItemStack(bb.getItemStack());
 			giveIt.setAmount(amount);
 		} else if (thingType.equalsIgnoreCase("artillery")) {
 			thingName = thingName.toUpperCase();
@@ -622,6 +637,22 @@ public class CitadelCommand extends BaseCommand {
 		Bukkit.getPluginManager().callEvent(updateEvent);
 		
 		player.sendMessage(ChatColor.YELLOW + "You have set bastion blueprint " + ChatColor.GOLD + name + ChatColor.YELLOW + " pearl damage to " + ChatColor.GOLD + blueprint.getPearlConfig().getDamage());
+	}
+
+	@Subcommand("stats")
+	public void stats(Player player) {
+		World world = player.getWorld();
+		ReinforcementWorld reinforcementWorld = rm.getReinforcementWorld(world);
+		BastionWorld bastionWorld = bm.getBastionWorld(world);
+		SnitchWorld snitchWorld = sm.getSnitchWorld(world);
+		ArtilleryWorld artilleryWorld = am.getArtilleryWorld(world);
+
+		player.sendMessage(ChatColor.YELLOW + "Statistics");
+		player.sendMessage(ChatColor.GOLD + "=======================");
+		player.sendMessage(ChatColor.GOLD + "Loaded reinforcements in world: " + ChatColor.YELLOW + reinforcementWorld.getAllReinforcements().size());
+		player.sendMessage(ChatColor.GOLD + "Loaded bastions in world: " + ChatColor.YELLOW + bastionWorld.getAllBastions().size());
+		player.sendMessage(ChatColor.GOLD + "Loaded snitches in world: " + ChatColor.YELLOW + snitchWorld.getAllSnitches().size());
+		player.sendMessage(ChatColor.GOLD + "Loaded artilleries in world: " + ChatColor.YELLOW + artilleryWorld.getAllArtilleries().size());
 	}
 	
 }

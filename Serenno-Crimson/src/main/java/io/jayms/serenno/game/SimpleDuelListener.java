@@ -3,6 +3,8 @@ package io.jayms.serenno.game;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.jayms.serenno.game.statistics.Death;
+import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -14,11 +16,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -41,8 +47,61 @@ import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.player.SerennoBot;
 import io.jayms.serenno.player.SerennoPlayer;
 
+import static io.jayms.serenno.game.DeathCause.PVP;
+
 public class SimpleDuelListener implements Listener {
-	
+
+	@EventHandler
+	public void onBreak(BlockBreakEvent e) {
+		Player player = e.getPlayer();
+		SerennoPlayer serennoPlayer = SerennoCrimson.get().getPlayerManager().get(player);
+		Duel duel = serennoPlayer.getDuel();
+
+		if (duel == null) {
+			return;
+		}
+
+		if (!duel.isSpectating(serennoPlayer)) {
+			return;
+		}
+
+		e.setCancelled(true);
+	}
+
+	@EventHandler
+	public void onPlace(BlockPlaceEvent e) {
+		Player player = e.getPlayer();
+		SerennoPlayer serennoPlayer = SerennoCrimson.get().getPlayerManager().get(player);
+		Duel duel = serennoPlayer.getDuel();
+
+		if (duel == null) {
+			return;
+		}
+
+		if (!duel.isSpectating(serennoPlayer)) {
+			return;
+		}
+
+		e.setCancelled(true);
+	}
+
+	@EventHandler
+	public void onInventoryClick(InventoryClickEvent e) {
+		Player player = (Player) e.getWhoClicked();
+		SerennoPlayer serennoPlayer = SerennoCrimson.get().getPlayerManager().get(player);
+		Duel duel = serennoPlayer.getDuel();
+
+		if (duel == null) {
+			return;
+		}
+
+		if (!duel.isSpectating(serennoPlayer)) {
+			return;
+		}
+
+		e.setCancelled(true);
+	}
+
 	@EventHandler
 	public void onInteract(PlayerInteractEvent e) {
 		if (e.getHand() != EquipmentSlot.HAND) {
@@ -53,6 +112,11 @@ public class SimpleDuelListener implements Listener {
 		Duel duel = serennoPlayer.getDuel();
 		
 		if (duel == null) {
+			return;
+		}
+
+		if (duel.isSpectating(serennoPlayer)) {
+			e.setCancelled(true);
 			return;
 		}
 		
@@ -99,7 +163,7 @@ public class SimpleDuelListener implements Listener {
 		
 		if (newHealth <= 0) { // Dead
 			e.setCancelled(true);
-			DuelPlayerDeathEvent deathEvent = new DuelPlayerDeathEvent(victimDuel, serennoVictim, e);
+			DuelPlayerDeathEvent deathEvent = new DuelPlayerDeathEvent(victimDuel, serennoVictim, e, DeathCause.ENVIRONMENT);
 			Bukkit.getPluginManager().callEvent(deathEvent);
 		}
 	}
@@ -146,7 +210,7 @@ public class SimpleDuelListener implements Listener {
 		
 		if (newHealth <= 0) { // Dead
 			e.setCancelled(true);
-			DuelPlayerDeathEvent deathEvent = new DuelPlayerDeathEvent(victimDuel, victimSP, e);
+			DuelPlayerDeathEvent deathEvent = new DuelPlayerDeathEvent(victimDuel, victimSP, e, DeathCause.PVP);
 			Bukkit.getPluginManager().callEvent(deathEvent);
 		}
 	}
@@ -203,7 +267,21 @@ public class SimpleDuelListener implements Listener {
 	public void onDeath(DuelPlayerDeathEvent e) {
 		Duel duel = e.getDuel();
 		SerennoPlayer deadPlayer = e.getDead();
-		duel.die(deadPlayer);
+		duel.die(deadPlayer, e.getCause());
+	}
+
+	@EventHandler
+	public void onJoin(PlayerJoinEvent e) {
+		Player player = e.getPlayer();
+		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(player);
+		Duel duel = sp.getDuel();
+
+		if (duel == null) {
+			return;
+		}
+
+		duel.spawn(sp);
+		duel.broadcast("%p% " + ChatColor.YELLOW + "connected.", sp);
 	}
 	
 	@EventHandler
@@ -216,7 +294,7 @@ public class SimpleDuelListener implements Listener {
 			return;
 		}
 		
-		duel.die(sp);
+		duel.die(sp, DeathCause.LOGOUT);
 		duel.broadcast("%p% " + ChatColor.YELLOW + "disconnected.", sp);
 	}
 	

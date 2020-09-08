@@ -1,17 +1,22 @@
 package io.jayms.serenno.model.citadel.reinforcement;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import com.google.common.cache.*;
+import io.jayms.serenno.event.reinforcement.PlayerReinforcementDestroyEvent;
+import io.jayms.serenno.event.reinforcement.ReinforcementDestroyEvent;
+import io.jayms.serenno.model.group.Group;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -29,48 +34,89 @@ public class ReinforcementWorld {
 		
 	}
 
-	private World world;
+	private String world;
 	private ReinforcementDataSource dataSource;
-	private LoadingCache<ChunkCoord, ChunkCache<Reinforcement>> reinCache;
+	private Map<String, Group> groupMap;
+	private Map<ChunkCoord, ChunkCache<Reinforcement>> reinCache;
+	private Map<UUID, Reinforcement> uuidReinforcementMap;
+	private double scaling;
 	
-	public ReinforcementWorld(World world, ReinforcementDataSource source) {
+	public ReinforcementWorld(String world, Map<String, Group> groupMap, ReinforcementDataSource dataSource, double scaling) {
 		this.world = world;
-		this.dataSource = source;
-		reinCache = CacheBuilder.newBuilder()
-				.removalListener(new RemovalListener<ChunkCoord, ChunkCache<Reinforcement>>() {
-					
-					@Override
-					public void onRemoval(RemovalNotification<ChunkCoord, ChunkCache<Reinforcement>> notification) {
-						if (dataSource != null) {
-							notification.getValue().unload();
-							dataSource.persistAll(notification.getValue().getAll(), new UnloadCallback() {
-								@Override
-								public void unload() {
-									SerennoCobalt.get().getLogger().info("Saved all reinforcements for " + notification.getKey());
-								}
-							});
-						}
-					}
-				
-				})
-				.build(new CacheLoader<ChunkCoord, ChunkCache<Reinforcement>>() {
-
-					@Override
-					public ChunkCache<Reinforcement> load(ChunkCoord key) throws Exception {
-						Map<Coords, Reinforcement> init = dataSource != null ? dataSource.getAll(key) : null;
-						return new ChunkCache<Reinforcement>(key,
-								init,
-								new RemovalListener<Coords, Reinforcement>() {
-
-									@Override
-									public void onRemoval(RemovalNotification<Coords, Reinforcement> notification) {
-									}
-								});
-					}
-
-				});
+		this.dataSource = dataSource;
+		this.groupMap = groupMap;
+		this.reinCache = new ConcurrentHashMap<>();
+		this.uuidReinforcementMap = new ConcurrentHashMap<>();
+		this.scaling = scaling;
 	}
-	
+
+	private ReinforcementWorld parent;
+
+	public static ReinforcementWorld clone(World world, ReinforcementWorld parent, Map<String, Group> groupMap, double scaling) {
+		ReinforcementWorld result = new ReinforcementWorld(world.getName(), parent, groupMap, scaling);
+		Collection<Reinforcement> all = parent.getAllReinforcements();
+		for (Reinforcement rein : all) {
+			Reinforcement reinforcement = rein.clone(result);
+			reinforcement.setHealth(reinforcement.getBlueprint().getMaxHealth());
+
+			Location loc = rein.getLocation();
+			loc.setWorld(world);
+
+			ChunkCoord chunkCoord = new ChunkCoord(rein.getChunkX(), rein.getChunkZ());
+			ChunkCache<Reinforcement> cache = result.reinCache.get(chunkCoord);
+			if (cache == null) {
+				cache = new ChunkCache<>(chunkCoord);
+				result.reinCache.put(chunkCoord, cache);
+			}
+			cache.put(Coords.fromLocation(loc), rein);
+			result.uuidReinforcementMap.put(rein.getID(), rein);
+			rein.setReinforcementWorld(result);
+		}
+		SerennoCobalt.get().getLogger().info("Loaded reinforcements for world: " + world.getName());
+		return result;
+	}
+
+	private ReinforcementWorld(String world, ReinforcementWorld parent, Map<String, Group> groupMap, double scaling) {
+		this.world = world;
+		this.parent = parent;
+		this.groupMap = groupMap;
+		this.reinCache = new ConcurrentHashMap<>();
+		this.uuidReinforcementMap = new ConcurrentHashMap<>();
+		this.scaling = scaling;
+	}
+
+	public Map<String, Group> getGroupMap() {
+		return groupMap;
+	}
+
+	public double getScaling() {
+		return scaling;
+	}
+
+	public void putReinforcement(Reinforcement reinforcement) {
+		Location location = reinforcement.getLocation();
+		ChunkCache<Reinforcement> chunkCache = getChunkCache(location);
+		Coords coords = Coords.fromLocation(location);
+		/*Reinforcement current = chunkCache.get(coords);
+		if (current != null)  {
+			current.destroy();
+		}*/
+		chunkCache.put(coords, reinforcement);
+		uuidReinforcementMap.put(reinforcement.getID(), reinforcement);
+		reinforcement.setReinforcementWorld(this);
+	}
+
+	public void destroyReinforcement(Player player, Reinforcement reinforcement) {
+		ReinforcementDestroyEvent reinDestroyEvent = player != null ? new PlayerReinforcementDestroyEvent(player, reinforcement, dataSource)
+				: new ReinforcementDestroyEvent(reinforcement, dataSource);
+		Bukkit.getPluginManager().callEvent(reinDestroyEvent);
+
+		Location loc = reinforcement.getLocation();
+		ChunkCache<Reinforcement> reinChunkCache = getChunkCache(loc);
+		reinChunkCache.delete(Coords.fromLocation(loc));
+		uuidReinforcementMap.remove(reinforcement.getID());
+	}
+
 	public ChunkCache<Reinforcement> getChunkCache(Block b) {
 		return getChunkCache(ChunkCoord.fromBlock(b));
 	}
@@ -80,42 +126,89 @@ public class ReinforcementWorld {
 	}
 	
 	public ChunkCache<Reinforcement> getChunkCache(ChunkCoord cc) {
-		try {
-			return reinCache.get(cc);
-		} catch (ExecutionException e) {
-			SerennoCobalt.get().getLogger().warning("Failed to load from cache: " + e.getMessage());
-			return null;
+		ChunkCache<Reinforcement> chunkCache = reinCache.get(cc);
+		if (chunkCache == null) {
+			chunkCache = new ChunkCache<>(cc);
+			reinCache.put(cc, chunkCache);
 		}
+		return chunkCache;
 	}
-	
-	public void loadChunkData(Chunk chunk) {
-		reinCache.refresh(ChunkCoord.fromChunk(chunk));
+
+	public Reinforcement getReinforcement(Block b) {
+		return getReinforcement(b.getLocation());
 	}
-	
-	public void unloadChunkData(Chunk chunk) {
-		reinCache.invalidate(ChunkCoord.fromChunk(chunk));
+
+	public Reinforcement getReinforcement(Location l) {
+		ChunkCache<Reinforcement> chunkCache = getChunkCache(l);
+		return chunkCache.get(Coords.fromLocation(l));
 	}
-	
-	public void unloadAll(boolean save) {
-		reinCache.invalidateAll();
+
+	public Reinforcement getReinforcement(UUID id) {
+		//Reinforcement reinforcement = uuidReinforcementMap.get(id);
+		/*if (reinforcement == null) {
+			Set<Reinforcement> all = getAllReinforcements();
+			List<Reinforcement> list = new ArrayList<>(all);
+			Comparator<Reinforcement> comparator = new Comparator<Reinforcement>() {
+				@Override
+				public int compare(Reinforcement o1, Reinforcement o2) {
+					return o1.getID().compareTo(o2.getID());
+				}
+			};
+			Collections.sort(list, comparator);
+			int index = Collections.binarySearch(list, Reinforcement.builder().id(id).build(), comparator);
+			System.out.println("binary search index: " + index);
+			reinforcement = list.get(index);
+		}*/
+		return uuidReinforcementMap.get(id);
+	}
+
+	public void unloadAll() {
+		reinCache.clear();
+		uuidReinforcementMap.clear();
+	}
+
+	public void load() {
+		load(dataSource);
+	}
+
+	public void load(ReinforcementDataSource dataSource) {
+		if (dataSource == null) {
+			return;
+		}
+		Collection<Reinforcement> all = dataSource.getAll();
+		for (Reinforcement rein : all) {
+			Location loc = rein.getLocation();
+			ChunkCoord chunkCoord = new ChunkCoord(rein.getChunkX(), rein.getChunkZ());
+			ChunkCache<Reinforcement> cache = reinCache.get(chunkCoord);
+			if (cache == null) {
+				cache = new ChunkCache<>(chunkCoord);
+				reinCache.put(chunkCoord, cache);
+			}
+			cache.put(Coords.fromLocation(loc), rein);
+			uuidReinforcementMap.put(rein.getID(), rein);
+			rein.setReinforcementWorld(this);
+		}
+		SerennoCobalt.get().getLogger().info("Loaded reinforcements for world: " + world);
+	}
+
+	public void save(UnloadCallback callback) {
+		save(dataSource, callback);
+	}
+
+	public void save(ReinforcementDataSource dataSource, UnloadCallback callback) {
+		dataSource.persistAll(getAllReinforcements(), callback);
 	}
 	
 	public Set<Reinforcement> getAllReinforcements() {
-		Set<Reinforcement> reinforcements = new HashSet<>();
-		
-		for (ChunkCache<Reinforcement> chunks : reinCache.asMap().values()) {
-			reinforcements.addAll(chunks.getAll());
-		}
-		
-		return reinforcements;
+		return new HashSet<>(uuidReinforcementMap.values());
 	}
-	
+
 	public ReinforcementDataSource getDataSource() {
 		return dataSource;
 	}
-	
+
 	public World getWorld() {
-		return world;
+		return Bukkit.getWorld(world);
 	}
 	
 }

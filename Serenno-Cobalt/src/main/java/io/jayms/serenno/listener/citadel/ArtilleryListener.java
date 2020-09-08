@@ -121,7 +121,7 @@ public class ArtilleryListener implements Listener {
 			return;
 		}
 		
-		artillery.dealBlockDamage(player);
+		e.setCancelled(artillery.dealBlockDamage(player));
 	}
 	
 	@EventHandler
@@ -133,8 +133,8 @@ public class ArtilleryListener implements Listener {
 		if (artillery == null) {
 			return;
 		}
-		
-		artillery.dealBlockDamage(player);
+
+		e.setCancelled(artillery.dealBlockDamage(player));
 	}
 
 }

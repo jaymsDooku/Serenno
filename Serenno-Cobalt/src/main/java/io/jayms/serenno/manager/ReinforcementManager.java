@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -57,7 +58,7 @@ public class ReinforcementManager {
 		this.dataSource = dataSource;
 		
 		World world = Bukkit.getWorld(SerennoCobalt.get().getConfigManager().getDefaultReinforcementWorld());
-		newReinforcementWorld(world, dataSource);
+		newReinforcementWorld(world.getName(), null, dataSource);
 	}
 	
 	public void registerReinforcementBlueprint(ReinforcementBlueprint blueprint) {
@@ -82,20 +83,35 @@ public class ReinforcementManager {
 	public Collection<ReinforcementBlueprint> getReinforcementBlueprints() {
 		return reinforcementBlueprints.values();
 	}
-	
-	public ReinforcementWorld newReinforcementWorld(World world, ReinforcementDataSource dataSource) {
-		ReinforcementWorld reinWorld = new ReinforcementWorld(world, dataSource);
-		reinforcementWorlds.put(world.getName(), reinWorld);
-		
-		for (Chunk chunk : world.getLoadedChunks()) {
-			reinWorld.loadChunkData(chunk);
+
+	public ReinforcementWorld newReinforcementWorld(String world, Map<String, Group> groupMap, ReinforcementDataSource dataSource) {
+		return newReinforcementWorld(world, groupMap, dataSource, 1.0);
+	}
+
+	public ReinforcementWorld newReinforcementWorld(String world, Map<String, Group> groupMap, ReinforcementDataSource dataSource, double scaling) {
+		ReinforcementWorld reinWorld = new ReinforcementWorld(world, groupMap, dataSource, scaling);
+		if (dataSource != null) {
+			reinWorld.load(dataSource);
 		}
+		reinforcementWorlds.put(world, reinWorld);
 		return reinWorld;
+	}
+
+	public ReinforcementWorld cloneReinforcementWorld(ReinforcementWorld reinforcementWorld, World world, Map<String, Group> groupMap, double scaling) {
+		ReinforcementWorld cloned = ReinforcementWorld.clone(world, reinforcementWorld, groupMap, scaling);
+		reinforcementWorlds.put(world.getName(), cloned);
+		return cloned;
 	}
 	
 	public void deleteReinforcementWorld(World world, boolean save) {
 		ReinforcementWorld reinWorld = reinforcementWorlds.remove(world.getName());
-		reinWorld.unloadAll(save);
+		if (save) {
+			reinWorld.save(dataSource, () -> {
+				reinWorld.unloadAll();
+			});
+		} else {
+			reinWorld.unloadAll();
+		}
 	}
 	
 	public void removeReinforcementWorld(World world) {
@@ -111,7 +127,6 @@ public class ReinforcementManager {
 		ReinforcementWorld reinWorld = getReinforcementWorld(world);
 		if (reinWorld == null) return null;
 		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
-		System.out.println("rein cache size: " + reinChunkCache.getAll().size());
 		Reinforcement rein = reinChunkCache.get(block);
 		return rein;
 	}
@@ -210,8 +225,10 @@ public class ReinforcementManager {
 				.creationTime(System.currentTimeMillis())
 				.placer(placer)
 				.loc(block.getLocation())
+				.chunkX(block.getLocation().getChunk().getX())
+				.chunkZ(block.getLocation().getChunk().getZ())
 				.inMemory(true)
-				.group(group)
+				.group(group.getName().toLowerCase())
 				.build();
 		
 		ReinforcementCreationEvent event = placer != null ? new PlayerReinforcementCreationEvent(placer, item, reinforcement, dataSource) 
@@ -219,8 +236,7 @@ public class ReinforcementManager {
 		Bukkit.getPluginManager().callEvent(event);
 		
 		ReinforcementWorld reinWorld = getReinforcementWorld(block.getWorld());
-		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(ChunkCoord.fromBlock(block));
-		reinChunkCache.put(block.getX(), block.getY(), block.getZ(), reinforcement);
+		reinWorld.putReinforcement(reinforcement);
 		
 		block.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, block.getLocation(), 1);
 		if (placer != null) {
@@ -256,12 +272,11 @@ public class ReinforcementManager {
 
 	public void destroyReinforcement(Player player, Reinforcement reinforcement) {
 		Location loc = reinforcement.getLocation();
+		if (loc.getWorld() == null) {
+			loc.setWorld(player.getWorld());
+		}
 		ReinforcementWorld reinWorld = getReinforcementWorld(loc.getWorld());
-		ChunkCache<Reinforcement> reinChunkCache = reinWorld.getChunkCache(loc);
-		reinChunkCache.delete(new Coords(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
-		ReinforcementDestroyEvent reinDestroyEvent = player != null ? new PlayerReinforcementDestroyEvent(player, reinforcement, dataSource) 
-				: new ReinforcementDestroyEvent(reinforcement, dataSource);
-		Bukkit.getPluginManager().callEvent(reinDestroyEvent);
+		reinWorld.destroyReinforcement(player, reinforcement);
 	}
 	
 	public static Block getResponsibleBlock(Block block) {

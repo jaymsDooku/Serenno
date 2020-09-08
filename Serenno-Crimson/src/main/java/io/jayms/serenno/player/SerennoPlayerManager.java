@@ -9,6 +9,14 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.github.maxopoly.finale.Finale;
+import com.github.maxopoly.finale.classes.archer.arrows.hunter.HunterArrow;
+import com.github.maxopoly.finale.classes.archer.arrows.hunter.HunterMarks;
+import io.jayms.serenno.player.ui.AllyMarkedTeam;
+import io.jayms.serenno.player.ui.AllyTeam;
+import io.jayms.serenno.player.ui.EnemyMarkedTeam;
+import io.jayms.serenno.player.ui.EnemyTeam;
+import io.jayms.serenno.ui.*;
 import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -30,11 +38,6 @@ import io.jayms.serenno.game.DuelTeam;
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.kit.Kit;
 import io.jayms.serenno.manager.PlayerManager;
-import io.jayms.serenno.ui.ActionBarHandler;
-import io.jayms.serenno.ui.UI;
-import io.jayms.serenno.ui.UIHandler;
-import io.jayms.serenno.ui.UIManager;
-import io.jayms.serenno.ui.UIScoreboard;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.md_5.bungee.api.ChatColor;
@@ -85,7 +88,7 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 			return;
 		}
 		
-		savePlayer(serennoPlayer, true);
+		savePlayer(serennoPlayer, false);
 	}
 	
 	public void savePlayer(SerennoPlayer player, boolean async) {
@@ -134,6 +137,14 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 		player.setDirty(false);
 		SerennoCrimson.get().getLogger().info("Saved player: " + player.getBukkitPlayer().getName());
 	}
+
+	private HunterArrow hunterArrow;
+	private HunterArrow getHunterArrow() {
+		if (hunterArrow == null) {
+			hunterArrow = (HunterArrow) Finale.getPlugin().getAbilityManager().getAbility(HunterArrow.NAME);
+		}
+		return hunterArrow;
+	}
 	
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
@@ -151,26 +162,50 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 				SerennoPlayer sp = get(player);
 				
 				if (SerennoCrimson.get().getLobby().inLobby(sp)) {
-					board.add(ChatColor.RED + "Online: " + ChatColor.WHITE + Bukkit.getOnlinePlayers().size(), 3);
+					board.add(ChatColor.RED + "Online: " + ChatColor.WHITE + Bukkit.getOnlinePlayers().size(), 14);
 				} else {
-					board.remove(3, "");
+					board.remove(14, "");
 				}
 				
 				Duel duel = sp.getDuel();
-				if (duel != null && !duel.isRunning()) {
+				if (duel != null && duel.isRunning()) {
 					DuelTeam team = duel.getTeam(sp);
 					
 					if (team != null && team.getTeam().size() > 1) {
-						board.add(ChatColor.RED + "Team: " + ChatColor.WHITE + team.getTeam().getLeader().getName() + "'s Team", 2);
+						String name = team.getTeam().getLeader().getName();
+						if (name.length() >= 11) {
+							name = name.substring(0, 10);
+						}
+						board.add(ChatColor.RED + "Team: " + ChatColor.WHITE + name + "'s Team", 13);
 					} else {
-						board.remove(2, "");
+						board.remove(13, "");
 					}
 					
 					DuelTeam otherTeam = duel.getOtherTeam(team);
-					board.add(ChatColor.RED + "Opponent: " + ChatColor.WHITE + otherTeam.getTeam().getLeader().getName(), 14);
+					board.add(ChatColor.RED + "Opponent: " + ChatColor.WHITE + otherTeam.getTeam().getLeader().getName(), 12);
+
+					if (duel.getDuelType() == DuelType.VAULTBATTLE) {
+						HunterMarks marks = getHunterArrow().getHunterMarks();
+						double markLeft = marks.getMarkDurationLeft(player);
+						boolean marked = markLeft > 0.0;
+						UITeam uiTeam = board.getUITeam(player);
+						if (marked) {
+							board.add(ChatColor.RED + "Hunter Marked: " + ChatColor.YELLOW + markLeft + "s", 3);
+
+							if (uiTeam != AllyMarkedTeam.TEAM) {
+								setTeam(board, sp, duel, AllyMarkedTeam.TEAM, EnemyMarkedTeam.TEAM);
+							}
+						} else {
+							board.remove(3, "");
+
+							if (uiTeam == AllyMarkedTeam.TEAM) {
+								setTeam(board, sp, duel, AllyTeam.TEAM, EnemyTeam.TEAM);
+							}
+						}
+					}
 				} else {
-					board.remove(14, "");
-					board.remove(2, "");
+					board.remove(12, "");
+					board.remove(13, "");
 				}
 			}
 		});
@@ -182,10 +217,28 @@ public class SerennoPlayerManager extends PlayerManager<SerennoPlayer> {
 			}
 		});
 	}
+
+	private void setTeam(UIScoreboard board, SerennoPlayer sp, Duel duel, UITeam ally, UITeam enemy) {
+		Player player = sp.getBukkitPlayer();
+		board.setTeam(player, ally);
+
+		List<SerennoPlayer> players = duel.getPlaying();
+		for (SerennoPlayer serennoPlayer : players) {
+			DuelTeam playingTeam = duel.getTeam(serennoPlayer);
+			UI playingUI = UIManager.getUIManager().getScoreboard(serennoPlayer.getBukkitPlayer());
+			UIScoreboard playingScoreboard = playingUI.getScoreboard();
+			if (playingTeam.getTeam().inTeam(sp)) {
+				playingScoreboard.setTeam(player, ally);
+			} else {
+				playingScoreboard.setTeam(player, enemy);
+			}
+		}
+	}
 	
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
 		Player p = e.getPlayer();
+		remove(p);
 		savePlayer(get(p));
 	}
 

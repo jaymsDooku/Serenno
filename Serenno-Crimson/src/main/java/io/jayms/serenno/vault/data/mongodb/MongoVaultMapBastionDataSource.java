@@ -4,25 +4,25 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
+import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCommon;
 import io.jayms.serenno.db.DBKey;
-import io.jayms.serenno.kit.ItemMetaBuilder;
-import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
-import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
-import io.jayms.serenno.model.citadel.bastion.BastionShape;
+import io.jayms.serenno.model.citadel.bastion.BastionDataSource;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import io.jayms.serenno.vault.VaultMapDatabase;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
+public class MongoVaultMapBastionDataSource implements BastionDataSource {
 
     public static final String COLLECTION = "bastion";
 
@@ -41,16 +41,23 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
     }
 
     @Override
-    public Bastion fromDocument(Document doc) {
-        Bastion b = new Bastion(db.getReinforcementSource().get(UUID.fromString(doc.getString(REINFORCEMENT_ID))),
-                db.getBastionBlueprintSource().get(doc.getString(BLUEPRINT)));
+    public Bastion fromDocumentKey(Reinforcement key, Document doc) {
+        Bastion b = new Bastion(key, db.getBastionBlueprintSource().get(doc.getString(BLUEPRINT)));
         return b;
+    }
+
+    @Override
+    public Bastion fromDocument(ReinforcementWorld world, Document doc) {
+        UUID reinID = UUID.fromString(doc.getString(REINFORCEMENT_ID));
+        ReinforcementWorld reinforcementWorld = world != null ? world : db.getVaultMap().getReinforcementWorld();
+        Reinforcement reinforcement = reinforcementWorld.getReinforcement(reinID);
+        return fromDocumentKey(reinforcement, doc);
     }
 
     @Override
     public Document toDocument(Bastion value) {
         Document doc = new Document();
-        doc.append(REINFORCEMENT_ID, value.getReinforcement().getID().toString());
+        doc.append(REINFORCEMENT_ID, value.getReinforcementID().toString());
         doc.append(BLUEPRINT, value.getBlueprint().getName());
         return doc;
     }
@@ -60,9 +67,13 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
         return Filters.eq(REINFORCEMENT_ID, key.getID().toString());
     }
 
+    public Bson getFilter(Bastion key) {
+        return Filters.eq(REINFORCEMENT_ID, key.getReinforcementID().toString());
+    }
+
     @Override
     public void create(Bastion value) {
-        if (exists(value.getReinforcement())) {
+        if (exists(value)) {
             return;
         }
 
@@ -73,16 +84,14 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
     @Override
     public void update(Bastion value) {
         Document doc = toDocument(value);
-        getCollection().replaceOne(getFilter(value.getReinforcement()), doc);
+        getCollection().replaceOne(getFilter(value), doc);
     }
 
     @Override
     public Bastion get(Reinforcement key) {
         FindIterable<Document> query = getCollection().find(getFilter(key));
-
         Document doc = query.first();
-
-        return fromDocument(doc);
+        return fromDocumentKey(key, doc);
     }
 
     @Override
@@ -91,8 +100,13 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
         return query.first() != null;
     }
 
+    public boolean exists(Bastion key) {
+        FindIterable<Document> query = getCollection().find(getFilter(key));
+        return query.first() != null;
+    }
+
     @Override
-    public Collection<Bastion> getAll() {
+    public Collection<Bastion> getAll(ReinforcementWorld world) {
         MongoCollection<Document> collection = getCollection();
         Collection<Bastion> result = new ArrayList<>();
 
@@ -101,7 +115,7 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
         MongoCursor<Document> cursor = allDocs.iterator();
         while (cursor.hasNext()) {
             Document doc = cursor.next();
-            result.add(fromDocument(doc));
+            result.add(fromDocument(world, doc));
         }
 
         return result;
@@ -109,7 +123,7 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
 
     @Override
     public void delete(Bastion value) {
-        getCollection().deleteOne(getFilter(value.getReinforcement()));
+        getCollection().deleteOne(getFilter(value));
     }
 
     @Override
@@ -117,4 +131,52 @@ public class MongoVaultMapBastionDataSource implements MongoBastionDataSource {
         getCollection().deleteMany(new Document());
     }
 
+    @Override
+    public void persistAll(ReinforcementWorld world, Collection<Bastion> bastions, ReinforcementWorld.UnloadCallback callback) {
+        if (bastions.isEmpty()) {
+            return;
+        }
+
+        new BukkitRunnable() {
+
+            @Override
+            public void run() {
+                List<Document> toInsert = new ArrayList<>();
+                List<Bastion> toRemove = new ArrayList<>();
+                for (Bastion bastion : bastions) {
+                    Reinforcement reinforcement = bastion.getReinforcement(world);
+                    if (reinforcement == null) {
+                        break;
+                    }
+                    if (!reinforcement.isDirty()) {
+                        continue;
+                    }
+                    if (reinforcement.isBroken()) {
+                        toRemove.add(bastion);
+                    } else {
+                        toInsert.add(toDocument(bastion));
+                    }
+                }
+                MongoCollection<Document> collection = getCollection();
+                if (!toRemove.isEmpty()) {
+                    Bson deleteFilter = Filters.all(REINFORCEMENT_ID, toRemove.stream()
+                            .map(b -> b.getReinforcementID().toString())
+                            .collect(Collectors.toList()));
+                    collection.deleteMany(deleteFilter);
+                }
+
+                if (!toInsert.isEmpty()) {
+                    collection.insertMany(toInsert);
+                }
+                new BukkitRunnable() {
+
+                    @Override
+                    public void run() {
+                        callback.unload();
+                    }
+                }.runTask(SerennoCobalt.get());
+            }
+
+        }.runTaskAsynchronously(SerennoCobalt.get());
+    }
 }

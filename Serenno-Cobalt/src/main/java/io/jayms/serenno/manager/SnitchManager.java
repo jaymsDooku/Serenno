@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.HashMultimap;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -35,7 +37,7 @@ public class SnitchManager {
 	private ReinforcementManager rm;
 	private Map<String, SnitchWorld> snitchWorlds = Maps.newConcurrentMap();
 	
-	private Multimap<Player, Snitch> playersInSnitches = new ImmutableMultimap.Builder<Player, Snitch>().build();
+	private Multimap<Player, Snitch> playersInSnitches = HashMultimap.create();
 	
 	private SnitchListener snitchListener;
 	
@@ -56,7 +58,7 @@ public class SnitchManager {
 	}
 	
 	public Collection<Snitch> getInsideSnitches(Player player) {
-		return playersInSnitches.get(player);
+		return new HashSet<>(playersInSnitches.get(player));
 	}
 	
 	public void leaveSnitch(Player player, Snitch snitch) {
@@ -67,9 +69,9 @@ public class SnitchManager {
 	}
 	
 	public SnitchWorld newSnitchWorld(World world, SnitchDataSource dataSource) {
-		SnitchWorld bastionWorld = new SnitchWorld(world, dataSource);
-		snitchWorlds.put(world.getName(), bastionWorld);
-		return bastionWorld;
+		SnitchWorld snitchWorld = new SnitchWorld(world, dataSource);
+		snitchWorlds.put(world.getName(), snitchWorld);
+		return snitchWorld;
 	}
 	
 	public SnitchWorld getSnitchWorld(World world) {
@@ -98,7 +100,7 @@ public class SnitchManager {
 		World world = l1.getWorld();
 		SnitchWorld snitchWorld = getSnitchWorld(world);
 		for (Snitch snitch : snitchWorld.getAllSnitches()) {
-			if (LocationTools.isBetween(l1, l2, snitch.getLocation())) {
+			if (LocationTools.isBetween(l1, l2, snitch.getReinforcement(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(snitchWorld.getWorld())).getLocation())) {
 				areaSnitches.add(snitch);
 			}
 		}
@@ -129,7 +131,7 @@ public class SnitchManager {
 		
 		Snitch snitch = new Snitch(reinforcement, name, radius);
 		
-		World world = snitch.getReinforcement().getLocation().getWorld();
+		World world = reinforcement.getLocation().getWorld();
 		SnitchWorld snitchWorld = getSnitchWorld(world);
 		snitchWorld.addSnitch(snitch);
 	}
@@ -145,20 +147,21 @@ public class SnitchManager {
 		if (snitches.isEmpty()) {
 			return;
 		}
-		
+
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(loc.getWorld());
 		for (Snitch snitch : snitches) {
-			if (snitch.getReinforcement().equals(reinforcement)) {
-				destroySnitch(snitch);
+			if (snitch.getReinforcement(reinforcementWorld).equals(reinforcement)) {
+				destroySnitch(reinforcementWorld, snitch);
 				break;
 			}
 		}
 	}
 	
-	public void destroySnitch(Snitch snitch) {
+	public void destroySnitch(ReinforcementWorld reinforcementWorld, Snitch snitch) {
 		SnitchDestroyEvent event = new SnitchDestroyEvent(snitch);
 		Bukkit.getPluginManager().callEvent(event);
 		
-		World world = snitch.getLocation().getWorld();
+		World world = snitch.getReinforcement(reinforcementWorld).getLocation().getWorld();
 		SnitchWorld snitchWorld = getSnitchWorld(world);
 		snitchWorld.deleteSnitch(snitch);
 	}

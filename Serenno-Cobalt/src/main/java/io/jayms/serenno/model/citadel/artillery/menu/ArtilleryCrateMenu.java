@@ -71,7 +71,7 @@ public class ArtilleryCrateMenu extends SingleMenu {
 		addButton(20, getDirectionDisplayButton(crate.getArtillery()));
 		
 		addButton(14, getStartItemTitle());
-		addButton(23, getStarterItemButton(inventory));
+		addButton(23, getStarterItemButton(inventory, crate));
 		
 		addButton(25, getBuildButton(inventory, crate));
 		
@@ -144,9 +144,9 @@ public class ArtilleryCrateMenu extends SingleMenu {
 				}).build();
 	}
 	
-	private SimpleButton getStarterItemButton(Inventory inventory) {
+	private SimpleButton getStarterItemButton(Inventory inventory, ArtilleryCrate crate) {
 		return new SimpleButton.Builder(this)
-				.setItemStack(null)
+				.setItemStack(crate.getLoadedStarterItem())
 				.setNormal(true)
 				.setClickHandler(new ClickHandler() {
 					

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -35,11 +36,12 @@ public class TrebuchetMissileFinishState implements ArtilleryMissileState<Trebuc
 		Random random = new Random();
 		Location loc = missile.getLocation();
 		SerennoCobaltConfigManager config = SerennoCobalt.get().getConfigManager();
-		
+
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(loc.getWorld());
 		Set<Bastion> bastions = SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(loc);
 		if (!bastions.isEmpty()) {
 			for (Bastion bastion : bastions) {
-				bastion.damage(config.getTrebuchetBastionDamage());
+				bastion.getReinforcement(reinforcementWorld).damage(config.getTrebuchetBastionDamage());
 			}
 		}
 		
@@ -70,7 +72,7 @@ public class TrebuchetMissileFinishState implements ArtilleryMissileState<Trebuc
 			}
 		}
 		
-		loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.5f);
+		loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 8.0f, 0.5f);
 		ParticleEffect.EXPLOSION_HUGE.display(loc, 0f, 0f, 0f, 0, 5);
 		ParticleEffect.FLAME.display(loc, 0.2f, 0.2f, 0.2f, 0, 10);
 		ParticleEffect.LARGE_SMOKE.display(loc, 0.3f, 0.3f, 0.3f, 0, 5);

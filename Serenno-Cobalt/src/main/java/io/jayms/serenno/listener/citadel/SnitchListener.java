@@ -3,6 +3,7 @@ package io.jayms.serenno.listener.citadel;
 import java.util.Collection;
 import java.util.Set;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -76,12 +77,13 @@ public class SnitchListener implements Listener {
 	@EventHandler
 	public void onSnitchEnter(SnitchEnterEvent e) {
 		Player player = e.getEntering();
-		
-		if (e.getSnitch().getReinforcement().getGroup().isAuthorized(player, GroupPermissions.SNITCH_NOTIFICATION_BYPASS)) {
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(player.getWorld());
+
+		if (e.getSnitch().getReinforcement(reinforcementWorld).getGroup().isAuthorized(player, GroupPermissions.SNITCH_NOTIFICATION_BYPASS)) {
 			return;
 		}
 		
-		Block snitchBlock = e.getSnitch().getReinforcement().getLocation().getBlock();
+		Block snitchBlock = e.getSnitch().getReinforcement(reinforcementWorld).getLocation().getBlock();
 		if (snitchBlock.getType() != Material.JUKEBOX) {
 			return;
 		}

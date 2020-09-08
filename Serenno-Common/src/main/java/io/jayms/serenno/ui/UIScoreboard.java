@@ -81,6 +81,10 @@ public class UIScoreboard {
     	uiTeams.put(player, uiTeam);
     }
 
+    public UITeam getUITeam(Player player) {
+        return uiTeams.get(player);
+    }
+
     public void add(String text, Integer score) {
         text = ChatColor.translateAlternateColorCodes('&', text);
 

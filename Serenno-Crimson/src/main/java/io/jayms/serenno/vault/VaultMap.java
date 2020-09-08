@@ -1,7 +1,9 @@
 package io.jayms.serenno.vault;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -24,10 +26,6 @@ public interface VaultMap extends Arena {
 	
 	Location getGotoLocation();
 	
-	VaultMapDatabase newDatabase(World world);
-	
-	VaultMapDatabase getDatabase(World world);
-	
 	VaultMapDatabase getDatabase();
 	
 	Arena getArena();
@@ -37,8 +35,18 @@ public interface VaultMap extends Arena {
 	boolean isOriginalWorldLoaded();
 	
 	String getOriginalWorldName();
-	
+
+	void getOriginalWorldAsync(Consumer<VaultMap> callback);
+
+	void getReinforcementWorldAsync(Consumer<VaultMap> callback);
+
 	World getOriginalWorld();
+
+	void setReady(boolean set);
+
+	boolean isReady();
+
+	ReinforcementWorld getReinforcementWorld();
 	
 	World activateWorld();
 	
@@ -47,5 +55,7 @@ public interface VaultMap extends Arena {
 	boolean isActiveWorld(World world);
 	
 	Set<World> getActiveWorlds();
+
+	void dispose();
 	
 }

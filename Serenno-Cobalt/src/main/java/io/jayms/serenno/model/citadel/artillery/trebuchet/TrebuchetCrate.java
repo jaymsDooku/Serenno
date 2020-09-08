@@ -31,7 +31,7 @@ public class TrebuchetCrate extends AbstractArtilleryCrate {
 		if (artillery == null) {
 			artillery = ArtilleryType.TREBUCHET.getArtillery(this);
 		}
-		return artillery; 
+		return artillery;
 	}
 	
 	@Override

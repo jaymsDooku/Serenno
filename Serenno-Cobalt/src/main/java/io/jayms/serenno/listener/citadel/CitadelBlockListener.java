@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -57,7 +58,7 @@ public class CitadelBlockListener extends CitadelListener {
 		ChatColor healthPC = NumberUtils.getPrimaryColor(rein.getHealthAsPercentage());
 		ChatColor healthSC = NumberUtils.getSecondaryColor(rein.getHealthAsPercentage());
 		double health = rein.getHealth();
-		double maxHealth = rb.getMaxHealth();
+		double maxHealth = rein.getMaxHealth();
 		String healthStr = df.format(rein.getHealthAsPercentage() * 100) + "%";
 		return healthPC + healthStr + healthSC + " (" + healthPC + df.format(health) + healthSC + "/" + healthPC + maxHealth + healthSC + ")";
 	}
@@ -83,11 +84,12 @@ public class CitadelBlockListener extends CitadelListener {
 		Player player = e.getPlayer();
 		CitadelPlayer cp = cm.getCitadelPlayer(player); 
 		Block b = e.getBlock();
-		
+
+		ReinforcementWorld reinforcementWorld = rm.getReinforcementWorld(b.getWorld());
 		Set<Bastion> bastions = bm.getBastions(b.getLocation());
 		if (!bastions.isEmpty()) {
 			for (Bastion bastion : bastions) {
-				Reinforcement rein = bastion.getReinforcement();
+				Reinforcement rein = bastion.getReinforcement(reinforcementWorld);
 				Group group = rein.getGroup();
 				if (!group.isAuthorized(player, GroupPermissions.BASTION_PLACE)) {
 					player.sendMessage(ChatColor.RED + "Bastion prevents block place. " + ChatColor.DARK_RED + "| " + ChatColor.RESET + getReinforcementHealth(player, rein));
@@ -218,9 +220,10 @@ public class CitadelBlockListener extends CitadelListener {
 		if (bastions.isEmpty()) {
 			return;
 		}
-		
+
+		ReinforcementWorld reinforcementWorld = rm.getReinforcementWorld(clickedBlock.getWorld());
 		Bastion bastion = bastions.iterator().next();
-		Reinforcement rein = bastion.getReinforcement();
+		Reinforcement rein = bastion.getReinforcement(reinforcementWorld);
 		Group group = rein.getGroup();
 		if (group.isMember(player)) {
 			player.sendMessage(ChatColor.GREEN + "Friendly bastion" + ChatColor.YELLOW + " | "

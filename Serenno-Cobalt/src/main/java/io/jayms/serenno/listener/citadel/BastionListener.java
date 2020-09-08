@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -121,7 +123,7 @@ public class BastionListener implements Listener {
 		}
 		
 		for (Bastion bastion : bastions) {
-			Reinforcement rein = bastion.getReinforcement();
+			Reinforcement rein = bastion.getReinforcement(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(b.getWorld()));
 			Group group = rein.getGroup();
 			if (!group.isAuthorized(player, GroupPermissions.BASTION_PLACE)) {
 				player.sendMessage(ChatColor.RED + "Bastion prevents bucket place. " + ChatColor.DARK_RED + "| " + ChatColor.RESET + CitadelBlockListener.getReinforcementHealth(player, rein));
@@ -151,11 +153,12 @@ public class BastionListener implements Listener {
 		if (bastions.isEmpty()) {
 			return;
 		}
-		
+
 		Player player = e.getPlayer();
+		ReinforcementWorld reinWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(e.getTo().getWorld());
 		for (Bastion bastion : bastions) {
 			BastionBlueprint bb = bastion.getBlueprint();
-			Reinforcement rein = bastion.getReinforcement();
+			Reinforcement rein = bastion.getReinforcement(reinWorld);
 			if (!bb.getPearlConfig().block()) {
 				continue;
 			}

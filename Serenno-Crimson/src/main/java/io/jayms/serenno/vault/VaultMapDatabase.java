@@ -50,40 +50,19 @@ public class VaultMapDatabase {
 
 	private static final String ATTACKERS = "Attackers";
 	private static final String DEFENDERS = "Defenders";
-	
-	private static final String CREATE_INFO = "CREATE TABLE IF NOT EXISTS INFO("
-			+ "InformationID INTEGER PRIMARY KEY AUTOINCREMENT,"
-			+ "GotoX REAL,"
-			+ "GotoY REAL,"
-			+ "GotoZ REAL, "
-			+ "GotoPitch REAL, "
-			+ "GotoYaw REAL, "
-			+ "PlayerListType TEXT, "
-			+ "AttackersColour TEXT, "
-			+ "DefendersColour TEXT"
-			+ ");";
-	
-	private static final String INSERT_INFO = "INSERT INTO INFO"
-			+ "("
-			+ "GotoX, GotoY, GotoZ, GotoPitch, GotoYaw, PlayerListType, AttackersColour, DefendersColour"
-			+ ") VALUES("
-			+ "?, ?, ?, ?, ?, ?, ?, ?"
-			+ ")";
-	
-	private static final String UPDATE_INFO = "UPDATE INFO "
-			+ "SET GotoX = ?, "
-			+ "GotoY = ?, "
-			+ "GotoZ = ?, "
-			+ "GotoPitch = ?, "
-			+ "GotoYaw = ?, "
-			+ "PlayerListType = ?, "
-			+ "AttackersColour = ?, "
-			+ "DefendersColour = ? "
-			+ "WHERE InformationID = ?";
-	
-	private static final String SELECT_INFO = "SELECT * FROM INFO LIMIT 1";
-	
-	private static final String DELETE_INFO = "DELETE FROM INFO WHERE ReinforcementID = ?";
+
+	public static void initializeGroups(Map<String, Company> companies, Map<String, Group> groups) {
+		UUID serverID = SerennoCobalt.get().getFinanceManager().getServerID();
+		Company attackerCompany = new ServerCompany(ATTACKERS, serverID);
+		Company defenderCompany = new ServerCompany(DEFENDERS, serverID);
+		companies.put(attackerCompany.getName().toLowerCase(), attackerCompany);
+		companies.put(defenderCompany.getName().toLowerCase(), defenderCompany);
+
+		Group attackerGroup = new Group(ATTACKERS, attackerCompany);
+		Group defenderGroup = new Group(DEFENDERS, defenderCompany);
+		groups.put(attackerGroup.getName().toLowerCase(), attackerGroup);
+		groups.put(defenderGroup.getName().toLowerCase(), defenderGroup);
+	}
 
 	private MongoDatabase database;
 
@@ -111,8 +90,6 @@ public class VaultMapDatabase {
 	
 	private boolean loaded;
 	
-	private VaultBattle battle;
-	
 	public VaultMapDatabase(String worldName, VaultMap vaultMap) {
 		this.worldName = worldName;
 		this.vaultMap = vaultMap;
@@ -139,6 +116,10 @@ public class VaultMapDatabase {
 		return database;
 	}
 
+	public VaultMap getVaultMap() {
+		return vaultMap;
+	}
+
 	public String getWorldName() {
 		return worldName;
 	}
@@ -151,17 +132,7 @@ public class VaultMapDatabase {
 	}
 	
 	public void init() {
-		UUID serverID = SerennoCobalt.get().getFinanceManager().getServerID();
-		Company attackerCompany = new ServerCompany(ATTACKERS, serverID);
-		Company defenderCompany = new ServerCompany(DEFENDERS, serverID);
-		companySource.put(attackerCompany.getName().toLowerCase(), attackerCompany);
-		companySource.put(defenderCompany.getName().toLowerCase(), defenderCompany);
-		
-		Group attackerGroup = new Group(ATTACKERS, attackerCompany);
-		Group defenderGroup = new Group(DEFENDERS, defenderCompany);
-		groupSource.put(attackerGroup.getName().toLowerCase(), attackerGroup);
-		groupSource.put(defenderGroup.getName().toLowerCase(), defenderGroup);
-		
+		initializeGroups(companySource, groupSource);
 		database = MongoAPI.getDatabase(worldName);
 	}
 	
@@ -335,13 +306,9 @@ public class VaultMapDatabase {
 	public Map<String, Company> getCompanySource() {
 		return companySource;
 	}
-	
-	public void setBattle(VaultBattle battle) {
-		this.battle = battle;
-	}
-	
-	public VaultBattle getBattle() {
-		return battle;
+
+	public void dispose() {
+		reinforcementSource.dispose();
 	}
 	
 }

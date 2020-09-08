@@ -3,6 +3,7 @@ package io.jayms.serenno.model.citadel.bastion;
 import java.util.Objects;
 import java.util.UUID;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Location;
 
 import io.jayms.serenno.SerennoCobalt;
@@ -11,24 +12,34 @@ import vg.civcraft.mc.civmodcore.locations.QTBox;
 
 public class Bastion implements QTBox, Comparable<Bastion> {
 
-	private Reinforcement reinforcement;
+	private UUID reinforcementID;
 	private BastionBlueprint blueprint;
 	private BastionFieldLogic fieldLogic;
-	
+	private int blockX;
+	private int blockY;
+	private int blockZ;
+
 	public Bastion(Reinforcement reinforcement, BastionBlueprint blueprint) {
-		this.reinforcement = reinforcement;
+		this(reinforcement.getID(), blueprint, reinforcement.getLocation().getBlockX(), reinforcement.getLocation().getBlockY(), reinforcement.getLocation().getBlockZ());
+	}
+
+	public Bastion(UUID reinforcementID, BastionBlueprint blueprint, int blockX, int blockY, int blockZ) {
+		this.reinforcementID = reinforcementID;
 		this.blueprint = blueprint;
 		this.fieldLogic = BastionShape.getFieldLogic(blueprint.getShape(), this);
+		this.blockX = blockX;
+		this.blockY = blockY;
+		this.blockZ = blockZ;
 	}
-	
-	public Location getLocation() {
-		return fieldLogic.getLocation();
+
+	public UUID getReinforcementID() {
+		return reinforcementID;
 	}
-	
-	public boolean inField(Location loc) {
-		return fieldLogic.inField(loc);
+
+	public BastionFieldLogic getFieldLogic() {
+		return fieldLogic;
 	}
-	
+
 	public void setBlueprint(BastionBlueprint blueprint) {
 		this.blueprint = blueprint;
 	}
@@ -37,59 +48,38 @@ public class Bastion implements QTBox, Comparable<Bastion> {
 		return blueprint;
 	}
 	
-	public Reinforcement getReinforcement() {
-		return reinforcement;
+	public Reinforcement getReinforcement(ReinforcementWorld world) {
+		return world.getReinforcement(reinforcementID);
 	}
 	
 	public int getRadius() {
 		return blueprint.getRadius();
 	}
 	
-	public void damage(double dmg) {
-		reinforcement.damage(dmg);
-	}
-	
-	public void destroy() {
-		reinforcement.destroy();
-	}
-	
 	@Override
 	public int compareTo(Bastion other) {
-		Location location = getLocation();
-		UUID thisWorld = location.getWorld().getUID();
-		int thisX = location.getBlockX();
-		int thisY = location.getBlockY();
-		int thisZ = location.getBlockZ();
+		int otherX = other.blockX;
+		int otherY = other.blockY;
+		int otherZ = other.blockZ;
 
-		Location otherLocation = other.getLocation();
-		UUID otherWorld = otherLocation.getWorld().getUID();
-		int otherX = otherLocation.getBlockX();
-		int otherY = otherLocation.getBlockY();
-		int otherZ = otherLocation.getBlockZ();
-
-		int worldCompare = thisWorld.compareTo(otherWorld);
-		if (worldCompare != 0) {
-			return worldCompare;
-		}
-
-		if (thisX < otherX) {
+		if (blockX < otherX) {
 			return -1;
 		}
-		if (thisX > otherX) {
+		if (blockX > otherX) {
 			return 1;
 		}
 
-		if (thisY < otherY) {
+		if (blockY < otherY) {
 			return -1;
 		}
-		if (thisY > otherY) {
+		if (blockY > otherY) {
 			return 1;
 		}
 		
-		if (thisZ < otherZ) {
+		if (blockZ < otherZ) {
 			return -1;
 		}
-		if (thisZ > otherZ) {
+		if (blockZ > otherZ) {
 			return 1;
 		}
 
@@ -103,7 +93,7 @@ public class Bastion implements QTBox, Comparable<Bastion> {
 
 	@Override
 	public int qtXMid() {
-		return getLocation().getBlockX();
+		return blockX;
 	}
 
 	@Override
@@ -118,7 +108,7 @@ public class Bastion implements QTBox, Comparable<Bastion> {
 
 	@Override
 	public int qtZMid() {
-		return getLocation().getBlockZ();
+		return blockZ;
 	}
 
 	@Override
@@ -128,7 +118,7 @@ public class Bastion implements QTBox, Comparable<Bastion> {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(qtXMid(), getLocation().getBlockY(), qtZMid());
+		return Objects.hash(qtXMid(), blockY, qtZMid());
 	}
 	
 }

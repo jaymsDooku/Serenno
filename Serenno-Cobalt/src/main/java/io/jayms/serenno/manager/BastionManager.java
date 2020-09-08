@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -97,13 +98,14 @@ public class BastionManager {
 		if (toBastions.isEmpty()) {
 			return false;
 		}
-		
+
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(origin.getWorld());
 		for (Bastion originBastion : originBastions) {
-			owners.add(originBastion.getReinforcement().getGroup().getOwner());
+			owners.add(originBastion.getReinforcement(reinforcementWorld).getGroup().getOwner());
 		}
 		
 		for (Bastion toBastion : toBastions) {
-			FinancialEntity owner = toBastion.getReinforcement().getGroup().getOwner();
+			FinancialEntity owner = toBastion.getReinforcement(reinforcementWorld).getGroup().getOwner();
 			if (!owners.contains(owner)) {
 				return true;
 			}
@@ -136,7 +138,7 @@ public class BastionManager {
 		World world = l1.getWorld();
 		BastionWorld bastionWorld = getBastionWorld(world);
 		for (Bastion bastion : bastionWorld.getAllBastions()) {
-			if (LocationTools.isBetween(l1, l2, bastion.getLocation())) {
+			if (LocationTools.isBetween(l1, l2, bastion.getReinforcement(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(bastionWorld.getWorld())).getLocation())) {
 				bastions.add(bastion);
 			}
 		}
@@ -165,7 +167,7 @@ public class BastionManager {
 	public boolean placeBastion(Reinforcement reinforcement, BastionBlueprint bb) {
 		Bastion bastion = new Bastion(reinforcement, bb);
 		
-		World world = bastion.getReinforcement().getLocation().getWorld();
+		World world = reinforcement.getLocation().getWorld();
 		BastionWorld bastionWorld = getBastionWorld(world);
 		bastionWorld.addBastion(bastion);
 		return false;
@@ -182,17 +184,18 @@ public class BastionManager {
 		if (bastions.isEmpty()) {
 			return;
 		}
-		
+
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(loc.getWorld());
 		for (Bastion bastion : bastions) {
-			if (bastion.getReinforcement().equals(reinforcement)) {
-				destroyBastion(bastion);
+			if (bastion.getReinforcement(reinforcementWorld).equals(reinforcement)) {
+				destroyBastion(reinforcementWorld, bastion);
 				break;
 			}
 		}
 	}
 	
-	public void destroyBastion(Bastion bastion) {
-		World world = bastion.getLocation().getWorld();
+	public void destroyBastion(ReinforcementWorld reinforcementWorld, Bastion bastion) {
+		World world = bastion.getReinforcement(reinforcementWorld).getLocation().getWorld();
 		BastionWorld bastionWorld = getBastionWorld(world);
 		bastionWorld.deleteBastion(bastion);
 	}

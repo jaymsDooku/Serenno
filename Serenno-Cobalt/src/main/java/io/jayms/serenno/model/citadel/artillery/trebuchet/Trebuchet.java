@@ -33,7 +33,7 @@ public class Trebuchet extends AbstractArtillery {
 	public Location getRotationPoint() {
 		if (rotPoint == null) {
 			Location origin = getLocation();
-			int horizontalOffset = config.getTrebuchetBackwardLength();
+			int horizontalOffset = config.getTrebuchetHorizontalOffset();
 			int verticalOffset = config.getTrebuchetVerticalOffset();
 			rotPoint = origin.clone();
 			
@@ -42,13 +42,13 @@ public class Trebuchet extends AbstractArtillery {
 					rotPoint.add(0, verticalOffset, horizontalOffset);
 					break;
 				case EAST:
-					rotPoint.add(horizontalOffset, verticalOffset, 0);
+					rotPoint.add(-horizontalOffset, verticalOffset, 0);
 					break;
 				case SOUTH:
 					rotPoint.add(0, verticalOffset, -horizontalOffset);
 					break;
 				case WEST:
-					rotPoint.add(-horizontalOffset, verticalOffset, 0);
+					rotPoint.add(horizontalOffset, verticalOffset, 0);
 					break;
 				default:
 					break;
@@ -237,7 +237,7 @@ public class Trebuchet extends AbstractArtillery {
 
 	@Override
 	public boolean fire(EngineerPlayer player) {
-		if (super.fire(player)) {
+		if (!super.fire(player)) {
 			return false;
 		}
 		if (isFiring()) {
@@ -290,7 +290,7 @@ public class Trebuchet extends AbstractArtillery {
 	
 	@Override
 	public int getUpperY() {
-		return (getLocation().getBlockY() + 1) + config.getTrebuchetHeight();
+		return getLowerY() + config.getTrebuchetHeight();
 	}
 	
 	@Override

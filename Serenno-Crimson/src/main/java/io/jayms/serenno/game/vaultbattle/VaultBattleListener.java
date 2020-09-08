@@ -3,6 +3,12 @@ package io.jayms.serenno.game.vaultbattle;
 import java.util.List;
 import java.util.Set;
 
+import com.github.maxopoly.finale.classes.archer.event.ArrowHitEvent;
+import io.jayms.serenno.event.TeleporterKillEvent;
+import io.jayms.serenno.game.DeathCause;
+import io.jayms.serenno.game.GameManager;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
+import io.jayms.serenno.player.SerennoPlayer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -17,7 +23,6 @@ import com.github.maxopoly.finale.classes.archer.ArcherConfig;
 import com.github.maxopoly.finale.classes.archer.ArcherPlayer;
 import com.github.maxopoly.finale.classes.archer.ArrowImpactForm;
 import com.github.maxopoly.finale.classes.archer.arrows.SiegeArrow;
-import com.github.maxopoly.finale.classes.archer.event.SiegeArrowHitEvent;
 
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.SerennoCrimson;
@@ -36,10 +41,23 @@ import net.md_5.bungee.api.ChatColor;
 public class VaultBattleListener implements Listener {
 
 	@EventHandler
+	public void onTeleporterKillEvent(TeleporterKillEvent e) {
+		Player killed = e.getKilled();
+		VaultBattle battle = SerennoCrimson.get().getVaultMapManager().getVaultBattleFromWorld(killed.getWorld());
+		if (battle == null) {
+			return;
+		}
+
+		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(killed);
+		battle.die(sp, DeathCause.ENVIRONMENT);
+		battle.broadcast(sp.getName() + ChatColor.YELLOW + " tried to use a vehicle teleporter and died.");
+	}
+
+	@EventHandler
 	public void onCoreDamage(CoreDamageEvent e) {
 		Player damager = e.getDamager();
 		Core core = e.getCore();
-		VaultBattle battle = core.getVaultMapDatabase().getBattle();
+		VaultBattle battle = core.getBattle();
 		if (battle == null) {
 			return;
 		}
@@ -56,7 +74,7 @@ public class VaultBattleListener implements Listener {
 	public void onCoreDestroy(CoreDestroyEvent e) {
 		Player destroyer = e.getDestroyer();
 		Core core = e.getCore();
-		VaultBattle battle = core.getVaultMapDatabase().getBattle();
+		VaultBattle battle = core.getBattle();
 		if (battle == null) {
 			return;
 		}
@@ -74,7 +92,12 @@ public class VaultBattleListener implements Listener {
 	}
 	
 	@EventHandler
-	public void onSiegeArrowHit(SiegeArrowHitEvent ev) {
+	public void onSiegeArrowHit(ArrowHitEvent ev) {
+		if (!(ev.getArrow() instanceof SiegeArrow)) {
+			return;
+		}
+
+		SiegeArrow siegeArrow = (SiegeArrow) ev.getArrow();
 		ArcherConfig config = Finale.getPlugin().getManager().getArcherConfig();
 		ProjectileHitEvent e = ev.getHitEvent();
 		ArcherPlayer archer = ev.getShooter();
@@ -95,20 +118,22 @@ public class VaultBattleListener implements Listener {
 				rein.damage(config.getSiegeDamageReinforcement());
 			}
 			if (!bastions.isEmpty()) {
+				ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(hitBlock.getWorld());
 				for (Bastion bastion : bastions) {
-					bastion.damage(config.getSiegeDamageBastion());
+					bastion.getReinforcement(reinforcementWorld).damage(config.getSiegeDamageBastion());
 				}
 			}
 		} else if (archer.getImpact() == ArrowImpactForm.EXPLOSIVE) {
-			Location explosiveLoc = ev.getSiegeArrow().getArrow(archer).getLocation();
+			Location explosiveLoc = siegeArrow.getArrow(archer).getLocation();
 			Set<Bastion> bastions = SerennoCobalt.get().getCitadelManager().getBastionManager().getBastions(explosiveLoc);
 			if (!bastions.isEmpty()) {
+				ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(explosiveLoc.getWorld());
 				for (Bastion bastion : bastions) {
-					bastion.damage(config.getSiegeDamageExplosiveBastion());
+					bastion.getReinforcement(reinforcementWorld).damage(config.getSiegeDamageExplosiveBastion());
 				}
 			}
 			
-			explode(archer, explosiveLoc, config, ev.getSiegeArrow());
+			explode(archer, explosiveLoc, config, siegeArrow);
 		}
 	}
 	

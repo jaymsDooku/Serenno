@@ -4,6 +4,7 @@ import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -23,7 +24,8 @@ public final class MongoTools {
 	
 	public static Document toDocument(Location loc) {
 		Document document = new Document();
-		document.append("worldName", loc.getWorld().getName());
+		World world = loc.getWorld();
+		document.append("worldName", loc.getWorld() != null ? loc.getWorld().getName() : "null");
 		document.append("x", loc.getX());
 		document.append("y", loc.getY());
 		document.append("z", loc.getZ());

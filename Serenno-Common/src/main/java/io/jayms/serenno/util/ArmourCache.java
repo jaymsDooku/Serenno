@@ -27,7 +27,6 @@ public class ArmourCache {
 			if (it != null) {
 				Armour a = armour.get(it.getType());
 				if (a != null) {
-					System.out.println("a: " + a);
 					contents[i] = ItemUtil.setArmour(it, a.getToughness(), a.getArmour());
 				}
 			}

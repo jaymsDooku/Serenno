@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.jayms.serenno.SerennoCobalt;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -21,8 +22,9 @@ public class SnitchWorld {
 		this.dataSource = dataSource;
 		this.snitches = new SparseQuadTree(900);
 		if (dataSource != null) {
-			Collection<Snitch> loadedSnitches = dataSource.getAll();
+			Collection<Snitch> loadedSnitches = dataSource.getAll(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(world));
 			for (Snitch s : loadedSnitches) {
+				s.setSnitchWorld(this);
 				snitches.add(s);
 			}
 		}
@@ -30,8 +32,6 @@ public class SnitchWorld {
 	
 	public void addSnitch(Snitch s) {
 		snitches.add(s);
-		if (dataSource != null)
-			dataSource.create(s);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -41,7 +41,7 @@ public class SnitchWorld {
 			return (Set<Snitch>) boxes;
 		}
 		return ((Set<Snitch>) boxes).stream().filter(b -> {
-				int y = b.getLocation().getBlockY();
+				int y = b.getReinforcement(SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(world)).getLocation().getBlockY();
 				int upperY = y + b.getRadius();
 				int lowerY = y - b.getRadius();
 				return loc.getBlockY() >= lowerY && loc.getBlockY() <= upperY;
@@ -56,8 +56,6 @@ public class SnitchWorld {
 	
 	public void deleteSnitch(Snitch snitch) {
 		snitches.remove(snitch);
-		if (dataSource != null) 
-			dataSource.delete(snitch);
 	}
 	
 	public World getWorld() {

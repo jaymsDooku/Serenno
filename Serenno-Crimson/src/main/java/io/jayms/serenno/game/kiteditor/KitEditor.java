@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -112,21 +113,25 @@ public class KitEditor implements Listener {
 		if (!PlayerTools.isRightClick(e.getAction())) {
 			return;
 		}
-		
-		Block clickedBlock = e.getClickedBlock();
-		if (clickedBlock == null) {
-			return;
-		}
-		
-		if (!clickedBlock.getLocation().equals(saveSignLocation)) {
-			return;
-		}
-		
+
 		SerennoPlayer sp = SerennoCrimson.get().getPlayerManager().get(e.getPlayer());
 		if (!inKitEditor(sp)) {
 			return;
 		}
 		
+		Block clickedBlock = e.getClickedBlock();
+		if (clickedBlock == null) {
+			return;
+		}
+
+		if (clickedBlock.getType() != Material.CHEST && clickedBlock.getType() != Material.TRAPPED_CHEST && clickedBlock.getType() != Material.WALL_SIGN) {
+			e.setCancelled(true);
+		}
+		
+		if (!clickedBlock.getLocation().equals(saveSignLocation)) {
+			return;
+		}
+
 		saveKitAndDepart(sp);
 	}
 

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.jayms.serenno.rank.Permissions;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -26,7 +27,7 @@ import net.md_5.bungee.api.ChatColor;
 
 public class SerennoPlayer implements Duelable {
 
-	private final Player bukkitPlayer;
+	private Player bukkitPlayer;
 	
 	private Map<DuelType, Kit[]> kits = new ConcurrentHashMap<>();
 	
@@ -40,7 +41,23 @@ public class SerennoPlayer implements Duelable {
 	public SerennoPlayer(Player bukkitPlayer) {
 		this.bukkitPlayer = bukkitPlayer;
 	}
-	
+
+	public void setBukkitPlayer(Player bukkitPlayer) {
+		this.bukkitPlayer = bukkitPlayer;
+	}
+
+	@Override
+	public String toString() {
+		return "SerennoPlayer{" +
+				"bukkitPlayer=" + bukkitPlayer +
+				", kits=" + kits +
+				", requests=" + requests +
+				", requestExpireTasks=" + requestExpireTasks +
+				", currentGame=" + currentGame +
+				", dirty=" + dirty +
+				'}';
+	}
+
 	@Override
 	public UUID getID() {
 		return bukkitPlayer.getUniqueId();

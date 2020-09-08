@@ -38,6 +38,23 @@ public class ReinforcementBlueprint {
 		this.reinforceableMaterials = builder.getReinforceableMaterials() == null ? new ArrayList<>() : builder.getReinforceableMaterials();
 		this.unreinforceableMaterials = builder.getUnreinforceableMaterials() == null ? new ArrayList<>() : builder.getUnreinforceableMaterials();
 	}
+
+	public ReinforcementBlueprint scale(double scale) {
+		return ReinforcementBlueprint.builder()
+				.name(name)
+				.displayName(displayName)
+				.itemStack(itemStack)
+				.regenRate(regenRate)
+				.maxHealth(maxHealth * scale)
+				.maturationScale(maturationScale)
+				.maturationTime(maturationTime)
+				.acidTime(acidTime)
+				.damageCooldown(damageCooldown)
+				.defaultDamage(defaultDamage)
+				.reinforceableMaterials(reinforceableMaterials)
+				.unreinforceableMaterials(unreinforceableMaterials)
+				.build();
+	}
 	
 	public void setDisplayName(String displayName) {
 		this.displayName = displayName;

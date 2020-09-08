@@ -9,10 +9,12 @@ import net.md_5.bungee.api.ChatColor;
 public class VaultBattleRequest extends DuelRequest {
 	
 	private ChatColor teamColor;
+	private double scaling;
 
-	public VaultBattleRequest(Duelable sender, DuelType duelType, VaultMap map, ChatColor teamColor) {
+	public VaultBattleRequest(Duelable sender, DuelType duelType, VaultMap map, ChatColor teamColor, double scaling) {
 		super(sender, duelType, map);
 		this.teamColor = teamColor;
+		this.scaling = scaling;
 	}
 	
 	public VaultMap getVaultMap() {
@@ -23,4 +25,7 @@ public class VaultBattleRequest extends DuelRequest {
 		return teamColor;
 	}
 
+	public double getScaling() {
+		return scaling;
+	}
 }

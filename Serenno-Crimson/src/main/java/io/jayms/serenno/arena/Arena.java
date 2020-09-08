@@ -4,11 +4,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
 
 import io.jayms.serenno.game.DuelType;
 import io.jayms.serenno.region.Region;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.util.Vector;
 
 public interface Arena {
 	
@@ -27,11 +29,11 @@ public interface Arena {
 	ItemStack getDisplayItem();
 	
 	Region getRegion();
-	
+
 	void addSpawnPoint(ChatColor teamColor, Location spawn);
 	
 	void removeSpawnPoint(ChatColor teamColor);
-	
+
 	Map<ChatColor, Location> getSpawnPoints();
 	
 	boolean requiresWorldCloning();

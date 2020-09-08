@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import io.jayms.serenno.vault.VaultMap;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -43,14 +44,18 @@ public class ArenaSelectMenu extends SingleMenu {
 	public Inventory newInventory(Map<String, Object> initData) {
 		DuelType duelType = (DuelType) initData.get("duelType");
 		List<Arena> arenas = SerennoCrimson.get().getArenaManager().listArenas(duelType);
-		
-		int i = 0;
-		arenas.stream().forEach(a -> {
+
+		for (int i = 0; i < arenas.size(); i++) {
+			Arena a = arenas.get(i);
 			if (!a.getDuelTypes().contains(duelType)) {
-				return;
+				continue;
+			}
+			if (a instanceof VaultMap) {
+				VaultMap vm = (VaultMap) a;
+				if (!vm.isReady()) continue;
 			}
 			addButton(i, getArenaButton(a, initData));
-		});
+		}
 		
 		int size = MathTools.ceil(arenas.size(), 9);
 		setSize(size);
@@ -77,7 +82,7 @@ public class ArenaSelectMenu extends SingleMenu {
 						DuelType duelType = (DuelType) initData.get("duelType");
 						if (duelType == DuelType.VAULTBATTLE) {
 							initData.put("arena", arena);
-							SerennoCrimson.get().getGameManager().getVaultSideMenu().open(player, initData);
+							SerennoCrimson.get().getGameManager().getVaultBattleScalingMenu().open(player, initData);
 							return;
 						}
 						

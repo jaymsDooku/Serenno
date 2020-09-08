@@ -14,6 +14,7 @@ import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
+import io.jayms.serenno.util.ItemUtil;
 import io.jayms.serenno.vault.VaultMapDatabase;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -35,6 +36,7 @@ public class MongoVaultMapReinforcementBlueprintDataSource implements MongoSeren
     public static final String DISPLAY_NAME = "display_name";
     public static final String ITEM_STACK_MATERIAL = "item_stack_material";
     public static final String ITEM_STACK_AMOUNT = "item_stack_amount";
+    public static final String ITEM_STACK_NAME = "item_stack_name";
     public static final String REGEN_RATE_AMOUNT = "regen_rate_amount";
     public static final String REGEN_RATE_INTERVAL = "regen_rate_interval";
     public static final String HEALTH = "health";
@@ -75,7 +77,7 @@ public class MongoVaultMapReinforcementBlueprintDataSource implements MongoSeren
                 .displayName(displayName)
                 .itemStack(new ItemStackBuilder(Material.valueOf(doc.getString(ITEM_STACK_MATERIAL)), doc.getInteger(ITEM_STACK_AMOUNT))
                         .meta(new ItemMetaBuilder()
-                                .name(displayName))
+                                .name(doc.getString(ITEM_STACK_NAME)))
                         .build())
                 .regenRate(new RegenRate(doc.getDouble(REGEN_RATE_AMOUNT), doc.getLong(REGEN_RATE_INTERVAL)))
                 .maxHealth(doc.getDouble(HEALTH))
@@ -97,6 +99,7 @@ public class MongoVaultMapReinforcementBlueprintDataSource implements MongoSeren
         doc.append(DISPLAY_NAME, value.getDisplayName());
         doc.append(ITEM_STACK_MATERIAL, value.getItemStack().getType().toString());
         doc.append(ITEM_STACK_AMOUNT, value.getItemStack().getAmount());
+        doc.append(ITEM_STACK_NAME, ItemUtil.getName(value.getItemStack()));
         doc.append(REGEN_RATE_AMOUNT, value.getRegenRate().getAmount());
         doc.append(REGEN_RATE_INTERVAL, value.getRegenRate().getInterval());
         doc.append(HEALTH, value.getMaxHealth());
@@ -126,7 +129,7 @@ public class MongoVaultMapReinforcementBlueprintDataSource implements MongoSeren
 
     @Override
     public void create(ReinforcementBlueprint value) {
-        if (exists(value.getItemStack())) {
+        if (exists(value.getName())) {
             return;
         }
 
@@ -175,6 +178,11 @@ public class MongoVaultMapReinforcementBlueprintDataSource implements MongoSeren
     @Override
     public boolean exists(ItemStack key) {
         FindIterable<Document> query = getCollection().find(getFilter(key));
+        return query.first() != null;
+    }
+
+    public boolean exists(String key) {
+        FindIterable<Document> query = getCollection().find(Filters.eq(NAME, key));
         return query.first() != null;
     }
 

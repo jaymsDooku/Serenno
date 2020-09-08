@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import io.jayms.serenno.model.citadel.artillery.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -14,11 +15,6 @@ import com.google.common.collect.Maps;
 import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.listener.citadel.ArtilleryListener;
 import io.jayms.serenno.menu.MenuController;
-import io.jayms.serenno.model.citadel.artillery.Artillery;
-import io.jayms.serenno.model.citadel.artillery.ArtilleryCrate;
-import io.jayms.serenno.model.citadel.artillery.ArtilleryMissileRunner;
-import io.jayms.serenno.model.citadel.artillery.ArtilleryRunnable;
-import io.jayms.serenno.model.citadel.artillery.ArtilleryWorld;
 import io.jayms.serenno.model.citadel.artillery.menu.ArtilleryCrateMenu;
 import io.jayms.serenno.model.citadel.artillery.menu.CannonMenu;
 import io.jayms.serenno.model.citadel.artillery.menu.TrebuchetMenu;
@@ -33,7 +29,8 @@ public class ArtilleryManager {
 	
 	private Map<Reinforcement, ArtilleryCrate> crates = Maps.newConcurrentMap();
 	private Map<String, ArtilleryWorld> artilleryWorlds = Maps.newConcurrentMap();
-	
+
+	private HitBoxProjector hitBoxProjector;
 	private ArtilleryRunnable artilleryRunnable;
 	private Map<Class<? extends Artillery>, ArtilleryMissileRunner> missileRunners = Maps.newConcurrentMap();
 	
@@ -52,6 +49,10 @@ public class ArtilleryManager {
 		this.cm = cm;
 		this.rm = cm.getReinforcementManager();
 		this.artilleryListener = new ArtilleryListener(this);
+
+		for (ArtilleryType type : ArtilleryType.values()) {
+			type.getNewItem();
+		}
 		
 		World world = Bukkit.getWorld(SerennoCobalt.get().getConfigManager().getDefaultReinforcementWorld());
 		newArtilleryWorld(world);
@@ -61,6 +62,11 @@ public class ArtilleryManager {
 		Bukkit.getPluginManager().registerEvents(artilleryListener, SerennoCobalt.get());
 		
 		Bukkit.getScheduler().runTaskTimer(SerennoCobalt.get(), artilleryRunnable = new ArtilleryRunnable(), 0L, 1L);
+		Bukkit.getScheduler().runTaskTimer(SerennoCobalt.get(), hitBoxProjector = new HitBoxProjector(this), 0L, 1L);
+	}
+
+	public Collection<ArtilleryCrate> getCrates() {
+		return crates.values();
 	}
 	
 	public void registerMissileRunner(ArtilleryMissileRunner runner) {
@@ -79,6 +85,7 @@ public class ArtilleryManager {
 		crates.put(reinforcement, crate);
 		crate.setReinforcement(reinforcement);
 		player.sendMessage(ChatColor.YELLOW + "You have placed down a " + crate.getDisplayName());
+		player.sendMessage(ChatColor.YELLOW + "Right click with your wrench to open the assembly menu.");
 	}
 	
 	public void breakArtilleryCrate(Player player, ArtilleryCrate crate) {
@@ -86,6 +93,8 @@ public class ArtilleryManager {
 		if (player != null) {
 			player.sendMessage(ChatColor.YELLOW + "You have broken " + crate.getDisplayName());
 		}
+		Location loc = crate.getLocation();
+		loc.getWorld().dropItemNaturally(loc, crate.getItemStack());
 	}
 	
 	public ArtilleryCrate getArtilleryCrate(Reinforcement reinforcement) {
@@ -157,3 +166,4 @@ public class ArtilleryManager {
 	}
 
 }
+

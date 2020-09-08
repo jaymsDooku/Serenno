@@ -41,8 +41,7 @@ public class MongoVaultMapCoreDataSource implements MongoSerennoDataSource<Core,
 
     @Override
     public Core fromDocument(Document doc) {
-        Core core = new Core(db,
-                ChatColor.valueOf(doc.getString(TEAM_COLOR)),
+        Core core = new Core(ChatColor.valueOf(doc.getString(TEAM_COLOR)),
                 db.getReinforcementSource().get(UUID.fromString(doc.getString(REINFORCEMENT_ID))));
         return core;
     }
@@ -50,8 +49,8 @@ public class MongoVaultMapCoreDataSource implements MongoSerennoDataSource<Core,
     @Override
     public Document toDocument(Core value) {
         Document doc = new Document();
-        doc.append(REINFORCEMENT_ID, value.getReinforcement().getID().toString());
-        doc.append(TEAM_COLOR, value.getTeamColor().toString());
+        doc.append(REINFORCEMENT_ID, value.getReinforcementID().toString());
+        doc.append(TEAM_COLOR, value.getTeamColor().name());
         return doc;
     }
 
@@ -60,9 +59,13 @@ public class MongoVaultMapCoreDataSource implements MongoSerennoDataSource<Core,
         return Filters.eq(REINFORCEMENT_ID, key.getID().toString());
     }
 
+    public Bson getFilter(Core value) {
+        return Filters.eq(REINFORCEMENT_ID, value.getReinforcementID().toString());
+    }
+
     @Override
     public void create(Core value) {
-        if (exists(value.getReinforcement())) {
+        if (exists(value)) {
             return;
         }
 
@@ -73,7 +76,7 @@ public class MongoVaultMapCoreDataSource implements MongoSerennoDataSource<Core,
     @Override
     public void update(Core value) {
         Document doc = toDocument(value);
-        getCollection().replaceOne(getFilter(value.getReinforcement()), doc);
+        getCollection().replaceOne(getFilter(value), doc);
     }
 
     @Override
@@ -101,6 +104,11 @@ public class MongoVaultMapCoreDataSource implements MongoSerennoDataSource<Core,
         return query.first() != null;
     }
 
+    public boolean exists(Core key) {
+        FindIterable<Document> query = getCollection().find(getFilter(key));
+        return query.first() != null;
+    }
+
     @Override
     public Collection<Core> getAll() {
         MongoCollection<Document> collection = getCollection();
@@ -119,7 +127,7 @@ public class MongoVaultMapCoreDataSource implements MongoSerennoDataSource<Core,
 
     @Override
     public void delete(Core value) {
-        getCollection().deleteOne(getFilter(value.getReinforcement()));
+        getCollection().deleteOne(getFilter(value));
     }
 
     @Override

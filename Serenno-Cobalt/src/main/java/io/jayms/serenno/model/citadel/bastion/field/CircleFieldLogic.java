@@ -1,5 +1,6 @@
 package io.jayms.serenno.model.citadel.bastion.field;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
@@ -15,20 +16,20 @@ public class CircleFieldLogic implements BastionFieldLogic {
 		this.bastion = bastion;
 	}
 	
-	public Location getLocation() {
-		return bastion.getReinforcement().getLocation();
+	public Location getLocation(ReinforcementWorld world) {
+		return bastion.getReinforcement(world).getLocation();
 	}
 
 	@Override
-	public boolean inField(Block block) {
-		return inField(block.getLocation());
+	public boolean inField(ReinforcementWorld world, Block block) {
+		return inField(world, block.getLocation());
 	}
 
 	@Override
-	public boolean inField(Location loc) {
+	public boolean inField(ReinforcementWorld world, Location loc) {
 		BastionBlueprint bb = bastion.getBlueprint();
 		double radius = bb.getRadius();
-		Location bastionLoc = getLocation();
+		Location bastionLoc = getLocation(world);
 		if (!loc.getWorld().getUID().equals(bastionLoc.getWorld().getUID())) {
 			return false;
 		}

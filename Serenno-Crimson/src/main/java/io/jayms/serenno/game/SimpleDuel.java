@@ -2,7 +2,9 @@ package io.jayms.serenno.game;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
+import io.jayms.serenno.player.ui.EnemyMarkedTeam;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -106,18 +108,24 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 	
 	@Override
 	public void spawn(SerennoPlayer player) {
+		if (SerennoCrimson.get().getLobby().inLobby(player)) {
+			SerennoCrimson.get().getLobby().depart(player);
+		}
+		if (SerennoCrimson.get().getKitEditor().inKitEditor(player)) {
+			SerennoCrimson.get().getKitEditor().saveKitAndDepart(player);
+		}
+
 		DuelTeam team = getTeam(player);
+		DuelTeam otherTeam = getOtherTeam(team);
 		Location spawn = getSpawnPoint(team.getTeamColor());
 		PlayerTools.clean(player.getBukkitPlayer());
 		player.teleport(spawn);
 		
 		UI ui = UIManager.getUIManager().getScoreboard(player.getBukkitPlayer());
 		UIScoreboard scoreboard = ui.getScoreboard();
-		
-		for (SerennoPlayer playing : this.getPlaying()) {
-			UITeam uiTeam = team.getTeam().inTeam(playing) ? AllyTeam.TEAM : EnemyTeam.TEAM;
-			scoreboard.setTeam(playing.getBukkitPlayer(), uiTeam);
-		}
+
+		team.getTeam().name(team.getAlive(), AllyTeam.TEAM);
+		team.getTeam().name(otherTeam.getAlive(), EnemyTeam.TEAM);
 		
 		Kit[] kits = player.getDuelingKits(getDuelType());
 		for (int i = 0; i < kits.length; i++) {
@@ -129,53 +137,24 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 								.name(duelType.getDisplayName() + ChatColor.WHITE + "#" + (i+1))
 								.enchant(Enchantment.DURABILITY, 1, true)
 								.flag(ItemFlag.HIDE_ENCHANTS)).build();
-				ItemMeta meta = kitBook.getItemMeta();
-				NBTItem nbtKitBook = new NBTItem(kitBook);
-				nbtKitBook.setInteger("index", i);
-				kitBook = nbtKitBook.getItem();
-				kitBook.setItemMeta(meta);
-				player.getBukkitPlayer().getInventory().setItem(i, kitBook);
+				net.minecraft.server.v1_12_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(kitBook);
+				NBTTagCompound compound = (nmsStack.hasTag()) ? nmsStack.getTag() : new NBTTagCompound();
+				compound.setInt("index", i);
+				nmsStack.setTag(compound);
+				player.getBukkitPlayer().getInventory().setItem(i, CraftItemStack.asBukkitCopy(nmsStack));
 			}
 		}
 	}
 	
 	@Override
-	protected void initGame() {
-		Location spawn1 = getSpawnPoint(team1.getTeamColor());
-		Location spawn2 = getSpawnPoint(team2.getTeamColor());
-		
-		team1.getTeam().clean();
-		team2.getTeam().clean();
-		
-		team1.getTeam().teleport(spawn1);
-		team2.getTeam().teleport(spawn2);
-		
+	protected void initGame(Consumer<Void> callback) {
 		List<SerennoPlayer> playing = getPlaying();
 		for (SerennoPlayer sp : playing) {
-			Player p = sp.getBukkitPlayer();
-			p.getInventory().clear();
-			
 			sp.setCurrentGame(this);
-			Bukkit.getPluginManager().callEvent(new DuelPlayerStartEvent(this, sp));
-			
-			Kit[] kits = sp.getDuelingKits(getDuelType());
-			for (int i = 0; i < kits.length; i++) {
-				Kit kit = kits[i];
-				
-				if (kit != null) {
-					ItemStack kitBook = new ItemStackBuilder(Material.BOOK, 1)
-							.meta(new ItemMetaBuilder()
-									.name(duelType.getDisplayName() + ChatColor.WHITE + "#" + (i+1))
-									.enchant(Enchantment.DURABILITY, 1, true)
-									.flag(ItemFlag.HIDE_ENCHANTS)).build();
-					net.minecraft.server.v1_12_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(kitBook);
-					NBTTagCompound compound = (nmsStack.hasTag()) ? nmsStack.getTag() : new NBTTagCompound();
-					compound.setInt("index", i);
-					nmsStack.setTag(compound);
-					p.getInventory().setItem(i, CraftItemStack.asBukkitCopy(nmsStack));
-				}
-			}
+			spawn(sp);
 		}
+
+		callback.accept(null);
 	}
 	
 	@Override
@@ -254,7 +233,11 @@ public abstract class SimpleDuel extends AbstractGame implements Duel {
 	}
 	
 	@Override
-	public void die(SerennoPlayer deadPlayer) {
+	public void die(SerennoPlayer deadPlayer, DeathCause cause) {
+		if (duelType == DuelType.VAULTBATTLE && cause == DeathCause.ENVIRONMENT) {
+			return;
+		}
+
 		DuelTeam duelTeam = getTeam(deadPlayer);
 		if (duelTeam == null) {
 			return;

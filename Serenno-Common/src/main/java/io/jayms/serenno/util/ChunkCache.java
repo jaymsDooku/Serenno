@@ -3,6 +3,7 @@ package io.jayms.serenno.util;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.cache.CacheLoader;
 import org.bukkit.block.Block;
@@ -14,21 +15,12 @@ import com.google.common.cache.RemovalListener;
 public class ChunkCache<T> {
 
 	private ChunkCoord chunkPair;
-	private Cache<Coords, T> cache;
+	private Map<Coords, T> cache;
 	private boolean dirty = false;
 	
-	public ChunkCache(ChunkCoord chunkPair, Map<Coords, T> init, RemovalListener<Coords, T> remover) {
+	public ChunkCache(ChunkCoord chunkPair) {
 		this.chunkPair = chunkPair;
-		CacheBuilder builder = CacheBuilder.newBuilder();
-		if (remover != null) {
-			builder.removalListener(remover);
-		}
-		this.cache = builder.build();
-		if (init != null) {
-			for (Entry<Coords, T> en : init.entrySet()) {
-				cache.put(en.getKey(), en.getValue());
-			}
-		}
+		this.cache = new ConcurrentHashMap<>();
 	}
 	
 	public ChunkCoord getChunkPair() {
@@ -52,19 +44,19 @@ public class ChunkCache<T> {
 	}
 	
 	public T get(Coords coords) {
-		return cache.getIfPresent(coords);
+		return cache.get(coords);
 	}
 	
 	public Collection<T> getAll() {
-		return cache.asMap().values();
+		return cache.values();
 	}
 	
 	public void delete(Coords coords) {
-		cache.invalidate(coords);
+		cache.remove(coords);
 	}
 	
 	public void unload() {
-		cache.invalidateAll();
+		cache.clear();
 	}
 	
 	public void setDirty(boolean dirty) {
@@ -77,7 +69,7 @@ public class ChunkCache<T> {
 
 	@Override
 	public String toString() {
-		return "ChunkCache [chunkPair=" + chunkPair + ", cache=" + cache.asMap().toString() + ", dirty=" + dirty + "]";
+		return "ChunkCache [chunkPair=" + chunkPair + ", cache=" + cache.toString() + ", dirty=" + dirty + "]";
 	}
 	
 }

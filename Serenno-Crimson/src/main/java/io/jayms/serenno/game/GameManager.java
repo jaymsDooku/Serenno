@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.jayms.serenno.game.menu.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
@@ -11,10 +12,6 @@ import com.google.common.collect.Lists;
 
 import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.arena.Arena;
-import io.jayms.serenno.game.menu.ArenaSelectMenu;
-import io.jayms.serenno.game.menu.DuelTypeMenu;
-import io.jayms.serenno.game.menu.KitSlotMenu;
-import io.jayms.serenno.game.menu.VaultSideMenu;
 import io.jayms.serenno.game.vaultbattle.VaultBattle;
 import io.jayms.serenno.game.vaultbattle.VaultBattleListener;
 import io.jayms.serenno.game.vaultbattle.VaultBattleRequest;
@@ -40,6 +37,9 @@ public class GameManager {
 	
 	private VaultSideMenu vaultSideMenu;
 	private MenuController vsController;
+
+	private VaultBattleScalingMenu vaultBattleScalingMenu;
+	private MenuController vbsController;
 	
 	private SimpleDuelListener duelListener;
 	private VaultBattleListener vbListener;
@@ -56,6 +56,9 @@ public class GameManager {
 		
 		vaultSideMenu = new VaultSideMenu();
 		vsController = new MenuController(vaultSideMenu);
+
+		vaultBattleScalingMenu = new VaultBattleScalingMenu();
+		vbsController = new MenuController(vaultBattleScalingMenu);
 		
 		duelListener = new SimpleDuelListener();
 		vbListener = new VaultBattleListener();
@@ -78,7 +81,11 @@ public class GameManager {
 	public VaultSideMenu getVaultSideMenu() {
 		return vaultSideMenu;
 	}
-	
+
+	public VaultBattleScalingMenu getVaultBattleScalingMenu() {
+		return vaultBattleScalingMenu;
+	}
+
 	public Game getGame(int id) {
 		return games.get(id);
 	}
@@ -113,16 +120,11 @@ public class GameManager {
 		ChatColor color2 = teamColors.get(1);
 		DuelTeam duelTeam1 = new DuelTeam(color1, team1, team1Temp);
 		DuelTeam duelTeam2 = new DuelTeam(color2, team2, team2Temp);
-		
-		DuelType duelType = request.getDuelType();
+
 		Duel duel;
 		int gameId = id++;
-		
-		if (duelType == DuelType.VAULTBATTLE) {
-			duel = new VaultBattle(gameId, (VaultMap) request.getMap(), duelTeam1, duelTeam2);
-		} else {
-			duel = new SimpleDuel(gameId, request.getMap(), request.getDuelType(), duelTeam1, duelTeam2) {};
-		}
+
+		duel = new SimpleDuel(gameId, request.getMap(), request.getDuelType(), duelTeam1, duelTeam2) {};
 			
 		duel.start();
 		games.put(duel.getID(), duel);
@@ -173,7 +175,7 @@ public class GameManager {
 		VaultBattle battle;
 		int gameId = id++;
 		
-		battle = new VaultBattle(gameId, vaultMap, duelTeam1, duelTeam2);
+		battle = new VaultBattle(gameId, vaultMap, duelTeam1, duelTeam2, request.getScaling());
 			
 		battle.start();
 		games.put(battle.getID(), battle);

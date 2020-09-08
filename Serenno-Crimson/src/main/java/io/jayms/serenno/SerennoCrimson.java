@@ -157,7 +157,9 @@ public class SerennoCrimson extends ACivMod {
 		super.onDisable();
 		
 		Bot.clearAndKillAllNPCs();
-		
+
+
+		vaultManager.dispose();
 		gameManager.shutdown();
 		
 		regionManager.saveAll();

@@ -96,8 +96,9 @@ public class VaultSideMenu extends SingleMenu {
 						Arena arena = (Arena) initData.get("arena");
 						DuelType duelType = (DuelType) initData.get("duelType");
 						SerennoPlayer toDuel = (SerennoPlayer) initData.get("toDuel");
+						double scaling = (double) initData.get("scaling");
 						
-						VaultBattleRequest request = new VaultBattleRequest(sp, duelType, (VaultMap) arena, teamColor);
+						VaultBattleRequest request = new VaultBattleRequest(sp, duelType, (VaultMap) arena, teamColor, scaling);
 						
 						if (toDuel instanceof SerennoBot) {
 							SerennoCrimson.get().getGameManager().vaultBattle(toDuel, request);

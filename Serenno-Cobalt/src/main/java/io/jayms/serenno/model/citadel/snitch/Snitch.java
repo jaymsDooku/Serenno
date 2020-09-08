@@ -4,6 +4,8 @@ import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.UUID;
 
+import io.jayms.serenno.SerennoCobalt;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -17,20 +19,45 @@ import net.md_5.bungee.api.ChatColor;
 import vg.civcraft.mc.civmodcore.locations.QTBox;
 
 public class Snitch implements QTBox, Comparable<Snitch> {
-	
-	private Reinforcement reinforcement;
+
+	private UUID reinforcementID;
 	private String name;
+	private int blockX;
+	private int blockY;
+	private int blockZ;
 	private int radius;
-	
+
+	private SnitchWorld snitchWorld;
+
 	public Snitch(Reinforcement reinforcement, String name, int radius) {
-		this.reinforcement = reinforcement;
+		this(reinforcement.getID(), name, radius, reinforcement.getLocation().getBlockX(), reinforcement.getLocation().getBlockY(), reinforcement.getLocation().getBlockZ());
+	}
+
+	public Snitch(UUID reinforcementID, String name, int radius, int blockX, int blockY, int blockZ) {
+		this.reinforcementID = reinforcementID;
 		this.name = name;
 		this.radius = radius;
+		this.blockX = blockX;
+		this.blockY = blockY;
+		this.blockZ = blockZ;
 	}
-	
+
+	public void setSnitchWorld(SnitchWorld snitchWorld) {
+		this.snitchWorld = snitchWorld;
+	}
+
+	public UUID getReinforcementID() {
+		return reinforcementID;
+	}
+
 	DecimalFormat df = new DecimalFormat("######");
 	
 	public void notifyEntrance(Player entering) {
+		if (snitchWorld == null) {
+			System.out.println("snitchWorld: " + snitchWorld);
+		}
+		ReinforcementWorld reinWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(snitchWorld.getWorld());
+		Reinforcement reinforcement = getReinforcement(reinWorld);
 		Group group = reinforcement.getGroup();
 		if (group.isAuthorized(entering, GroupPermissions.SNITCH_NOTIFICATION_BYPASS)) {
 			return;
@@ -38,13 +65,14 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 		
 		SnitchEnterEvent event = new SnitchEnterEvent(this, entering);
 		Bukkit.getPluginManager().callEvent(event);
-		
+
+		Location loc = reinforcement.getLocation();
 		for (GroupMember member : group.getMembers()) {
 			Player player = member.getPlayer();
 			player.sendMessage(ChatColor.BLACK + "[" + ChatColor.AQUA + "Snitch" + ChatColor.BLACK + "]: " + ChatColor.DARK_AQUA + entering.getName() + ChatColor.AQUA
 				+ " has entered a snitch " + ChatColor.DARK_AQUA + name + ChatColor.AQUA + " at " 
-				+ ChatColor.DARK_AQUA + "[" + getLocation().getBlockX() + ChatColor.DARK_AQUA  + ", " + getLocation().getBlockY() + ChatColor.DARK_AQUA + ", " + getLocation().getBlockZ() + ChatColor.DARK_AQUA + "]"
-				+ ChatColor.GOLD + " (" + ChatColor.YELLOW + df.format(player.getLocation().distance(getLocation())) + "m" + ChatColor.GOLD + ")");
+				+ ChatColor.DARK_AQUA + "[" + loc.getBlockX() + ChatColor.DARK_AQUA  + ", " + loc.getBlockY() + ChatColor.DARK_AQUA + ", " + loc.getBlockZ() + ChatColor.DARK_AQUA + "]"
+				+ ChatColor.GOLD + " (" + ChatColor.YELLOW + df.format(player.getLocation().distance(loc)) + "m" + ChatColor.GOLD + ")");
 		}
 	}
 	
@@ -56,24 +84,12 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 		this.name = name;
 	}
 	
-	public Reinforcement getReinforcement() {
-		return reinforcement;
-	}
-	
-	public Location getLocation() {
-		return reinforcement.getLocation();
+	public Reinforcement getReinforcement(ReinforcementWorld world) {
+		return world.getReinforcement(reinforcementID);
 	}
 	
 	public int getRadius() {
 		return radius;
-	}
-	
-	public void damage(double dmg) {
-		reinforcement.damage(dmg);
-	}
-	
-	public void destroy() {
-		reinforcement.destroy();
 	}
 	
 	@Override
@@ -83,46 +99,33 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 		}
 		
 		Snitch snitch = (Snitch) obj;
-		return snitch.name.equals(name) && snitch.reinforcement.equals(reinforcement);
+		return snitch.name.equals(name) && snitch.reinforcementID.equals(reinforcementID);
 	}
 	
 	@Override
 	public int compareTo(Snitch other) {
-		Location location = getLocation();
-		UUID thisWorld = location.getWorld().getUID();
-		int thisX = location.getBlockX();
-		int thisY = location.getBlockY();
-		int thisZ = location.getBlockZ();
+		int otherX = other.blockX;
+		int otherY = other.blockY;
+		int otherZ = other.blockZ;
 
-		Location otherLocation = other.getLocation();
-		UUID otherWorld = otherLocation.getWorld().getUID();
-		int otherX = otherLocation.getBlockX();
-		int otherY = otherLocation.getBlockY();
-		int otherZ = otherLocation.getBlockZ();
-
-		int worldCompare = thisWorld.compareTo(otherWorld);
-		if (worldCompare != 0) {
-			return worldCompare;
-		}
-
-		if (thisX < otherX) {
+		if (blockX < otherX) {
 			return -1;
 		}
-		if (thisX > otherX) {
+		if (blockX > otherX) {
 			return 1;
 		}
 
-		if (thisY < otherY) {
+		if (blockY < otherY) {
 			return -1;
 		}
-		if (thisY > otherY) {
+		if (blockY > otherY) {
 			return 1;
 		}
 		
-		if (thisZ < otherZ) {
+		if (blockZ < otherZ) {
 			return -1;
 		}
-		if (thisZ > otherZ) {
+		if (blockZ > otherZ) {
 			return 1;
 		}
 
@@ -136,7 +139,7 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 
 	@Override
 	public int qtXMid() {
-		return getLocation().getBlockX();
+		return blockX;
 	}
 
 	@Override
@@ -151,7 +154,7 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 
 	@Override
 	public int qtZMid() {
-		return getLocation().getBlockZ();
+		return blockZ;
 	}
 
 	@Override
@@ -161,7 +164,7 @@ public class Snitch implements QTBox, Comparable<Snitch> {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(qtXMid(), getLocation().getBlockY(), qtZMid());
+		return Objects.hash(qtXMid(), blockY, qtZMid());
 	}
 	
 }

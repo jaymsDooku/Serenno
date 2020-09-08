@@ -55,12 +55,14 @@ public interface Artillery extends QTBox {
 	
 	Menu getInterface();
 	
-	void dealBlockDamage(Player player);
+	boolean dealBlockDamage(Player player);
 	
 	long getBlockDamageCooldown();
 	
 	int getUpperY();
 	
 	int getLowerY();
+
+	void projectHitBox();
 	
 }

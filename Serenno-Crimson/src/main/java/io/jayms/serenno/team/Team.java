@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.jayms.serenno.player.ui.LobbyTeam;
+import io.jayms.serenno.ui.UI;
+import io.jayms.serenno.ui.UIManager;
+import io.jayms.serenno.ui.UIScoreboard;
+import io.jayms.serenno.ui.UITeam;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -190,6 +195,18 @@ public class Team implements Duelable {
 	
 	public int size() {
 		return getAll().size();
+	}
+
+	public void name(List<SerennoPlayer> players, UITeam team) {
+		for (SerennoPlayer ally : getAll()) {
+			Player allyPlayer = ally.getBukkitPlayer();
+			UI ui = UIManager.getUIManager().getScoreboard(allyPlayer);
+			UIScoreboard scoreboard = ui.getScoreboard();
+
+			for (SerennoPlayer lobbyPlayer : players) {
+				scoreboard.setTeam(lobbyPlayer.getBukkitPlayer(), team);
+			}
+		}
 	}
 	
 	@Override

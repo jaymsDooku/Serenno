@@ -13,7 +13,9 @@ import io.jayms.serenno.SerennoCrimson;
 import io.jayms.serenno.db.DBKey;
 import io.jayms.serenno.model.citadel.bastion.Bastion;
 import io.jayms.serenno.model.citadel.reinforcement.Reinforcement;
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementDataSource;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
+import io.jayms.serenno.model.group.Group;
 import io.jayms.serenno.util.ChunkCoord;
 import io.jayms.serenno.util.Coords;
 import io.jayms.serenno.vault.VaultMapDatabase;
@@ -24,9 +26,11 @@ import org.bukkit.Material;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public class MongoVaultMapReinforcementDataSource implements MongoReinforcementDataSource {
+public class MongoVaultMapReinforcementDataSource implements ReinforcementDataSource {
 
     public static final String COLLECTION = "reinforcement";
 
@@ -47,6 +51,10 @@ public class MongoVaultMapReinforcementDataSource implements MongoReinforcementD
         this.db = db;
     }
 
+    public VaultMapDatabase getDb() {
+        return db;
+    }
+
     @Override
     public MongoCollection<Document> getCollection() {
         MongoCollection<Document> collection = SerennoCommon.get().getDBManager().getCollection(new DBKey(db.getWorldName(), COLLECTION),
@@ -61,8 +69,10 @@ public class MongoVaultMapReinforcementDataSource implements MongoReinforcementD
         Reinforcement r = Reinforcement.builder()
                 .id(UUID.fromString(doc.getString(REINFORCEMENT_ID)))
                 .loc(new Location(db.getWorld(), doc.getDouble(X), doc.getDouble(Y), doc.getDouble(Z)))
+                .chunkX(doc.getInteger(CX))
+                .chunkZ(doc.getInteger(CZ))
                 .creationTime(doc.getLong(CREATION_TIME))
-                .group(db.getGroupSource().get(doc.getString(CITADEL_GROUP)))
+                .group(doc.getString(CITADEL_GROUP))
                 .blueprint(db.getReinforcementBlueprintSource().get(doc.getString(BLUEPRINT)))
                 .health(doc.getDouble(HEALTH))
                 .inMemory(false)
@@ -78,10 +88,14 @@ public class MongoVaultMapReinforcementDataSource implements MongoReinforcementD
         doc.append(X, value.getLocation().getX());
         doc.append(Y, value.getLocation().getY());
         doc.append(Z, value.getLocation().getZ());
-        doc.append(CX, value.getLocation().getChunk().getX());
-        doc.append(CZ, value.getLocation().getChunk().getZ());
+        doc.append(CX, value.getChunkX());
+        doc.append(CZ, value.getChunkZ());
         doc.append(BLUEPRINT, value.getBlueprint().getName());
-        doc.append(CITADEL_GROUP, value.getGroup().getName().toLowerCase());
+        Group group = value.getGroup();
+        if (group == null) {
+            System.out.println("GROUP IS NULL | " + value.getGroupName());
+        }
+        doc.append(CITADEL_GROUP, group.getName().toLowerCase());
         doc.append(CREATION_TIME, value.getCreationTime());
         doc.append(HEALTH, value.getHealth());
         return doc;
@@ -112,7 +126,11 @@ public class MongoVaultMapReinforcementDataSource implements MongoReinforcementD
 
     public Reinforcement get(UUID key) {
         FindIterable<Document> query = getCollection().find(Filters.eq(REINFORCEMENT_ID, key.toString()));
-        return fromDocument(query.first());
+        Document doc = query.first();
+        if (doc == null) {
+            return null;
+        }
+        return fromDocument(doc);
     }
 
     @Override
@@ -120,7 +138,9 @@ public class MongoVaultMapReinforcementDataSource implements MongoReinforcementD
         FindIterable<Document> query = getCollection().find(getFilter(key));
 
         Document doc = query.first();
-
+        if (doc == null) {
+            return null;
+        }
         return fromDocument(doc);
     }
 
@@ -156,71 +176,18 @@ public class MongoVaultMapReinforcementDataSource implements MongoReinforcementD
         getCollection().deleteMany(new Document());
     }
 
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
     @Override
     public void persistAll(Collection<Reinforcement> reinforcements, ReinforcementWorld.UnloadCallback callback) {
         if (reinforcements.isEmpty()) {
             return;
         }
 
-        new BukkitRunnable() {
+        executorService.execute(new MongoReinforcementPersistTask(this, reinforcements, 30000, callback));
+    }
 
-            @Override
-            public void run() {
-                List<UpdateOneModel<Document>> updateDocuments = new ArrayList<>();
-                List<Reinforcement> toRemove = new ArrayList<>();
-                for (Reinforcement reinforcement : reinforcements) {
-                    if (!reinforcement.isDirty()) {
-                        continue;
-                    }
-                    if (reinforcement.isBroken()) {
-                        toRemove.add(reinforcement);
-                    } else {
-                        Document filterDocument = new Document();
-                        filterDocument.append(REINFORCEMENT_ID, reinforcement.getID().toString());
-
-                        Document updateDocument = new Document();
-                        Document setDocument = toDocument(reinforcement);
-                        updateDocument.append("$set", setDocument);
-
-                        UpdateOptions updateOptions = new UpdateOptions();
-                        updateOptions.upsert(true);
-                        updateOptions.bypassDocumentValidation(true);
-
-                        updateDocuments.add(new UpdateOneModel<>(filterDocument,
-                                updateDocument,
-                                updateOptions));
-                    }
-                }
-                MongoCollection<Document> collection = getCollection();
-                if (!toRemove.isEmpty()) {
-                    Bson deleteFilter = Filters.all(REINFORCEMENT_ID, toRemove.stream()
-                            .map(r -> r.getID().toString())
-                            .collect(Collectors.toList()));
-                    collection.deleteMany(deleteFilter);
-                }
-
-                if (!updateDocuments.isEmpty()) {
-                    BulkWriteOptions bulkWriteOptions = new BulkWriteOptions();
-                    bulkWriteOptions.ordered(false);
-                    bulkWriteOptions.bypassDocumentValidation(true);
-
-                    BulkWriteResult bulkWriteResult = null;
-                    try {
-                        bulkWriteResult = collection.bulkWrite(updateDocuments, bulkWriteOptions);
-                    } catch (BulkWriteException e) {
-                        SerennoCrimson.get().getLogger().severe("Failed to bulk write reinforcements for vault map: " + db.getWorld().getName());
-                    }
-                }
-                new BukkitRunnable() {
-
-                    @Override
-                    public void run() {
-                        callback.unload();
-                    }
-                }.runTask(SerennoCobalt.get());
-            }
-
-        }.runTaskAsynchronously(SerennoCobalt.get());
+    public void dispose() {
+        executorService.shutdown();
     }
 
     @Override

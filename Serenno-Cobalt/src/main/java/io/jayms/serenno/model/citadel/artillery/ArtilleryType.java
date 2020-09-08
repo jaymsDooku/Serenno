@@ -26,6 +26,7 @@ public enum ArtilleryType {
 	}
 	
 	public ItemStack getNewItem() {
+		if (artilleryCrateItemSupplier == null) return null;
 		return artilleryCrateItemSupplier.get().getItemStack();
 	}
 	

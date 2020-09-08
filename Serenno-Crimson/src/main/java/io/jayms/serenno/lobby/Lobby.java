@@ -17,11 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.google.common.collect.Maps;
@@ -181,24 +177,33 @@ public class Lobby implements Listener {
 			sendToLobby(SerennoCrimson.get().getPlayerManager().get(player));
 		}
 	}
-	
+
 	public void sendToLobby(SerennoPlayer player) {
-		new BukkitRunnable() {
-			
-			public void run() {
-				Player p = player.getBukkitPlayer();
-				if (p == null) return;
-				
-				SentToLobbyEvent event = new SentToLobbyEvent(p);
-				Bukkit.getPluginManager().callEvent(event);
-				
-				PlayerTools.clean(p);
-				p.teleport(lobbySpawn);
-				giveItems(player);
-			};
-			
-		}.runTaskLater(SerennoCrimson.get(), 1L);
+		sendToLobby(player, false);
+	}
+	
+	public void sendToLobby(SerennoPlayer player, boolean depart) {
+		Player p = player.getBukkitPlayer();
+		if (p == null)  {
+			SerennoCrimson.get().getLogger().info("Couldn't send player back to lobby");
+			return;
+		}
+
+		SentToLobbyEvent event = new SentToLobbyEvent(p);
+		Bukkit.getPluginManager().callEvent(event);
+
+		PlayerTools.clean(p);
+		giveItems(player);
 		inLobby.add(player);
+
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				player.teleport(lobbySpawn);
+			}
+
+		}.runTaskLater(SerennoCrimson.get(), 1L);
 	}
 	
 	public boolean inLobby(SerennoPlayer player) {
@@ -208,22 +213,30 @@ public class Lobby implements Listener {
 	public void depart(SerennoPlayer player) {
 		inLobby.remove(player);
 	}
-	
+
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		Player player = e.getPlayer();
 		SerennoPlayer sPlayer = SerennoCrimson.get().getPlayerManager().get(player);
+		sPlayer.setBukkitPlayer(player);
 		sendToLobby(sPlayer);
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				sPlayer.teleport(lobbySpawn);
+			}
+
+		}.runTaskLater(SerennoCrimson.get(), 1L);
 	}
 	
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
 		Player player = e.getPlayer();
 		SerennoPlayer sPlayer = SerennoCrimson.get().getPlayerManager().get(player);
-		if (!inLobby(sPlayer)) {
-			sendToLobby(sPlayer);
+		if (inLobby(sPlayer)) {
+			depart(sPlayer);
 		}
-		depart(sPlayer);
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)

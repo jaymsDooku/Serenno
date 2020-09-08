@@ -4,9 +4,13 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
+import io.jayms.serenno.listener.MechanicsListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.google.common.collect.Maps;
@@ -15,7 +19,6 @@ import io.jayms.serenno.SerennoCobalt;
 import io.jayms.serenno.kit.ItemMetaBuilder;
 import io.jayms.serenno.kit.ItemStackBuilder;
 import io.jayms.serenno.listener.citadel.CitadelBlockListener;
-import io.jayms.serenno.listener.citadel.CitadelChunkListener;
 import io.jayms.serenno.listener.citadel.CitadelEntityListener;
 import io.jayms.serenno.model.citadel.CitadelPlayer;
 import io.jayms.serenno.model.citadel.RegenRate;
@@ -25,7 +28,7 @@ import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
 import net.md_5.bungee.api.ChatColor;
 
-public class CitadelManager {
+public class CitadelManager implements Listener {
 
 	private Map<UUID, CitadelPlayer> citadelPlayers = Maps.newConcurrentMap();
 	private BastionManager bastionManager;
@@ -35,7 +38,7 @@ public class CitadelManager {
 	
 	private CitadelBlockListener blockListener;
 	private CitadelEntityListener entityListener;
-	private CitadelChunkListener chunkListener;
+	private MechanicsListener mechanicsListener;
 	
 	public CitadelManager() {
 		reinforcementManager = new ReinforcementManager(this, null);
@@ -118,10 +121,11 @@ public class CitadelManager {
 		
 		blockListener = new CitadelBlockListener(this, reinforcementManager, bastionManager);
 		entityListener = new CitadelEntityListener(this, reinforcementManager, bastionManager);
-		chunkListener = new CitadelChunkListener(reinforcementManager);
+		mechanicsListener = new MechanicsListener();
 		Bukkit.getPluginManager().registerEvents(blockListener, SerennoCobalt.get());
 		Bukkit.getPluginManager().registerEvents(entityListener, SerennoCobalt.get());
-		Bukkit.getPluginManager().registerEvents(chunkListener, SerennoCobalt.get());
+		Bukkit.getPluginManager().registerEvents(mechanicsListener, SerennoCobalt.get());
+		Bukkit.getPluginManager().registerEvents(this, SerennoCobalt.get());
 	}
 	
 	public ArtilleryManager getArtilleryManager() {
@@ -147,6 +151,12 @@ public class CitadelManager {
 			citadelPlayers.put(player.getUniqueId(), citadelPlayer);
 		}
 		return citadelPlayer;
+	}
+
+	@EventHandler
+	public void onQuit(PlayerQuitEvent e) {
+		Player player = e.getPlayer();
+		citadelPlayers.remove(player.getUniqueId());
 	}
 	
 }

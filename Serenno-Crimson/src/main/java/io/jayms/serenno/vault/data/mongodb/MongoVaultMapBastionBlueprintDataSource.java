@@ -13,6 +13,7 @@ import io.jayms.serenno.kit.ItemStackKey;
 import io.jayms.serenno.model.citadel.bastion.BastionBlueprint;
 import io.jayms.serenno.model.citadel.bastion.BastionShape;
 import io.jayms.serenno.model.citadel.reinforcement.ReinforcementBlueprint;
+import io.jayms.serenno.util.ItemUtil;
 import io.jayms.serenno.util.SerennoDataSource;
 import io.jayms.serenno.vault.VaultMapDatabase;
 import org.bson.Document;
@@ -33,8 +34,9 @@ public class MongoVaultMapBastionBlueprintDataSource implements MongoSerennoData
     public static final String DISPLAY_NAME = "display_name";
     public static final String ITEM_STACK_MATERIAL = "item_stack_material";
     public static final String ITEM_STACK_AMOUNT = "item_stack_amount";
-    public static final String BASTION_SHAPE = "item_stack_amount";
-    public static final String RADIUS = "item_stack_amount";
+    public static final String ITEM_STACK_NAME = "item_stack_name";
+    public static final String BASTION_SHAPE = "bastion_shape";
+    public static final String RADIUS = "radius";
     public static final String REQUIRES_MATURITY = "requires_maturity";
     public static final String PEARL_BLOCK = "pearl_block";
     public static final String PEARL_BLOCK_MID_AIR = "pearl_block_mid_air";
@@ -63,7 +65,7 @@ public class MongoVaultMapBastionBlueprintDataSource implements MongoSerennoData
                 .displayName(displayName)
                 .itemStack(new ItemStackBuilder(Material.valueOf(doc.getString(ITEM_STACK_MATERIAL)), doc.getInteger(ITEM_STACK_AMOUNT))
                         .meta(new ItemMetaBuilder()
-                                .name(displayName))
+                                .name(doc.getString(ITEM_STACK_NAME)))
                         .build())
                 .shape(BastionShape.valueOf(doc.getString(BASTION_SHAPE)))
                 .radius(doc.getInteger(RADIUS))
@@ -85,6 +87,7 @@ public class MongoVaultMapBastionBlueprintDataSource implements MongoSerennoData
         doc.append(DISPLAY_NAME, value.getDisplayName());
         doc.append(ITEM_STACK_MATERIAL, value.getItemStack().getType().toString());
         doc.append(ITEM_STACK_AMOUNT, value.getItemStack().getAmount());
+        doc.append(ITEM_STACK_NAME, ItemUtil.getName(value.getItemStack()));
         doc.append(BASTION_SHAPE, value.getShape().toString());
         doc.append(RADIUS, value.getRadius());
         doc.append(REQUIRES_MATURITY, value.requiresMaturity());

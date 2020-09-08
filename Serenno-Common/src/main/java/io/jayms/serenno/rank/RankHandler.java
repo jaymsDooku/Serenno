@@ -39,6 +39,8 @@ public class RankHandler {
 		if (attachment == null) {
 			attachment = bukkitPlayer.addAttachment(common);
 			attachments.put(bukkitPlayer.getUniqueId(), attachment);
+		} else {
+			common.getLogger().info(bukkitPlayer.getName() + " already has a permission attachment.");
 		}
 		
 		for (String perm : rank.getPerms()) {
@@ -50,12 +52,15 @@ public class RankHandler {
 	public void removePermissions(CommonPlayer player) {
 		Player bukkitPlayer = player.getBukkitPlayer();
 		
-		PermissionAttachment attachment = attachments.get(bukkitPlayer.getUniqueId());
+		PermissionAttachment attachment = attachments.remove(bukkitPlayer.getUniqueId());
+		common.getLogger().info("Removing permission attachment for " + bukkitPlayer.getName() + "...");
 		if (attachment == null) return;
-		
+
 		for (String perm : player.getRank().getPerms()) {
 			attachment.unsetPermission(perm);
 		}
+		bukkitPlayer.removeAttachment(attachment);
+		common.getLogger().info("Permission attachment removed.");
 	}
 	
 }

@@ -1,6 +1,7 @@
 package io.jayms.serenno.model.citadel.artillery.trebuchet;
 
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.util.Vector;
@@ -59,6 +60,7 @@ public class TrebuchetMissileLaunchState implements ArtilleryMissileState<Trebuc
 		FallingBlock fallBlock = missile.getMissileBlock();
 		Vector velocity = loc.clone().toVector().subtract(fallBlock.getLocation().toVector());
 		fallBlock.setVelocity(velocity);
+		loc.getWorld().playSound(loc, Sound.ENTITY_ARROW_SHOOT, 0.75f, 0.2f);
 		ParticleEffect.FLAME.display(fallBlock.getLocation(), 0.5f, 0.5f, 0.5f, 0f, 15);
 		ParticleEffect.SMOKE_NORMAL.display(fallBlock.getLocation(), 0.5f, 0.5f, 0.5f, 0f, 7);
 		ParticleEffect.SMOKE_LARGE.display(fallBlock.getLocation(), 0.5f, 0.5f, 0.5f, 0f, 2);

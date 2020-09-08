@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import io.jayms.serenno.model.citadel.reinforcement.ReinforcementWorld;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -33,16 +34,17 @@ public class JaNameCommand extends StandaloneCommand {
 			return true;
 		}
 		Snitch toName = null;
+		ReinforcementWorld reinforcementWorld = SerennoCobalt.get().getCitadelManager().getReinforcementManager().getReinforcementWorld(playerLoc.getWorld());
 		if (snitches.size() == 1) {
 			toName = snitches.iterator().next();
 		} else {
 			double lowestDist = Double.MAX_VALUE;
 			for (Snitch snitch : snitches) {
-				Reinforcement rein = snitch.getReinforcement();
+				Reinforcement rein = snitch.getReinforcement(reinforcementWorld);
 				if (!rein.hasPermission(player, GroupPermissions.SNITCH_RENAME)) {
 					continue;
 				}
-				double dist = snitch.getLocation().distanceSquared(playerLoc);
+				double dist = snitch.getReinforcement(reinforcementWorld).getLocation().distanceSquared(playerLoc);
 				if (dist < lowestDist) {
 					toName = snitch;
 					lowestDist = dist;
@@ -58,7 +60,7 @@ public class JaNameCommand extends StandaloneCommand {
 		String name = args[0];
 		toName.setName(name);
 		
-		Location toNameLoc = toName.getLocation();
+		Location toNameLoc = toName.getReinforcement(reinforcementWorld).getLocation();
 		player.sendMessage(ChatColor.AQUA + "You have renamed snitch at " 
 				+ ChatColor.DARK_AQUA + "[" + ChatColor.AQUA + toNameLoc.getBlockX() + ChatColor.DARK_AQUA + ", " + ChatColor.DARK_AQUA + ", " + ChatColor.DARK_AQUA + "]" 
 				+ ChatColor.AQUA + " to " + ChatColor.DARK_AQUA + name);

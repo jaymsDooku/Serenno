@@ -47,7 +47,7 @@ public class CommonPlayerManager extends PlayerManager<CommonPlayer> {
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
 		Player player = e.getPlayer();
-		CommonPlayer corePlayer = this.get(player);
+		CommonPlayer corePlayer = this.remove(player);
 		
 		rankHandler.removePermissions(corePlayer);
 	}
